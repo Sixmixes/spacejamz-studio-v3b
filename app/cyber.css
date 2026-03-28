@@ -1,0 +1,190 @@
+@font-face {
+  font-family: Cyber;
+  src: url('https://assets.codepen.io/605876/Blender-Pro-Bold.otf');
+  font-display: swap;
+}
+
+.letters {
+  display: flex;
+}
+.letters span:nth-of-type(2),
+.letters span:nth-of-type(5) {
+  scale: 1 -1;
+}
+.letters span:nth-of-type(3),
+.letters span:nth-of-type(6),
+.letters span:nth-of-type(7) {
+  scale: -1 -1;
+}
+
+.cyber-btn {
+  --corner: 12px;
+  --border: 1.5px;
+  --clip: polygon(
+    0 0,
+    100% 0,
+    100% calc(100% - var(--corner)),
+    calc(100% - var(--corner)) 100%,
+    0% 100%
+  );
+  font-family: 'Cyber', var(--font-brand), sans-serif;
+  width: auto;
+  min-width: 140px;
+  text-align: left;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border: 0;
+  background: transparent;
+  position: relative;
+  color: rgb(var(--color-primary));
+  cursor: pointer;
+  outline: none;
+  font-size: 1.25rem;
+  letter-spacing: 0.15em;
+}
+
+.cyber-btn * { pointer-events: none; }
+
+.cyber-btn .backdrop {
+  backdrop-filter: saturate(180%) blur(6px);
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: rgba(0,0,0,0.8);
+  clip-path: var(--clip);
+  transition: all 0.2s;
+}
+
+.cyber-btn .backdrop::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgb(var(--color-primary));
+  translate: 0 0;
+  border: var(--border) solid transparent;
+  clip-path: var(--clip);
+  -webkit-mask: linear-gradient(#0000 0% 100%), linear-gradient(#fff 0% 100%);
+  mask: linear-gradient(#0000 0% 100%), linear-gradient(#fff 0% 100%);
+  -webkit-mask-clip: padding-box, border-box;
+  mask-clip: padding-box, border-box;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  mask-composite: intersect;
+  z-index: 2;
+  transition: background 0.2s;
+}
+
+.cyber-btn .backdrop .corner {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  height: var(--corner);
+  width: var(--corner);
+}
+.cyber-btn .backdrop .corner::after {
+  content: '';
+  height: calc(var(--border) * 2);
+  width: 200%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+  transform: rotate(135deg);
+  background: rgb(var(--color-primary));
+}
+
+.cyber-btn kbd {
+  color: #000;
+  font-weight: bold;
+  height: 20px;
+  display: inline-flex;
+  aspect-ratio: 1;
+  font-size: 10px;
+  border-radius: 50%;
+  background: rgb(var(--color-primary));
+  place-items: center;
+  justify-content: center;
+  margin-right: 4px;
+}
+.cyber-btn kbd svg { width: 65%; stroke: #000; }
+
+.cyber-btn:is(:hover, :focus-visible) {
+  color: #000;
+}
+.cyber-btn:is(:hover, :focus-visible) kbd {
+  color: rgb(var(--color-primary));
+  background: #000;
+}
+.cyber-btn:is(:hover, :focus-visible) kbd svg { stroke: rgb(var(--color-primary)); }
+
+.cyber-btn:is(:hover, :focus-visible) .backdrop {
+  background: rgb(var(--color-primary));
+}
+
+.cyber-btn.danger {
+  color: rgb(var(--color-danger));
+}
+.cyber-btn.danger .backdrop::before, .cyber-btn.danger .backdrop .corner::after {
+  background: rgb(var(--color-danger));
+}
+.cyber-btn.danger:is(:hover, :focus-visible) {
+  color: #000;
+}
+.cyber-btn.danger:is(:hover, :focus-visible) .backdrop {
+  background: rgb(var(--color-danger));
+}
+
+.cyber-btn {
+  --shimmy-distance: 5;
+  --clip-one: polygon(0 2%, 100% 2%, 100% 95%, 95% 95%, 95% 90%, 85% 90%, 85% 95%, 8% 95%, 0 70%);
+  --clip-two: polygon(0 78%, 100% 78%, 100% 100%, 95% 100%, 95% 90%, 85% 90%, 85% 100%, 8% 100%, 0 78%);
+  --clip-three: polygon(0 44%, 100% 44%, 100% 54%, 95% 54%, 95% 54%, 85% 54%, 85% 54%, 8% 54%, 0 54%);
+  --clip-four: polygon(0 0, 100% 0, 100% 0, 95% 0, 95% 0, 85% 0, 85% 0, 8% 0, 0 0);
+  --clip-five: polygon(0 0, 100% 0, 100% 0, 95% 0, 95% 0, 85% 0, 85% 0, 8% 0, 0 0);
+  --clip-six: polygon(0 40%, 100% 40%, 100% 85%, 95% 85%, 95% 85%, 85% 85%, 85% 85%, 8% 85%, 0 70%);
+  --clip-seven: polygon(0 63%, 100% 63%, 100% 80%, 95% 80%, 95% 80%, 85% 80%, 85% 80%, 8% 80%, 0 70%);
+}
+
+.cyber-btn:is(:hover, :focus-visible) .glitch {
+  animation: cyber-glitch 2s infinite;
+  display: flex;
+}
+.cyber-btn:is(:hover, :focus-visible) .glitch .backdrop {
+  background: inherit;
+}
+.cyber-btn .glitch {
+  display: none;
+  position: absolute;
+  inset: 0;
+  translate: 0% 0;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  pointer-events: none;
+  color: inherit;
+  text-shadow: 0 1px currentColor;
+}
+.cyber-btn .glitch kbd { opacity: 0; }
+
+@keyframes cyber-glitch {
+  0% { clip-path: var(--clip-one); }
+  2%, 8% { clip-path: var(--clip-two); transform: translate(calc(var(--shimmy-distance) * -1%), 0); }
+  6% { clip-path: var(--clip-two); transform: translate(calc(var(--shimmy-distance) * 1%), 0); }
+  9% { clip-path: var(--clip-two); transform: translate(0, 0); }
+  10% { clip-path: var(--clip-three); transform: translate(calc(var(--shimmy-distance) * 1%), 0); }
+  13% { clip-path: var(--clip-three); transform: translate(0, 0); }
+  14%, 21% { clip-path: var(--clip-four); transform: translate(calc(var(--shimmy-distance) * 1%), 0); }
+  25% { clip-path: var(--clip-five); transform: translate(calc(var(--shimmy-distance) * 1%), 0); }
+  30% { clip-path: var(--clip-five); transform: translate(calc(var(--shimmy-distance) * -1%), 0); }
+  35%, 45% { clip-path: var(--clip-six); transform: translate(calc(var(--shimmy-distance) * -1%)); }
+  40% { clip-path: var(--clip-six); transform: translate(calc(var(--shimmy-distance) * 1%)); }
+  50% { clip-path: var(--clip-six); transform: translate(0, 0); }
+  55% { clip-path: var(--clip-seven); transform: translate(calc(var(--shimmy-distance) * 1%), 0); }
+  60% { clip-path: var(--clip-seven); transform: translate(0, 0); }
+  31%, 61%, 100% { clip-path: var(--clip-four); }
+}
