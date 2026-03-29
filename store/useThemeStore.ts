@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export type SpaceTheme = 'cosmos' | 'battle' | 'arena' | 'toxic' | 'royal' | 'ghastly' | 'abyss' | 'neon';
+export type SpaceTheme = 'cosmos' | 'battle' | 'arena' | 'domination' | 'ledger' | 'toxic' | 'royal' | 'ghastly' | 'abyss' | 'neon' | 'void' | 'inferno';
 
 interface ThemeState {
     activeTheme: SpaceTheme;

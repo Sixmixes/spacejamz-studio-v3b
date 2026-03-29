@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, memo } from 'react';
-import { Play, Square, Pause, Shuffle, SkipForward, SkipBack, Volume2, VolumeX } from 'lucide-react';
+import { Play, Square, Pause, Shuffle, SkipForward, SkipBack, Volume2, VolumeX, Database, X, Cpu } from 'lucide-react';
 import { useAudioStore } from '@/store/useAudioStore';
 import { audioRef, analyserRef, coreAudioData } from '@/components/global/AudioEngine';
 
@@ -73,7 +73,7 @@ const VolumeControl = memo(() => {
                 onChange={handleVolumeChange}
                 className="w-16 md:w-20 lg:w-24 h-1 opacity-50 hover:opacity-100 appearance-none cursor-pointer focus:outline-none transition-all duration-200 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
                 style={{
-                  background: `linear-gradient(to right, rgb(6,182,212) ${(isMuted ? 0 : volume) * 100}%, rgba(255,255,255,0.1) ${(isMuted ? 0 : volume) * 100}%)`
+                  background: `linear-gradient(to right, rgb(var(--color-primary)) ${(isMuted ? 0 : volume) * 100}%, rgba(255,255,255,0.1) ${(isMuted ? 0 : volume) * 100}%)`
                 }}
             />
         </div>
@@ -85,15 +85,15 @@ const MINIMAP_MULTS = [0.85, 0.32, 0.94, 0.51, 0.27, 0.76, 0.43, 0.88, 0.35, 0.6
 const AudioMinimap = memo(({ isPlaying }: { isPlaying: boolean }) => {
     return (
         <div className="flex justify-end gap-[3px] h-6 items-end">
-            {[...Array(16)].map((_, i) => (
+            {MINIMAP_MULTS.map((mult, i) => (
                 <div 
                     key={i} 
-                    className="w-1.5 bg-primary/60 rounded-t-sm origin-bottom"
+                    className="w-1.5 rounded-t-sm origin-bottom transition-all duration-75"
                     style={{ 
-                        '--random-mult': MINIMAP_MULTS[i],
+                        backgroundColor: 'rgb(var(--color-primary))',
                         height: '100%',
-                        transform: isPlaying ? `scaleY(calc(0.1 + (var(--audio-intensity, 0) * var(--random-mult) * 0.9)))` : 'scaleY(0.1)',
-                        opacity: isPlaying ? 1 : 0.2
+                        transform: isPlaying ? `scaleY(calc(0.1 + (var(--audio-intensity, 0) * ${mult} * 1.5)))` : 'scaleY(0.1)',
+                        opacity: isPlaying ? 0.8 : 0.2
                     } as React.CSSProperties}
                 ></div>
             ))}
@@ -283,7 +283,7 @@ const FrequencyLine = memo(({ isPlaying }: { isPlaying: boolean }) => {
     );
 });
 
-const StickyPlayer = () => {
+const StickyPlayer = memo(function StickyPlayer() {
     const isPlaying = useAudioStore(state => state.isPlaying);
     const currentTrack = useAudioStore(state => state.currentTrack);
     const playlist = useAudioStore(state => state.playlist);
@@ -326,101 +326,106 @@ const StickyPlayer = () => {
     };
 
     return (
-        <div className="fixed bottom-0 left-0 w-full z-[99999] bg-black/85 backdrop-blur-2xl border-t border-white/5 h-[88px] sm:h-20 flex items-center justify-between pl-4 pr-4 md:px-12 pb-[env(safe-area-inset-bottom)] shadow-[0_-10px_40px_rgba(0,0,0,0.5)] crevice-pulse">
+        <div className="fixed bottom-0 left-0 w-full z-[200000] pointer-events-auto bg-black/90 backdrop-blur-3xl border-t border-white/5 h-[88px] sm:h-20 flex items-center justify-between px-4 md:px-12 pb-[env(safe-area-inset-bottom)] shadow-[0_-10px_40px_rgba(0,0,0,0.8)] crevice-pulse">
             
-            <FrequencyLine isPlaying={isPlaying} />
+            <div className="absolute inset-0 z-0 pointer-events-none">
+                <FrequencyLine isPlaying={isPlaying} />
+                <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(var(--color-primary),0.02),rgba(var(--color-primary),0.01),rgba(var(--color-primary),0.02))] z-10 bg-[length:100%_2px,3px_100%] opacity-20" />
+            </div>
+
             <ProgressBar />
 
-            {/* Left: Track Info */}
-            <div className="flex items-center gap-3 md:gap-4 flex-1 min-w-0 md:w-1/3 pr-2 md:pr-4">
-                <div className="w-12 h-12 md:w-14 md:h-14 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center relative overflow-hidden shrink-0 shadow-inner">
-                    <div 
-                        className="absolute bottom-0 left-0 w-full bg-primary/40 transition-all duration-75"
-                        style={{ height: `calc(var(--audio-intensity, 0) * 100%)` }}
-                    ></div>
-                    <Play size={18} className="text-white/80 z-10" />
-                </div>
-                <div className="flex flex-col overflow-hidden justify-center h-full pt-1 relative z-10">
-                    <span className={`font-mono text-[9px] md:text-[10px] uppercase tracking-[0.2em] ${isPlaying ? 'text-primary drop-shadow-[0_0_8px_rgba(6,182,212,0.8)]' : 'text-gray-500'}`}>
-                        {isPlaying ? 'TRANSMITTING' : 'STANDBY'}
-                    </span>
-                    <span className="font-bebas text-lg sm:text-xl md:text-2xl text-white tracking-widest truncate leading-none mt-1" title={currentTrack?.title || 'NO SOURCE LOADED'}>
-                        {currentTrack?.title || 'NO SOURCE LOADED'}
-                    </span>
-                    
-                    {/* KEY AND BPM METADATA COMPONENT */}
-                    {(currentTrack?.bpm || currentTrack?.key) && (
-                        <div className="flex items-center gap-1.5 mt-1.5">
-                            {currentTrack.bpm && (
-                                <span className="font-mono text-[8px] md:text-[9px] text-white/80 border border-white/20 bg-white/5 px-1.5 py-0.5 rounded shadow-[0_0_10px_rgba(255,255,255,0.05)] uppercase tracking-wider backdrop-blur-sm">
-                                    {currentTrack.bpm} BPM
-                                </span>
-                            )}
-                            {currentTrack.key && (
-                                <span className="font-mono text-[8px] md:text-[9px] text-cyan-400 border border-cyan-500/30 bg-cyan-900/30 px-1.5 py-0.5 rounded shadow-[0_0_10px_rgba(6,182,212,0.15)] tracking-wider backdrop-blur-sm">
-                                    {currentTrack.key}
-                                </span>
-                            )}
-                        </div>
-                    )}
+            {/* Left: Track Info & Tactical Visualizer */}
+            <div className="flex items-center gap-4 md:gap-8 flex-1 min-w-0 pr-4 relative z-10">
+                <div className="relative group shrink-0">
+                    <div className="w-14 h-14 md:w-16 md:h-16 bg-black border-2 border-primary/20 flex items-center justify-center relative overflow-hidden shadow-[0_0_20px_rgba(var(--color-primary),0.1)] group-hover:border-primary/60 transition-all duration-500"
+                         style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%)' }}>
+                        <div 
+                            className="absolute bottom-0 left-0 w-full transition-all duration-150 opacity-30"
+                            style={{ height: `calc(var(--audio-intensity, 0) * 100%)`, backgroundColor: 'rgb(var(--color-primary))' }}
+                        ></div>
+                        <Database size={24} className={`z-10 transition-all duration-500 ${isPlaying ? 'text-primary scale-110' : 'text-primary/40'}`} />
+                        <div className="absolute inset-x-0 top-0 h-[1px] bg-primary/40 animate-scan-slow opacity-50" />
+                    </div>
+                    {/* Floating HUD Bit */}
+                    <div className="absolute -top-1 -right-1 w-3 h-3 border-t-2 border-r-2 border-primary/60" />
                 </div>
                 
-                <div className="ml-auto hidden xl:flex">
+                <div className="flex flex-col min-w-0 justify-center">
+                    <div className="flex items-center gap-3">
+                        <span className="font-bebas text-2xl md:text-4xl text-white tracking-[0.05em] truncate leading-none drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
+                            {currentTrack?.title || 'BOOT_SEQUENCE'}
+                        </span>
+                        {isPlaying && <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(var(--color-primary),0.8)]" />}
+                    </div>
+                    
+                    <div className="flex items-center gap-4 mt-1.5">
+                        <span className="font-mono text-[9px] md:text-[10px] text-primary/60 tracking-[0.4em] uppercase font-black truncate">
+                            {currentTrack?.producer || 'THE_ARCHITECT'}
+                        </span>
+                        <div className="hidden sm:flex items-center gap-2">
+                            <span className="w-1 h-1 rounded-full bg-white/10" />
+                            <span className="font-mono text-[8px] text-gray-500 tracking-widest uppercase italic">Neural_Link_OK</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Center: Triple-A Gaming Controls */}
+            <div className="flex items-center gap-4 sm:gap-10 lg:gap-14 justify-center shrink-0 relative z-10">
+                <div className="hidden lg:block">
                     <AudioTimer />
                 </div>
-            </div>
 
-            {/* Center: Controls */}
-            <div className="flex items-center gap-3 sm:gap-4 md:gap-8 justify-end md:justify-center w-auto md:w-1/3 shrink-0">
-                <button 
-                    onClick={toggleShuffle} 
-                    className={`transition-colors hidden md:flex items-center justify-center min-w-[44px] min-h-[44px] rounded-full ${isShuffleToggle ? 'text-cyan-400 drop-shadow-[0_0_8px_rgba(6,182,212,0.8)]' : 'text-gray-300 hover:text-white'}`} 
-                    title={isShuffleToggle ? "True RNG Shuffle: ON" : "True RNG Shuffle: OFF"}
-                >
-                    <Shuffle size={18} />
-                </button>
-                <button onClick={prevTrack} className="text-gray-200 hover:text-white transition-colors hidden sm:flex items-center justify-center min-w-[44px] min-h-[44px] rounded-full drop-shadow-md" title="Previous Track">
-                    <SkipBack size={20} />
-                </button>
-                
-                <button 
-                    onClick={handlePlayPause}
-                    className={`min-w-[48px] min-h-[48px] md:w-14 md:h-14 rounded-full shrink-0 flex items-center justify-center transition-all duration-75 relative z-10 ${isPlaying ? 'bg-cyan-500 text-black' : 'bg-white text-black hover:bg-gray-200'}`}
-                >
-                    {/* Hardware Accelerated Glow Wrapper */}
-                    {isPlaying && (
-                        <div 
-                            className="absolute inset-0 rounded-full bg-cyan-500 pointer-events-none z-[-1]"
-                            style={{ 
-                                boxShadow: `0 0 30px rgba(6, 182, 212, 1)`,
-                                opacity: `calc(0.4 + (var(--audio-intensity, 0) * 0.6))`,
-                                // Removed scaling to keep UI perfectly static
-                            }}
-                        />
-                    )}
-                    <div className="relative z-10 flex items-center justify-center">
-                        {isPlaying ? <Pause size={20} className="fill-current" /> : <Play size={22} className="fill-current ml-1" />}
+                <div className="flex items-center gap-3 sm:gap-6">
+                    <button 
+                        onClick={toggleShuffle} 
+                        className={`transition-all duration-500 hidden md:flex items-center justify-center w-11 h-11 rounded-lg border-2 ${isShuffleToggle ? 'bg-primary/10 text-primary border-primary shadow-[0_0_15px_rgba(var(--color-primary),0.3)]' : 'bg-transparent text-white/30 border-white/5 hover:text-white hover:border-white/20'}`}
+                        title="RNG Shuffle"
+                    >
+                        <Shuffle size={18} />
+                    </button>
+                    
+                    <button onClick={prevTrack} className="text-white/40 hover:text-primary transition-all duration-300 hover:scale-110 px-2" title="Previous Node">
+                        <SkipBack size={24} className="fill-current" />
+                    </button>
+                    
+                    <div className="relative group">
+                        <div className={`absolute -inset-4 bg-primary/20 blur-2xl rounded-full transition-opacity duration-700 ${isPlaying ? 'opacity-100' : 'opacity-0'}`} />
+                        <button 
+                            onClick={handlePlayPause} 
+                            className="w-14 h-14 md:w-16 md:h-16 bg-primary text-black rounded-full flex items-center justify-center transition-all duration-500 hover:scale-110 active:scale-90 shadow-[0_0_25px_rgba(var(--color-primary),0.4)] relative z-10 overflow-hidden"
+                        >
+                            <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.2)_50%,transparent_75%)] bg-[length:250%_250%] animate-shimmer" />
+                            {isPlaying ? <Pause size={28} className="fill-current" /> : <Play size={28} className="fill-current ml-1" />}
+                        </button>
                     </div>
-                </button>
-                
-                <button onClick={handleStop} className="text-gray-200 hover:text-red-500 transition-colors hidden md:flex items-center justify-center min-w-[44px] min-h-[44px] rounded-full drop-shadow-md" title="Kill Audio Engine">
-                    <Square size={16} />
-                </button>
-                <button onClick={nextTrack} className="text-gray-200 hover:text-white transition-colors flex items-center justify-center min-w-[44px] min-h-[44px] rounded-full drop-shadow-md" title="Next Track">
-                    <SkipForward size={20} />
-                </button>
+
+                    <button onClick={nextTrack} className="text-white/40 hover:text-primary transition-all duration-300 hover:scale-110 px-2" title="Next Node">
+                        <SkipForward size={24} className="fill-current" />
+                    </button>
+                    
+                    <button onClick={handleStop} className="text-white/20 hover:text-red-500 transition-all duration-300 hidden md:block" title="Kill System">
+                        <Square size={16} />
+                    </button>
+                </div>
             </div>
 
-            {/* Right: Audio Reactor Minimap & Volume */}
-            <div className="hidden md:flex w-1/3 justify-between items-center pl-4 lg:pl-12 pr-2">
-                <VolumeControl />
-                <div className="hidden lg:block">
-                    <AudioMinimap isPlaying={isPlaying} />
+            {/* Right: Tactical Metrics */}
+            <div className="hidden md:flex flex-1 justify-end items-center gap-8 relative z-10">
+                <div className="flex flex-col items-end gap-1.5">
+                    <div className="flex gap-1">
+                        {[...Array(4)].map((_, i) => (
+                            <div key={i} className={`w-3 h-1 ${i < 3 ? 'bg-primary/40' : 'bg-white/5'}`} />
+                        ))}
+                    </div>
+                    <span className="font-mono text-[8px] text-primary/40 tracking-[0.2em] font-black uppercase italic">D_Stream: Active</span>
                 </div>
+                <VolumeControl />
             </div>
             
         </div>
     );
-};
+});
 
 export default StickyPlayer;

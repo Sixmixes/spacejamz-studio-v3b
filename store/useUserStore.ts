@@ -14,6 +14,8 @@ export interface UserProfile {
   prestige_level?: number;
   enhancements?: string[];
   ownedEnhancements?: string[];
+  customBannerUrl?: string; // Cinematic Private Matrix Banner
+  freeGenerationsRemaining?: number; // Founder Neural Stipend
 }
 
 export type UserLoadState = 'IDLE' | 'LOADING' | 'AUTHENTICATED' | 'UNAUTHENTICATED';

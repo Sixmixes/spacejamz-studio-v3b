@@ -200,7 +200,8 @@ export const useAudioStore = create<AudioState>()(
       // only persist things we want to survive refresh
       partialize: (state) => ({ 
         volume: state.volume, 
-        playlist: state.playlist.filter(t => !t.src?.startsWith('blob:')) 
+        playlist: state.playlist.filter(t => !t.src?.startsWith('blob:'))
+        // Visual engine parameters are strictly fetched via Live Firebase Stream to ensure sitewide sync
       })
     }
   )

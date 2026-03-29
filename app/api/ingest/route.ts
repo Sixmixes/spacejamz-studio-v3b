@@ -14,9 +14,34 @@ export async function POST(req: Request) {
 
         // --- SPACEJAMZ CUSTOM SUNO ABSTRACTION ---
         if (url.includes('suno.com') || url.includes('suno.ai')) {
-            // Natively follow the HTTP 302 Redirect to reveal the hidden /song/ ID
-            const res = await fetch(url, { redirect: "follow" });
+            // Natively follow the HTTP 302 Redirect and read HTML to decrypt metadata
+            const res = await fetch(url, { 
+                redirect: "follow",
+                headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
+            });
+            
             const finalUrl = res.url || url;
+            const htmlText = await res.text();
+            
+            let trackTitle = "UNKNOWN SUNO TRACK";
+            
+            // Aggressively rip out the OpenGraph Title metadata using Regex
+            const titleMatch = htmlText.match(/<meta\s+property="og:title"\s+content="([^"]+)"/i);
+            if (titleMatch && titleMatch[1]) {
+                trackTitle = titleMatch[1];
+                // Strip out Suno's standard "by @username" suffix
+                if (trackTitle.includes(' - a song by')) {
+                    trackTitle = trackTitle.split(' - a song by')[0].trim();
+                } else if (trackTitle.includes('by @')) {
+                    trackTitle = trackTitle.split('by @')[0].trim();
+                }
+            } else {
+                // Fallback to standard HTML <title> tag
+                const basicTitleMatch = htmlText.match(/<title>([^<]+)<\/title>/i);
+                if (basicTitleMatch && basicTitleMatch[1]) {
+                     trackTitle = basicTitleMatch[1].replace('Suno', '').replace('- ', '').trim();
+                }
+            }
 
             if (finalUrl.includes('/song/')) {
                 const uuid = finalUrl.split('/song/')[1].split('?')[0].replace(/\//g, '');
@@ -24,7 +49,7 @@ export async function POST(req: Request) {
                 
                 return NextResponse.json({
                     success: true,
-                    title: `Suno Neural Signal (${uuid.substring(0,6)})`,
+                    title: trackTitle.toUpperCase(),
                     streamUrl: directUrl,
                     type: "suno"
                 });
@@ -38,7 +63,7 @@ export async function POST(req: Request) {
         const ytInfo = await youtubedl(url, {
             dumpSingleJson: true,
             noWarnings: true,
-            noCallHome: true,
+            callHome: false,
             format: 'bestaudio',
         }).catch(err => {
             console.error(err);

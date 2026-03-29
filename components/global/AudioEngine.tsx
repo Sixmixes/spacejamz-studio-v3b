@@ -33,6 +33,7 @@ export default function AudioEngine() {
   const gainNodeRef = useRef<GainNode | null>(null);
   const animationRef = useRef<number | null>(null);
   const lastAssignedSrc = useRef<string | null>(null);
+  const lastAnimFrame = useRef<number>(0);
 
   // 0. Attach detached Native Audio to the DOM (Bypasses iOS Safari Lock-Screen GC Suspension)
   useEffect(() => {
@@ -200,12 +201,17 @@ export default function AudioEngine() {
   // 5. High-performance analyzer WebGL loop (ported from V2)
   useEffect(() => {
     let dataArray: Uint8Array | null = null;
+    const TARGET_FPS = 30;
+    const THROTTLE_MS = 1000 / TARGET_FPS;
+    const DELTA_THRESHOLD = 0.01; // 1% change gating
+    const lastPushed = { intensity: 0, low: 0, mid: 0, high: 0 };
+    let rollingLufs = 0.15;
     let lastUpdate = 0;
-    let lastAnimFrame = 0;
-    let rollingLufs = 0.15; 
-    let currentNormalizationGain = 1.0;
-    const TARGET_LUFS = 0.45; // Approximated -11 LUFS target
-    const THROTTLE_MS = 1000 / 60; // Upgraded to 60fps for smoother gain ramps
+    
+    // Scale FFT for mobile to save DSP cycles
+    if (typeof window !== 'undefined' && window.innerWidth < 768 && analyserRef.current) {
+        analyserRef.current.fftSize = 1024;
+    }
 
     const analyseAudio = (time: number) => {
       if (isPlaying && analyserRef.current) {
@@ -213,13 +219,11 @@ export default function AudioEngine() {
             dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
         }
 
-        if (time - lastAnimFrame < THROTTLE_MS) {
-            if (isPlaying) {
-                animationRef.current = requestAnimationFrame(analyseAudio);
-            }
+        if (time - lastAnimFrame.current < THROTTLE_MS) {
+            animationRef.current = requestAnimationFrame(analyseAudio);
             return;
         }
-        lastAnimFrame = time;
+        lastAnimFrame.current = time;
         analyserRef.current.getByteFrequencyData(dataArray as any);
 
         let bassSum = 0, midSum = 0, highSum = 0;
@@ -258,39 +262,49 @@ export default function AudioEngine() {
 
         // 3. TRANSIENT EMISSION (The visual hit)
         const impactEnergy = freqImpact;
-        const lufsMultiplier = 0.15 / Math.max(0.01, rollingLufs); 
-        
-        let overallIntensity = 0;
-        const dynamicFloor = rollingLufs * 0.7; // Lowered floor for better sensitivity
         const liveThreshold = liveState.reactivityThreshold;
         
-        // Export RAW SIGNAL (of the targeted band) for the UI meter
-        const rawSignal = Math.min(1.0, Math.max(0, (impactEnergy - dynamicFloor) * 2.5));
+        let overallIntensity = 0;
+        
+        // Export RAW SIGNAL exactly as the engine hears it, mapped only by user sensitivity
+        const rawSignal = Math.min(1.0, Math.max(0, impactEnergy * 2.5));
         document.documentElement.style.setProperty('--audio-signal-raw', rawSignal.toString());
         
-        if (impactEnergy > (dynamicFloor + liveThreshold)) {
-            const transient = impactEnergy - dynamicFloor - (liveThreshold * 0.5);
-            // Boosted the gain multiplier from 2.5 to 3.0 for better feel
-            const expanded = Math.pow(transient / Math.max(0.01, rollingLufs * 0.15), 3.0);
-            overallIntensity = expanded * lufsMultiplier; 
+        // The gate is now strictly the user's manual threshold. No more adaptive "fading away".
+        if (impactEnergy > liveThreshold) {
+            const transient = impactEnergy - liveThreshold;
+            // Snappy power curve, multiplied instantly by user sensitivity
+            const expanded = Math.pow(transient * 3.0, 1.8);
+            overallIntensity = expanded * liveState.reactivitySensitivity; 
         }
 
         overallIntensity = Math.min(1.0, Math.max(0, overallIntensity));
         
-        // Use live state from store for zero-latency slider response
-        // (Moved up)
-
-        const finalMultiplicationGate = lufsMultiplier * liveState.reactivitySensitivity * 1.8; 
+        // Erase the old Auto-Gain LUFS multiplier and hand 100% control back to the user
+        const finalMultiplicationGate = liveState.reactivitySensitivity * 2.5; 
         
         const normalizedLow = Math.min(1.0, currentLow * finalMultiplicationGate);
         const normalizedMid = Math.min(1.0, currentMid * finalMultiplicationGate);
         const normalizedHigh = Math.min(1.0, currentHigh * finalMultiplicationGate);
 
-        document.documentElement.style.setProperty('--audio-intensity', overallIntensity.toString());
-        document.documentElement.style.setProperty('--audio-low', normalizedLow.toString());
-        document.documentElement.style.setProperty('--audio-mid', normalizedMid.toString());
-        document.documentElement.style.setProperty('--audio-high', normalizedHigh.toString());
-        document.documentElement.style.setProperty('--bass-kick', normalizedLow.toString());
+        // DELTA-GATED CSS DISPATCH (Only update DOM if signal shifts significantly)
+        if (Math.abs(lastPushed.intensity - overallIntensity) > DELTA_THRESHOLD) {
+            document.documentElement.style.setProperty('--audio-intensity', overallIntensity.toString());
+            lastPushed.intensity = overallIntensity;
+        }
+        if (Math.abs(lastPushed.low - normalizedLow) > DELTA_THRESHOLD) {
+            document.documentElement.style.setProperty('--audio-low', normalizedLow.toString());
+            document.documentElement.style.setProperty('--bass-kick', normalizedLow.toString());
+            lastPushed.low = normalizedLow;
+        }
+        if (Math.abs(lastPushed.mid - normalizedMid) > DELTA_THRESHOLD) {
+            document.documentElement.style.setProperty('--audio-mid', normalizedMid.toString());
+            lastPushed.mid = normalizedMid;
+        }
+        if (Math.abs(lastPushed.high - normalizedHigh) > DELTA_THRESHOLD) {
+            document.documentElement.style.setProperty('--audio-high', normalizedHigh.toString());
+            lastPushed.high = normalizedHigh;
+        }
 
         coreAudioData.current.intensity = overallIntensity;
         coreAudioData.current.low = normalizedLow;

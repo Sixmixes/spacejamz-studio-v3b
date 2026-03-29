@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { onAuthStateChanged, signInAnonymously } from 'firebase/auth';
 import { doc, onSnapshot, setDoc, serverTimestamp, getDoc, runTransaction } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase/config';
@@ -15,6 +16,9 @@ export default function AuthEngine() {
   const setCurrentUser = useUserStore(state => state.setCurrentUser);
   const setIsArchitect = useUserStore(state => state.setIsArchitect);
   const setUserLoadState = useUserStore(state => state.setUserLoadState);
+  const router = useRouter();
+  const pathname = usePathname();
+  const unsubUserRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     if (!auth) return;
@@ -27,13 +31,11 @@ export default function AuthEngine() {
         }
     }, 2000);
 
-    let unsubUser: (() => void) | null = null;
-
     const unsubAuth = onAuthStateChanged(auth, async (user) => {
       // Manage snapshot detach
-      if (unsubUser) { 
-        unsubUser(); 
-        unsubUser = null; 
+      if (unsubUserRef.current) { 
+        unsubUserRef.current(); 
+        unsubUserRef.current = null; 
       }
       
       const isAuthenticated = user && !user.isAnonymous;
@@ -43,7 +45,7 @@ export default function AuthEngine() {
             try {
                 const userRef = doc(db, 'users', user.uid);
                 
-                unsubUser = onSnapshot(userRef, async (userSnap) => {
+                const unsub = onSnapshot(userRef, async (userSnap) => {
                     const now = new Date();
                     
                     if (userSnap.exists()) {
@@ -62,7 +64,6 @@ export default function AuthEngine() {
                                 catch (e) { console.warn("Auto-Architect promotion blocked by rules."); }
                             }
                         }
-                        
                         setIsArchitect(isArchitectRole || isArchitectUID || forceArchitect);
                         setCurrentUser({
                             uid: user.uid,
@@ -76,6 +77,25 @@ export default function AuthEngine() {
                             enhancements: data.enhancements || [],
                             ownedEnhancements: data.ownedEnhancements || []
                         });
+                        
+                        // Daily Operational Refill Logic
+                        const todayString = now.toISOString().split('T')[0];
+                        const lastRefill = data.lastCoinRefill || '';
+                        
+                        // If it's a new day, evaluate refill
+                        if (lastRefill !== todayString && typeof window !== 'undefined') {
+                            const currentBalance = data.coinsBalance || 0;
+                            // Top-up to 100 if they are below 100. If they have >= 100, do not augment.
+                            if (currentBalance < 100) {
+                                setDoc(userRef, { coinsBalance: 100, lastCoinRefill: todayString }, { merge: true })
+                                    .catch(e => console.error("Daily refill failed", e));
+                                console.warn(`[ECONOMY] Daily Operational Refill Granted. Topped up to 100C.`);
+                            } else {
+                                // Just clock the check-in so we don't spam the DB evaluate again today
+                                setDoc(userRef, { lastCoinRefill: todayString }, { merge: true })
+                                    .catch(e => console.error("Daily check sync failed", e));
+                            }
+                        }
                         
                     } else {
                         // NEW PILOT CREATION - Handle the 50 Founders 5000 Coin Airdrop
@@ -115,8 +135,6 @@ export default function AuthEngine() {
                             enrollmentComplete: false
                         };
                         
-                        await setDoc(userRef, newUserData);
-                        
                         setCurrentUser({
                             uid: user.uid,
                             displayName: user.displayName,
@@ -136,7 +154,13 @@ export default function AuthEngine() {
                     }
                     
                     setUserLoadState('AUTHENTICATED');
+                    
+                    // ARCHITECT COMMAND: DO NOT REDIRECT TO POD. LAND AT MATRIX CORE.
+                    if (pathname === '/enrollment') {
+                      router.push('/');
+                    }
                 });
+                unsubUserRef.current = unsub;
             } catch (e) {
                 console.error("AuthEngine Mount Error:", e);
                 setIsArchitect(false);
@@ -154,7 +178,10 @@ export default function AuthEngine() {
     return () => {
       clearTimeout(initializationTimeout);
       unsubAuth();
-      if (unsubUser) unsubUser();
+      if (unsubUserRef.current) {
+        unsubUserRef.current();
+        unsubUserRef.current = null;
+      }
     };
   }, [setCurrentUser, setIsArchitect, setUserLoadState]);
 

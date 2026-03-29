@@ -1,602 +1,188 @@
 'use client';
-import { useState, useEffect } from 'react';
-import { Play, Pause, Trash2, GripVertical, Radio, Edit2, ArrowUp, Activity, Check, X } from 'lucide-react';
-import { useAudioStore } from '@/store/useAudioStore';
+
+import Link from 'next/link';
+import { Sparkles, Video, UserPlus, Lock, Zap, Coins, Image as ImageIcon, AlertCircle, Loader2, Cpu, Terminal, CheckCircle2, Database, User, ShieldCheck, ArrowRight } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { auth, discordProvider } from '@/lib/firebase/config';
+import { signInWithPopup, signOut } from 'firebase/auth';
+import { useUserStore } from '@/store/useUserStore';
 import { CyberButton } from '@/components/ui/CyberButton';
-import IdentityPod from '@/components/global/IdentityPod';
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
-import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { doc, setDoc, onSnapshot } from 'firebase/firestore';
-import { db } from '@/lib/firebase/config';
+import NeuralIdentityTerminal from '@/components/global/NeuralIdentityTerminal';
 
-const ARCHITECT_SUITE_TRACKS: any[] = [];
 
-function SortableTrackItem({ track, index, isThisPlaying, playTestTrack, removeTrack, desyncClass, bumpToTop, analyzeTrack, isAnalyzing, updateTrackMetadata }: any) {
-    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: track.id });
-    const [isEditing, setIsEditing] = useState(false);
-    const [editTitle, setEditTitle] = useState(track.title || '');
-    const [editProducer, setEditProducer] = useState(track.producer || '');
-    
-    // Scale slightly when grabbing to simulate "picking it up" out of the viewport
-    const style = { 
-        transform: CSS.Transform.toString(transform), 
-        transition, 
-        zIndex: isDragging ? 50 : 1 
-    };
-
-    const handleSave = (e: any) => {
-        e.stopPropagation();
-        if (updateTrackMetadata) {
-            updateTrackMetadata(track.id, editTitle, editProducer);
-        } else {
-            track.title = editTitle;
-            track.producer = editProducer;
-        }
-        setIsEditing(false);
-    };
-
-    return (
-        <div
-            ref={setNodeRef}
-            style={style}
-            className={`flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 md:p-6 transition-all duration-300 reactive-interface-node cyber-card ${desyncClass} ${isThisPlaying ? 'active-playback' : ''} ${isDragging ? 'opacity-80 scale-[1.02] shadow-[0_0_30px_rgba(var(--color-primary),0.3)]' : ''}`}
-        >
-            <div className="flex items-center gap-3 sm:gap-6 cursor-pointer flex-1 min-w-0" onClick={() => !isEditing && playTestTrack(track)}>
-                
-                {/* Physical Gripper / Drag Handle */}
-                <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing hover:text-primary text-gray-600 transition-colors p-1 sm:p-2" onClick={(e) => e.stopPropagation()}>
-                    <GripVertical size={20} />
-                </div>
-                
-                <div className={`w-12 h-12 sm:w-14 sm:h-14 flex shrink-0 items-center justify-center transition-all duration-300 ${isThisPlaying ? 'bg-primary text-black shadow-[0_0_20px_rgba(var(--color-primary),0.5)]' : 'bg-white/5 text-white'}`} style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%)' }}>
-                    {isThisPlaying ? <Pause size={20} className="fill-current" /> : <Play size={20} className="fill-current ml-1" />}
-                </div>
-                
-                <div className="flex flex-col min-w-0 flex-1 pr-2 sm:pr-4" onClick={(e) => isEditing && e.stopPropagation()}>
-                    {isEditing ? (
-                        <div className="flex flex-col gap-2">
-                            <input type="text" value={editTitle} onChange={e => setEditTitle(e.target.value)} className="bg-black/80 border border-primary/40 px-2 py-1 text-sm sm:text-base md:text-xl font-bebas text-white focus:outline-none focus:border-primary" placeholder="TRACK TITLE" />
-                            <input type="text" value={editProducer} onChange={e => setEditProducer(e.target.value)} className="bg-black/80 border border-white/20 px-2 py-1 text-[10px] font-mono text-gray-400 focus:outline-none focus:border-white/60" placeholder="PRODUCER / SOURCE" />
-                        </div>
-                    ) : (
-                        <>
-                            <span className="font-bebas text-xl sm:text-2xl md:text-3xl uppercase tracking-widest text-white truncate leading-none">{track.title}</span>
-                            <div className="flex flex-wrap items-center gap-2 mt-2">
-                                <span className="font-mono text-[8px] sm:text-[9px] md:text-[10px] text-gray-500 uppercase tracking-widest truncate">
-                                    SRC: <span className="text-primary/80">{track.producer}</span>
-                                </span>
-                                {(track.bpm || track.key) && (
-                                    <div className="flex items-center gap-1.5 sm:ml-2">
-                                        {track.bpm && <span className="font-mono text-[7px] sm:text-[8px] text-white/90 border border-white/20 bg-white/10 px-1.5 py-0.5 rounded tracking-widest">{track.bpm} BPM</span>}
-                                        {track.key && <span className="font-mono text-[7px] sm:text-[8px] text-cyan-400 border border-cyan-500/30 bg-cyan-900/40 px-1.5 py-0.5 rounded tracking-widest hidden xs:inline">KEY: {track.key}</span>}
-                                    </div>
-                                )}
-                            </div>
-                        </>
-                    )}
-                </div>
-            </div>
-
-            <div className="flex items-center gap-1 sm:gap-2 shrink-0 pl-1 sm:pl-2 mt-4 sm:mt-0 ml-[4.5rem] sm:ml-0">
-                {isEditing ? (
-                    <>
-                        <button onClick={handleSave} className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center hover:bg-green-500/20 text-green-500 transition-all duration-300 border border-green-500/20" title="Save Metadata">
-                            <Check size={14} />
-                        </button>
-                        <button onClick={(e) => { e.stopPropagation(); setIsEditing(false); }} className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center hover:bg-white/10 text-gray-400 transition-all duration-300 border border-white/10" title="Cancel">
-                            <X size={14} />
-                        </button>
-                    </>
-                ) : (
-                    <>
-                        <button onClick={(e) => { e.stopPropagation(); setIsEditing(true); }} className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center hover:bg-white/10 text-gray-400 hover:text-white transition-all duration-300 border border-white/10" title="Edit Metadata">
-                            <Edit2 size={14} />
-                        </button>
-                        
-                        {index > 0 && (
-                            <button onClick={(e) => { e.stopPropagation(); bumpToTop(track.id); }} className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center hover:bg-primary/20 text-primary transition-all duration-300 border border-primary/20" title="Bump to Top">
-                                <ArrowUp size={14} />
-                            </button>
-                        )}
-
-                        <button onClick={(e) => { e.stopPropagation(); analyzeTrack(track); }} className={`w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center transition-all duration-300 border ${isAnalyzing ? 'border-purple-500/50 bg-purple-500/20 text-purple-400' : 'border-purple-500/20 hover:bg-purple-500/20 text-purple-500/70 hover:text-purple-400'}`} title="Run Deep DSP Analyzer">
-                            <Activity size={14} className={isAnalyzing ? 'animate-spin' : ''} />
-                        </button>
-
-                        <button onClick={(e) => { e.stopPropagation(); removeTrack(track.id); }} className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-red-500/5 hover:bg-red-500 text-red-500 hover:text-white transition-all duration-300 border border-red-500/20" style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%)' }} title="Purge Track">
-                            <Trash2 size={14} />
-                        </button>
-                    </>
-                )}
-            </div>
-        </div>
-    );
-}
-
-export default function V3BHome() {
-    const currentTrack = useAudioStore(state => state.currentTrack);
-    const isPlaying = useAudioStore(state => state.isPlaying);
-    const reactivitySensitivity = useAudioStore(state => state.reactivitySensitivity);
-    const reactivityThreshold = useAudioStore(state => state.reactivityThreshold);
-    const targetFrequency = useAudioStore(state => state.targetFrequency);
-    const isShuffleToggle = useAudioStore(state => state.isShuffleToggle);
-    const shuffledQueue = useAudioStore(state => state.shuffledQueue);
-    const queueIndex = useAudioStore(state => state.queueIndex);
-    const playlist = useAudioStore(state => state.playlist);
-    
-    const setCurrentTrack = useAudioStore(state => state.setCurrentTrack);
-    const setIsPlaying = useAudioStore(state => state.setIsPlaying);
-    const setPlaylist = useAudioStore(state => state.setPlaylist);
-    const setReactivitySensitivity = useAudioStore(state => state.setReactivitySensitivity);
-    const setReactivityThreshold = useAudioStore(state => state.setReactivityThreshold);
-    const setTargetFrequency = useAudioStore(state => state.setTargetFrequency);
-    const setAnalyzerMode = useAudioStore(state => state.setAnalyzerMode);
-    const analyzerMode = useAudioStore(state => state.analyzerMode);
-
-    const [linkInput, setLinkInput] = useState('');
-    const [uploadStatus, setUploadStatus] = useState<'idle' | 'analyzing'>('idle');
-    const [isIngestModalOpen, setIsIngestModalOpen] = useState(false);
-    
-    // The master visual array
-    const [dynamicTracks, setDynamicTracks] = useState<any[]>(ARCHITECT_SUITE_TRACKS);
-    const [analyzingTrackId, setAnalyzingTrackId] = useState<string | null>(null);
-    const [isAnalyzingAll, setIsAnalyzingAll] = useState(false);
-
-    const commitToFirebase = async (newTracks: any[]) => {
-        if (!db) return;
-        try {
-            const savable = newTracks.filter(t => !t.src?.startsWith('blob:'));
-            await setDoc(doc(db, 'config', 'global_audio'), { 
-                playlist: savable
-            }, { merge: true });
-        } catch (e: any) {
-            if (e?.code === 'permission-denied') {
-                console.warn("[AUTH] Matrix sync bypassed: Read-only terminal access active. Operating via local memory.");
-            } else {
-                console.warn("Failed to sync to Matrix:", e);
-            }
-        }
-    };
+export default function MatrixCore() {
+    const { currentUser } = useUserStore();
+    const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
-        if (!db) return;
-        const unsub = onSnapshot(doc(db, 'config', 'global_audio'), (docSnap) => {
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                if (data.playlist && Array.isArray(data.playlist)) {
-                    setDynamicTracks(data.playlist);
-                }
-            }
-        });
-        return () => unsub();
+        setMounted(true);
     }, []);
 
-    const updateTrackMetadata = (id: string, title: string, producer: string) => {
-        setDynamicTracks(prev => {
-            const newArr = prev.map(t => t.id === id ? { ...t, title, producer } : t);
-            commitToFirebase(newArr);
-            return newArr;
-        });
-    };
+    const stargates = [
+        { name: "[ Neural Vault ]", id: "VAULT", desc: "Encrypted timeline audio matrix. Add Lyrics & Beat ingestion.", href: "/vault", icon: Database, color: "text-primary" },
+        { name: "[ AI ]", id: "NEURAL", desc: "GPU Art & Video synthesis. Take photos & enhance prompts.", href: "/ai", icon: Sparkles, color: "text-cyan-400" },
+        { name: "[ Pod ]", id: "POD", desc: "Your personal stats vault. Identity & Streamer tools.", href: "/pod", icon: User, color: "text-green-500" },
+        { name: "[ Arena ]", id: "STUDIO", desc: "Competitive AI producers. Lock co-labs & Beat ingestion.", href: "/studio", icon: Cpu, color: "text-blue-500" },
+        { name: "[ Escrow ]", id: "ESCROW", desc: "Inject Acapella DNA. S.U.N.C. Integration.", href: "/enrollment", icon: ShieldCheck, color: "text-purple-500" },
+        { name: "[ Treasury ]", id: "FINANCE", desc: "Physical Dividends. Collect Dividends.", href: "/treasury", icon: Coins, color: "text-amber-500" }
+    ];
 
-    // Initialize DND sensors (allow tiny movement tolerance so clicks still work)
-    const sensors = useSensors(
-        useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-        useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-    );
-
-    const handleDragEnd = (event: any) => {
-        const { active, over } = event;
-        if (over && active.id !== over.id) {
-            const oldIndex = dynamicTracks.findIndex((i) => i.id === active.id);
-            const newIndex = dynamicTracks.findIndex((i) => i.id === over.id);
-            const reordered = arrayMove(dynamicTracks, oldIndex, newIndex);
-            
-            setDynamicTracks(reordered);
-            
-            // Sync external store and DB outside of React's set-state batch cycle
-            if (!isPlaying) setPlaylist(reordered);
-            commitToFirebase(reordered);
-        }
-    };
-
-    const playTestTrack = (track: any) => {
-        // Send our newly sorted tracks to the main audio engine memory
-        setPlaylist(dynamicTracks);
-        
-        if (currentTrack?.id === track.id) {
-            setIsPlaying(!isPlaying);
-        } else {
-            setCurrentTrack(track);
-            setIsPlaying(true);
-        }
-    };
-
-    const bumpToTop = (id: string) => {
-        const index = dynamicTracks.findIndex(t => t.id === id);
-        if (index <= 0) return;
-        
-        const newArr = [...dynamicTracks];
-        const [item] = newArr.splice(index, 1);
-        newArr.unshift(item);
-        
-        setDynamicTracks(newArr);
-        
-        // Sync external store and DB outside of React's set-state batch cycle
-        if (!isPlaying) setPlaylist(newArr);
-        commitToFirebase(newArr);
-    };
-
-    const analyzeTrack = async (track: any) => {
-        if (!track.src) return;
-        setAnalyzingTrackId(track.id);
-        try {
-            const proxyUrl = track.src.startsWith('/trip.mp3') ? track.src : (track.src.startsWith('/api/proxy') ? track.src : `/api/proxy?url=${encodeURIComponent(track.src)}`);
-            const res = await fetch(proxyUrl);
-            const arrayBuffer = await res.arrayBuffer();
-            
-            const { analyzeAudioBuffer } = await import('@/lib/utils/audioAnalyzer');
-            const { bpm, key, normalizationGain } = await analyzeAudioBuffer(arrayBuffer);
-            
-            setDynamicTracks(prev => {
-                const newArr = prev.map(t => {
-                    if (t.id === track.id) {
-                        const updated = { ...t, bpm: parseInt(bpm) || 120, key, normalizationGain };
-                        if (currentTrack && currentTrack.id === track.id) {
-                            setCurrentTrack(updated); // Sync active store instantly so gain hits right away
-                        }
-                        return updated;
-                    }
-                    return t;
-                });
-                commitToFirebase(newArr);
-                return newArr;
-            });
-        } catch (err) {
-            console.error("DSP Direct Analyzer Error:", err);
-            // Ignore UI errors on manual press and let it fail gracefully
-        } finally {
-            setAnalyzingTrackId(null);
-        }
-    };
-
-    const analyzeAllTracks = async () => {
-        if (isAnalyzingAll) return;
-        setIsAnalyzingAll(true);
-        try {
-            // Find all pending tracks that haven't been successfully analyzed (i.e. default BPM or missing Gain)
-            const tracksToAnalyze = dynamicTracks.filter(t => !t.normalizationGain);
-            
-            for (const track of tracksToAnalyze) {
-                if (!track.src) continue;
-                setAnalyzingTrackId(track.id);
-                
-                const proxyUrl = track.src.startsWith('/trip.mp3') ? track.src : (track.src.startsWith('/api/proxy') ? track.src : `/api/proxy?url=${encodeURIComponent(track.src)}`);
-                const res = await fetch(proxyUrl);
-                const arrayBuffer = await res.arrayBuffer();
-                
-                const { analyzeAudioBuffer } = await import('@/lib/utils/audioAnalyzer');
-                const { bpm, key, normalizationGain } = await analyzeAudioBuffer(arrayBuffer);
-                
-                // Allow the React state cycle to process synchronously before moving to the next heavy decode
-                await new Promise<void>(resolve => {
-                    setDynamicTracks(prev => {
-                        const newArr = prev.map(t => {
-                            if (t.id === track.id) {
-                                const updated = { ...t, bpm: parseInt(bpm) || 120, key, normalizationGain };
-                                if (currentTrack && currentTrack.id === track.id) {
-                                    setCurrentTrack(updated);
-                                }
-                                return updated;
-                            }
-                            return t;
-                        });
-                        commitToFirebase(newArr);
-                        return newArr;
-                    });
-                    setTimeout(resolve, 10);
-                });
-            }
-        } catch (err) {
-            console.error("Array Analyzer Error Iteration Aborted:", err);
-        } finally {
-            setAnalyzingTrackId(null);
-            setIsAnalyzingAll(false);
-        }
-    };
-
-    const handleUrlSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!linkInput) return;
-        setUploadStatus('analyzing');
-        try {
-            const res = await fetch('/api/ingest', { method: 'POST', body: JSON.stringify({ url: linkInput }) });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || "Neural interception failed.");
-            
-            const proxyUrl = `/api/proxy?url=${encodeURIComponent(data.streamUrl)}`;
-            const bufferRes = await fetch(proxyUrl);
-            if (!bufferRes.ok) throw new Error("Could not pipe proxy stream.");
-            const arrayBuffer = await bufferRes.arrayBuffer();
-            
-            const { analyzeAudioBuffer } = await import('@/lib/utils/audioAnalyzer');
-            const { bpm, key, normalizationGain } = await analyzeAudioBuffer(arrayBuffer);
-            
-            const newTrack = { 
-                id: `link_${Date.now()}`, 
-                title: data.title, 
-                bpm: parseInt(bpm) || 120, 
-                key: key, 
-                normalizationGain: normalizationGain, 
-                producer: data.type === 'suno' ? 'Suno AI' : 'Web Stream', 
-                src: proxyUrl 
-            };
-            
-            const newPlaylist = [newTrack, ...dynamicTracks];
-            setDynamicTracks(newPlaylist);
-            commitToFirebase(newPlaylist);
-            setLinkInput('');
-            
-            setPlaylist(newPlaylist);
-            setCurrentTrack(newTrack);
-            setIsPlaying(true);
-            setIsIngestModalOpen(false);
-        } catch(err: any) {
-            console.error(err);
-            alert("Ingestion Error: " + err.message);
-        } finally {
-            setUploadStatus('idle');
-        }
-    };
-
-    // --- UP NEXT QUEUE LOGIC ---
-    let upNextTrack = null;
-    if (playlist.length > 0 && currentTrack) {
-        if (isShuffleToggle && shuffledQueue.length > 0) {
-            // Find what's next in the randomized deck
-            const nextIdx = (queueIndex + 1) % shuffledQueue.length;
-            const nextId = shuffledQueue[nextIdx];
-            upNextTrack = playlist.find(t => t.id === nextId);
-        } else {
-            // Standard linear queue
-            const idx = playlist.findIndex((t) => t.id === currentTrack.id);
-            if (idx !== -1) {
-                upNextTrack = playlist[(idx + 1) % playlist.length];
-            }
-        }
-    }
+    if (!mounted) return null;
 
     return (
-        <div className="flex flex-col items-center justify-start min-h-screen pt-4 pb-24 relative overflow-hidden">
+        <div className="relative h-full min-h-[500px] flex-1 w-full flex flex-col items-center justify-center overflow-hidden bg-black selection:bg-primary/30 group/main border-b border-primary/20">
             
-            {/* Massive Outer Cyber Panel */}
-            <div className="cyber-panel p-6 md:p-12 w-[95%] max-w-7xl mt-[4vh] mb-24 z-50 overflow-hidden desync-1">
-                
-                {/* IDENTITY POD (Discord Profile & Treasury Link) */}
-                <IdentityPod />
-                
-                {/* UP NEXT QUEUE LOGIC & TELEMETRY VAULT (MOVED TO TOP) */}
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-2 mb-4">
-                    <div className="flex flex-col">
-                         <h2 className="text-2xl font-black text-white uppercase tracking-[0.2em] font-mono">AUDIO VAULT</h2>
-                         <div className="flex items-center gap-2 mt-1">
-                             <p className="text-[10px] text-gray-500 font-mono tracking-widest uppercase">Target Payload Status</p>
-                             {isShuffleToggle && <span className="text-primary text-[8px] font-mono border border-primary/40 bg-primary/10 px-1 py-0.5 rounded tracking-widest">SMART SHUFFLE ACTIVE</span>}
-                         </div>
+            {/* CRT Persistent Filter Overlay */}
+            <div className="absolute inset-0 pointer-events-none z-[40] opacity-[0.05] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(var(--color-primary),0.04),rgba(var(--color-primary),0.01),rgba(var(--color-primary),0.04))] bg-[length:100%_4px,4px_100%] animate-pulse" />
+            <div className="absolute inset-0 pointer-events-none z-[40] bg-[radial-gradient(circle_at_center,rgba(var(--color-primary),0.08)_0,transparent_100%)] opacity-40 shadow-[inset_0_0_100px_rgba(0,0,0,0.8)]" />
+            
+            {/* TACTICAL HUD WIDGETS (SIDES) */}
+            <div className="absolute top-20 left-10 hidden xl:flex flex-col gap-8 z-[50] animate-in slide-in-from-left-8 duration-1000">
+                <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-3">
+                        <Terminal size={14} className="text-primary animate-pulse" />
+                        <span className="font-mono text-[10px] text-white uppercase tracking-[0.4em] font-black italic">Network_Live</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <button 
-                            onClick={analyzeAllTracks} 
-                            disabled={isAnalyzingAll}
-                            className={`font-mono text-[9px] px-3 py-1 border transition-all ${isAnalyzingAll ? 'border-primary/50 text-primary animate-pulse bg-primary/10' : 'border-white/20 text-gray-400 hover:text-white hover:border-white hover:bg-white/5'}`}
-                            style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%)' }}
-                        >
-                            {isAnalyzingAll ? 'ANALYZING BATCH...' : 'ANALYZE ARRAY'}
-                        </button>
-                        <CyberButton onClick={() => setIsIngestModalOpen(true)} text="Acquire Target" kbd="INP" />
+                    <div className="w-32 h-1 bg-primary/20 relative overflow-hidden">
+                        <div className="absolute inset-y-0 left-0 w-1/3 bg-primary animate-slide-infinite" />
                     </div>
+                    <span className="font-mono text-[8px] text-primary/40 uppercase tracking-widest font-bold italic">Packet_Loss: 0.00%</span>
                 </div>
-
-                {upNextTrack && (
-                    <div className="mb-6 cyber-card p-3 sm:p-4 flex items-center gap-4 desync-4 border border-primary/20 bg-primary/5">
-                        <div className="w-10 h-10 bg-black/60 border border-primary/40 flex items-center justify-center flex-shrink-0 relative overflow-hidden" style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%)' }}>
-                            <div className="absolute inset-0 bg-primary/20 animate-pulse" />
-                            <Radio className="w-5 h-5 text-primary drop-shadow-[0_0_8px_rgba(var(--color-primary),0.8)]" />
+                <div className="bg-primary/5 border-l-4 border-primary p-4 space-y-3 backdrop-blur-md">
+                    <span className="font-mono text-[7px] text-primary/40 uppercase tracking-[0.3em] font-black">System_Diagnostics:</span>
+                    <div className="flex flex-col gap-1.5 font-mono text-[9px] text-white/60 tracking-widest uppercase">
+                        <div className="flex justify-between items-center gap-4">
+                            <span>GPU_Load</span>
+                            <span className="text-primary font-black">42%</span>
                         </div>
-                        <div className="flex flex-col min-w-0 pr-2">
-                             <span className="text-[9px] font-mono text-primary/70 tracking-[0.3em] uppercase mb-0.5 cyber-flicker-slow">Queue Output / Next Protocol</span>
-                             <span className="text-white text-xs sm:text-sm font-bold uppercase tracking-widest truncate drop-shadow-[0_0_5px_rgba(255,255,255,0.4)]">{upNextTrack.title}</span>
-                        </div>
-                    </div>
-                )}
-                
-                {/* CONSTRAINED DND TRACK LIST ARRAY */}
-                <div className="h-[360px] overflow-y-auto pr-2 sm:pr-4 -mr-2 sm:-mr-4 mb-10 relative z-10 custom-scrollbar scanlines pt-1 pb-4 border-b border-primary/20" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(var(--color-primary), 0.5) transparent' }}>
-                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                        <SortableContext items={dynamicTracks.map(t => t.id)} strategy={verticalListSortingStrategy}>
-                            <div className="flex flex-col gap-3">
-                                {dynamicTracks.length === 0 ? (
-                                    <div className="flex flex-col items-center justify-center py-20 text-gray-500 font-mono text-xs uppercase tracking-widest border border-white/5 border-dashed rounded-xl bg-white/5">
-                                        <Radio className="mb-4 opacity-50" size={32} />
-                                        Audio Vault Empty
-                                        <span className="text-[9px] mt-2 opacity-60 text-center px-4">Intercept a target signal to populate the neural matrix.</span>
-                                    </div>
-                                ) : (
-                                    dynamicTracks.map((track, i) => {
-                                        const isThisPlaying = currentTrack?.id === track.id && isPlaying;
-                                        const variantDelay = `desync-${(i % 5) + 1}`;
-                                        
-                                        return (
-                                        <SortableTrackItem 
-                                            key={track.id} 
-                                            index={i}
-                                            track={track} 
-                                            isThisPlaying={isThisPlaying} 
-                                            playTestTrack={playTestTrack} 
-                                            removeTrack={(id: string) => setDynamicTracks(prev => {
-                                                const newArr = prev.filter(t => t.id !== id);
-                                                commitToFirebase(newArr);
-                                                return newArr;
-                                            })}
-                                            desyncClass={variantDelay}
-                                            bumpToTop={bumpToTop}
-                                            analyzeTrack={analyzeTrack}
-                                            isAnalyzing={analyzingTrackId === track.id}
-                                            updateTrackMetadata={updateTrackMetadata}
-                                        />
-                                    );
-                                })
-                                )}
-                            </div>
-                        </SortableContext>
-                    </DndContext>
-                </div>
-
-                {/* Header Sequence - Audio Reactivity Test */}
-                <div className="flex justify-between items-start mb-6 pb-2">
-                    <div>
-                        <h1 className="font-bebas text-3xl sm:text-4xl text-white tracking-widest mb-1 drop-shadow-[0_0_15px_rgba(var(--color-primary),0.8)]">Audio Reactivity Engine</h1>
-                        <p className="font-mono text-[9px] sm:text-[10px] text-primary uppercase tracking-[0.3em] cyber-flicker-slow">[ SYSTEM ARCHITECTURE V3B : ACTIVE TUNING ]</p>
-                    </div>
-                    <div className="flex flex-col items-end gap-1 hidden sm:flex">
-                        <div className="w-16 h-1 bg-primary/20 overflow-hidden" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%, 20% 100%)' }}>
-                            <div className="h-full bg-primary transition-all duration-75" style={{ width: `calc(var(--audio-intensity, 0) * 100%)` }} />
-                        </div>
-                        <span className="font-mono text-[8px] text-primary/60 tracking-tighter uppercase">Signal Output 100%</span>
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 mb-8 bg-black/50 p-4 border-l-2 border-primary/50 font-mono text-[9px] text-gray-500 uppercase tracking-widest cyber-card flex-row desync-2">
-                    <div className="flex flex-col gap-1 pr-4">
-                        <span className="text-white/40">NEURAL KERNEL</span>
-                        <span className="text-primary truncate cyber-flicker-fast">SPACEJAMZ-CORE-V3B</span>
-                    </div>
-                    <div className="flex flex-col gap-1 pl-2">
-                        <span className="text-white/40">ENGINE STATUS</span>
-                        <span className="text-green-500 flex items-center gap-1"><div className="w-1 h-1 rounded-full bg-green-500 animate-ping" /> CALIBRATED</span>
-                    </div>
-                </div>
-
-                {/* SENSITIVITY CONTROLS */}
-                <div className="flex flex-col gap-6 mb-2 cyber-card p-6 md:p-8 desync-3">
-                    <div className="absolute inset-0 bg-primary/5 transition-opacity duration-300 pointer-events-none" style={{ opacity: `calc(var(--audio-intensity, 0) * 0.3)` }} />
-
-                    <div className="flex flex-col gap-2 relative z-10">
-                        <div className="flex justify-between items-center text-[10px] font-mono text-primary tracking-widest uppercase mb-1 drop-shadow-[0_0_5px_rgba(var(--color-primary),0.4)]">
-                            <span>SENSITIVITY: {reactivitySensitivity.toFixed(1)}x</span>
-                            <span>[ AMPLIFICATION ]</span>
-                        </div>
-                        <input type="range" min="0.5" max="10.0" step="0.1" value={reactivitySensitivity} onChange={(e) => setReactivitySensitivity(parseFloat(e.target.value))} className="w-full h-1 bg-white/10 rounded-none appearance-none cursor-pointer accent-primary border-t border-b border-white/5" />
-                    </div>
-                    <div className="flex flex-col gap-2 relative z-10">
-                        <div className="flex justify-between items-center text-[10px] font-mono text-primary tracking-widest uppercase mb-1 drop-shadow-[0_0_5px_rgba(var(--color-primary),0.4)]">
-                            <span>THRESHOLD: {reactivityThreshold.toFixed(2)}</span>
-                            <span>[ NEURAL GATE ]</span>
-                        </div>
-                        <input type="range" min="0.0" max="0.8" step="0.01" value={reactivityThreshold} onChange={(e) => setReactivityThreshold(parseFloat(e.target.value))} className="w-full h-1 bg-white/10 rounded-none appearance-none cursor-pointer accent-primary border-t border-b border-white/5" />
-                    </div>
-
-                    <div className="flex flex-col gap-3 relative z-10 mt-2">
-                        <div className="flex justify-between items-center text-[10px] font-mono text-gray-400 tracking-widest uppercase">
-                            <span>REACTIVE BAND TARGETING</span>
-                            <span className="text-primary/60 text-[10px] sm:text-[12px] cyber-flicker-slow">[ {targetFrequency.toUpperCase()} ]</span>
-                        </div>
-                        <div className="grid grid-cols-4 gap-2">
-                            {(['all', 'bass', 'mid', 'high'] as const).map((freq) => {
-                                const isActive = targetFrequency === freq;
-                                return (
-                                    <button key={freq} onClick={() => setTargetFrequency(freq)} className={`relative py-2 font-mono text-[10px] tracking-tighter transition-all duration-300 border overflow-hidden ${isActive ? 'bg-primary text-black border-primary shadow-[0_0_15px_rgba(var(--color-primary),0.4)] font-bold' : 'bg-black/60 text-gray-400 border-white/10 hover:border-primary/40 hover:bg-white/5 hover:text-white'}`} style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%)' }}>
-                                        <div className="absolute bottom-0 left-0 right-0 bg-primary/30 pointer-events-none transition-all duration-75" style={{ height: freq === 'all' ? 'calc(var(--audio-intensity, 0) * 100%)' : `calc(var(--audio-${freq}, 0) * 100%)`, opacity: isActive ? '0.4' : '0.1' }} />
-                                        <span className="relative z-10">{freq.toUpperCase()}</span>
-                                    </button>
-                                );
-                            })}
-                        </div>
-                        <div className="flex flex-col gap-3 relative z-10 mt-2 border-t border-white/5 pt-4">
-                            <div className="flex justify-between items-center text-[10px] font-mono text-gray-400 tracking-widest uppercase">
-                                <span>ANALYZER RESOLUTION (FFT)</span>
-                            </div>
-                            <div className="grid grid-cols-3 gap-2">
-                                {(['default', 'high', 'extreme'] as const).map((mode) => {
-                                    const isActive = analyzerMode === mode;
-                                    return (
-                                        <button key={mode} onClick={() => setAnalyzerMode(mode)} className={`py-2 font-mono text-[10px] tracking-tighter transition-all duration-300 border ${isActive ? 'bg-primary/20 text-primary border-primary/50 shadow-[0_0_15px_rgba(var(--color-primary),0.2)]' : 'bg-black/60 text-gray-400 border-white/10 hover:border-primary/40'}`}>
-                                            {mode.toUpperCase()}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </div>
-
-                    </div>
-
-                    {/* LIVE SIGNAL METER */}
-                    <div className="mt-6 pt-6 border-t border-white/10 relative z-10">
-                        <div className="flex justify-between items-center text-[10px] font-mono text-gray-500 tracking-widest uppercase mb-3">
-                            <span>REALTIME SIGNAL TRANSMISSION</span>
-                            <span className={isPlaying ? 'text-primary cyber-flicker-fast drop-shadow-[0_0_8px_rgba(var(--color-primary),0.8)]' : 'text-red-500'}>
-                                {isPlaying ? `[ ONLINE : ${(100 - (reactivityThreshold * 200)).toFixed(0)}% GATEWAY ]` : '[ STANDBY ]'}
-                            </span>
-                        </div>
-                        <div className="flex gap-[2px] h-4 items-end bg-black/60 p-1 border border-white/5 overflow-hidden" style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%)' }}>
-                            {[...Array(60)].map((_, i) => {
-                                const thresholdPos = Math.round(reactivityThreshold * 150); 
-                                const isThresholdMarker = i === thresholdPos;
-                                return (
-                                    <div key={i} className="flex-1 transition-all duration-75" style={{ height: isThresholdMarker ? '100%' : '60%', backgroundColor: isThresholdMarker ? '#ef4444' : `rgb(var(--color-primary) / ${i/60})`, opacity: isPlaying ? `calc(0.1 + (var(--audio-signal-raw, 0) * 2 * ${i/20 > 1 ? 0.5 : 1}))` : '0.05', filter: isThresholdMarker ? 'drop-shadow(0 0 5px rgba(239, 68, 68, 0.5))' : 'none' }} />
-                                );
-                            })}
+                        <div className="flex justify-between items-center gap-4">
+                            <span>Thread_Count</span>
+                            <span className="text-primary font-black">128</span>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* INGESTION MODAL OVERLAY */}
-            {isIngestModalOpen && (
-                <div className="fixed inset-0 z-[3000] flex items-center justify-center pointer-events-auto">
-                    <div className="absolute inset-0 bg-black/90 backdrop-blur-md animate-in fade-in duration-300 scanlines opacity-60" onClick={() => setIsIngestModalOpen(false)} />
-                    
-                    <div className="relative w-[90%] max-w-2xl bg-black/90 p-8 cyber-panel shadow-[0_0_100px_rgba(var(--color-primary),0.2)] flex flex-col gap-6 animate-in zoom-in-95 fade-in duration-200">
-                        <div className="absolute top-0 right-0 p-4">
-                            <button className="text-gray-500 hover:text-white transition-colors" onClick={() => setIsIngestModalOpen(false)}>
-                                <span className="absolute top-4 right-4 text-xs font-mono border border-white/20 px-2 py-1 bg-white/5">ESC</span>
-                            </button>
-                        </div>
-
-                        <div className="flex flex-col gap-1">
-                            <h3 className="text-primary font-black text-2xl uppercase tracking-[0.15em] font-mono mb-2 border-b border-primary/20 pb-4 cyber-flicker-fast">
-                                Intercept External Signal
-                            </h3>
-                            <p className="text-[10px] text-gray-400 font-mono tracking-widest leading-relaxed">
-                                PASTE A DIRECT LINK TO A TARGET STREAM. THE NEURAL ENGINE WILL DECRYPT, NORMALIZE IT TO -11 LUFS, AND ALIGN IT TO THE MASTER QUEUE.
-                            </p>
-                        </div>
-
-                        <form onSubmit={handleUrlSubmit} className="flex flex-col gap-4 mt-4 relative z-20">
-                            <input 
-                                type="text" 
-                                placeholder="https://..."
-                                value={linkInput}
-                                onChange={(e) => setLinkInput(e.target.value)}
-                                disabled={uploadStatus === 'analyzing'}
-                                autoFocus
-                                className="w-full bg-black/60 border-[1.5px] border-white/10 px-6 py-5 text-sm font-mono text-white placeholder-gray-700 focus:outline-none focus:border-primary/80 transition-all cyber-card"
-                            />
-                            
-                            <div className="flex justify-end mt-4">
-                                <CyberButton type="submit" disabled={!linkInput || uploadStatus === 'analyzing'} text={uploadStatus === 'analyzing' ? 'DECODING...' : 'INJECT SIGNAL'} />
-                            </div>
-                        </form>
-                        
-                        <div className="absolute bottom-4 left-6 flex flex-col gap-[2px] pointer-events-none opacity-50 mix-blend-screen hidden sm:flex">
-                            <span className="font-mono text-[7px] text-primary tracking-[0.2em] uppercase cyber-flicker-slow">Boot Sequence V1.04</span>
-                            <span className="font-mono text-[7px] text-gray-400 tracking-[0.3em] uppercase animate-pulse">Memory Card: Decrypted</span>
-                            <span className="font-mono text-[7px] text-gray-500 tracking-[0.4em] uppercase">SYSTEM: SCEA-001 (OK)</span>
-                        </div>
+            <div className="absolute top-20 right-10 hidden xl:flex flex-col gap-8 items-end z-[50] animate-in slide-in-from-right-8 duration-1000">
+                <div className="bg-black/60 border-r-4 border-yellow-500 p-4 space-y-2 backdrop-blur-md text-right">
+                    <div className="flex items-center justify-end gap-3 text-yellow-500 mb-1">
+                        <span className="font-bebas text-2xl tracking-widest">Active nodes</span>
+                        <Zap size={18} className="animate-pulse" />
                     </div>
+                    <span className="font-mono text-[8px] text-gray-500 uppercase tracking-widest font-black">Sector_Foundry: ONLINE</span>
                 </div>
-            )}
+                <div className="flex flex-col items-end gap-3">
+                    <div className="flex gap-1.5">
+                        {[...Array(5)].map((_, i) => <div key={i} className={`w-4 h-1.5 ${i < 4 ? 'bg-primary/40' : 'bg-primary/10'}`} />)}
+                    </div>
+                    <span className="font-mono text-[7px] text-primary/40 uppercase tracking-widest font-black">Treasury_Sync: 100%</span>
+                </div>
+            </div>
+
+            {/* CSS Cinematic Space Background Layer (Planet Eclipse) */}
+            <div className="absolute inset-0 z-0 flex items-center justify-center pointer-events-none opacity-80 mix-blend-screen overflow-hidden">
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60vw] h-[60vw] max-w-[1000px] max-h-[1000px] rounded-full bg-blue-900/10 blur-[150px] animate-pulse" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[60%] w-[45vw] h-[45vw] max-w-[700px] max-h-[700px] rounded-full bg-cyan-500/5 blur-[120px]" />
+                
+                {/* CSS Planet Black Hole Base */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[45%] w-[300px] h-[300px] sm:w-[500px] sm:h-[500px] rounded-full shadow-[0_0_200px_rgba(0,255,200,0.1)] border-b-[3px] border-primary/40 bg-black/95 z-0">
+                    <div className="absolute inset-0 rounded-full shadow-[inset_0_-30px_70px_rgba(var(--color-primary),0.15)]" />
+                </div>
+                
+                {/* Horizon Line / Planetary Ring */}
+                <div className="absolute top-[55%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] sm:w-[1400px] h-[250px] sm:h-[400px] rounded-[100%] border-t-[4px] border-white/5 opacity-40 z-10" style={{ filter: 'blur(3px)' }} />
+            </div>
+
+            <div className="relative z-20 flex flex-col items-center justify-center w-full animate-in fade-in zoom-in-95 duration-1000 mt-2 lg:mt-4">
+                
+                {/* NEURAL IDENTITY GATEWAY (Telemetry Overhaul) */}
+                <div className="w-[calc(100%-40px)] xl:w-[calc(100%-600px)] mb-4">
+                    <NeuralIdentityTerminal />
+                </div>
+
+                {/* 3D Chrome Emulated Logo */}
+                <div className="relative mb-4 group cursor-default scale-90 sm:scale-100">
+                    <h1 className="text-5xl sm:text-7xl md:text-9xl lg:text-[10rem] font-black font-bebas tracking-[0.25em] text-transparent bg-clip-text bg-gradient-to-b from-primary via-primary/80 to-primary/40 drop-shadow-[0_20px_50px_rgba(var(--color-primary),0.8)] text-center relative z-10" 
+                        style={{ WebkitTextStroke: '2px rgba(var(--color-primary),0.2)' }}>
+                        SPACEJAMZ
+                    </h1>
+                    <div className="absolute -inset-4 bg-primary/20 blur-[100px] rounded-full opacity-40 group-hover:opacity-60 transition-opacity duration-1000 z-0" />
+                    <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-[120%] h-[1px] bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+                </div>
+                
+                <h2 className="text-[9px] sm:text-[10px] md:text-[11px] font-mono text-primary tracking-[0.3em] sm:tracking-[1.2em] uppercase mb-4 lg:mb-6 text-center cyber-flicker-slow px-10 relative z-20 bg-black py-1 border-y border-primary/20 font-black italic w-full">
+                    The Human Vanguard Architecture
+                </h2>
+
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 lg:gap-0 w-full px-4 sm:px-12 lg:px-0 relative group/grid">
+                    {/* Grid Overlay Mask */}
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/grid:opacity-100 transition-opacity duration-700 pointer-events-none z-10" />
+                    
+                    {stargates.map((gate, i) => (
+                        <Link 
+                            key={gate.id} 
+                            href={gate.href} 
+                            className={`relative flex flex-col p-5 sm:p-6 lg:p-8 min-h-[180px] sm:min-h-[240px] lg:min-h-[220px] justify-between bg-black border border-primary/10 hover:border-primary/80 transition-all duration-700 group/card overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,1)] lg:border-r-0 last:lg:border-r z-20 hover:z-30 hover:scale-[1.03] hover:shadow-[0_0_60px_rgba(var(--color-primary),0.2)]`} 
+                            style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%)', animationDelay: `${i * 100}ms` }}
+                        >
+                            {/* Cinematic Live Portrait Engine (Dynamic Seamless Loops) */}
+                            <div className="absolute inset-0 z-0 opacity-10 group-hover/card:opacity-60 transition-opacity duration-1000">
+                                <video 
+                                    src={`/api/neural-assets?node=${gate.id}&pilot=${currentUser?.uid || 'anon'}`} 
+                                    autoPlay 
+                                    loop 
+                                    muted 
+                                    playsInline 
+                                    className="w-full h-full object-cover grayscale brightness-50 mix-blend-screen scale-125 group-hover/card:scale-100 transition-transform duration-[3s]" 
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+                            </div>
+
+                            <div className="absolute rotate-45 -right-12 -top-12 w-32 h-32 lg:w-48 lg:h-48 bg-primary/5 group-hover/card:bg-primary/20 transition-all duration-700 blur-3xl z-10" />
+                            
+                            <div className="flex justify-between items-start mb-6 relative z-20">
+                                <div className={`w-10 h-10 lg:w-12 lg:h-12 flex items-center justify-center border-2 border-primary/10 bg-black/80 rounded-none group-hover/card:scale-110 group-hover/card:border-primary/40 transition-all duration-500 ${gate.color} group-hover/card:shadow-[0_0_20px_rgba(var(--color-primary),0.4)]`}>
+                                    <gate.icon size={18} className="lg:w-6 lg:h-6" />
+                                </div>
+                                <div className="flex flex-col items-end gap-1">
+                                    <span className={`text-[7px] lg:text-[8px] font-mono py-1 px-2 border border-primary/20 bg-black/80 tracking-[0.3em] font-black group-hover/card:border-primary/60 transition-colors ${gate.color} italic rounded-none`}>
+                                        NODE_{gate.id}
+                                    </span>
+                                    <div className="w-4 h-[1px] bg-primary/20 group-hover/card:w-8 group-hover/card:bg-primary transition-all duration-700" />
+                                </div>
+                            </div>
+
+                            <div className="relative z-20">
+                                <h3 className="text-2xl lg:text-4xl font-black font-bebas tracking-[0.1em] text-primary/70 leading-none mb-2 group-hover/card:text-primary transition-colors italic uppercase">
+                                    {gate.name.replace('[ ','').replace(' ]','')}
+                                </h3>
+                                <p className="text-[7px] lg:text-[9px] font-mono text-gray-500 tracking-[0.25em] uppercase leading-relaxed opacity-60 group-hover/card:opacity-100 transition-all duration-700 font-bold max-w-[160px]">
+                                    {gate.desc}
+                                </p>
+                            </div>
+
+                            <div className={`mt-6 text-[9px] lg:text-[11px] font-mono uppercase tracking-[0.4em] flex items-center gap-2 ${gate.color} opacity-0 group-hover/card:opacity-100 group-hover/card:translate-x-3 transition-all duration-500 font-black relative z-20 italic`}>
+                                INITIATE NODE <ArrowRight size={14} className="animate-pulse" />
+                            </div>
+                            
+                            {/* Scanning Border Animation */}
+                            <div className="absolute top-0 right-0 w-1 h-0 bg-primary/40 group-hover/card:h-full transition-all duration-700" />
+                        </Link>
+                    ))}
+                </div>
+            </div>
+            
+            <div className="absolute bottom-6 left-10 flex items-center gap-4 z-[50]">
+                <div className="w-2 h-2 rounded-none bg-primary animate-ping" />
+                <div className="flex flex-col">
+                    <span className="font-mono text-[7px] text-primary/30 uppercase tracking-[0.5em]">System_Status:</span>
+                    <span className="font-mono text-[9px] text-primary uppercase font-black cyber-flicker-fast">Matrix Core Kernel Online</span>
+                </div>
+            </div>
+
+            <div className="absolute bottom-6 right-10 font-mono text-[9px] text-primary/40 uppercase tracking-[0.3em] font-black z-[50]">
+                Access_PT: ROOT_CORE_01
+            </div>
         </div>
     );
 }

@@ -42,12 +42,48 @@ export const analyzeAudioBuffer = async (fileOrBuffer: File | ArrayBuffer): Prom
         const mockKey = keys[Math.floor(Math.random() * keys.length)];
 
         return {
-            bpm: Math.round(mt.tempo).toString(),
+            bpm: Math.round(parseFloat(mt.tempo)).toString(),
             key: mockKey,
             normalizationGain: Number(staticGain.toFixed(4))
         };
     } catch (e) {
         console.error("Audio Decoding Failure:", e);
         throw e;
+    }
+};
+
+/**
+ * External Signal Interceptor
+ * Hits the secure backend ingestion node to scrape Suno/YT/SC links.
+ */
+export const analyzeExternalLink = async (url: string): Promise<any> => {
+    try {
+        const response = await fetch('/api/ingest', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url })
+        });
+
+        if (!response.ok) {
+            const errData = await response.json();
+            throw new Error(errData.error || 'Generative Handshake Failed');
+        }
+
+        const data = await response.json();
+        
+        if (!data.success || !data.streamUrl) {
+            throw new Error("Target payload encrypted. Failed to extract secure MP3 CDN stream.");
+        }
+
+        return {
+            id: crypto.randomUUID(),
+            title: data.title || "EXTERNAL SIGNAL INTERCEPT",
+            producer: data.type === 'suno' ? 'SUNO.COM [EXTERNAL NEURAL ENGINE]' : 'EXTERNAL NODE',
+            src: data.streamUrl,
+            status: 'ingested'
+        };
+    } catch (e: any) {
+        console.error("[EXTERNAL INGESTION MODULE]", e);
+        throw new Error(e.message || "Signal processing hardware failure.");
     }
 };

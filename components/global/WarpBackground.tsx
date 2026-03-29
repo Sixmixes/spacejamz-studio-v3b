@@ -58,7 +58,7 @@ const WarpBackground = memo(() => {
                     // Trigger the cinematic drift-back and center into a dark b-roll state
                     logoRef.current.style.transition = 'transform 4000ms cubic-bezier(0.16, 1, 0.3, 1), opacity 2000ms ease-out';
                     logoRef.current.style.transform = `translate(0px, 0px) scale(0.6)`;
-                    logoRef.current.style.opacity = '0.5';
+                    logoRef.current.style.opacity = '0.25';
 
                     setTimeout(() => {
                         if (logoRef.current && window.location.pathname === '/') {
@@ -72,7 +72,7 @@ const WarpBackground = memo(() => {
         } else {
             logoRef.current.style.transition = 'transform 4000ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 800ms ease-out';
             logoRef.current.style.transform = `translate(0px, 0px) scale(0.9)`;
-            logoRef.current.style.opacity = '0.35';
+            logoRef.current.style.opacity = '0.18';
         }
     }, [isHome]);
 
@@ -141,7 +141,7 @@ const WarpBackground = memo(() => {
         window.addEventListener('resize', updateDimensions);
         updateDimensions();
 
-        const STAR_COUNT = window.innerWidth < 768 ? 80 : 200; // Cranked up geometry count
+        const STAR_COUNT = window.innerWidth < 768 ? 50 : 200; // Optimized for mobile stability
         const stars: any[] = [];
 
         let rLow = 0, rMid = 0, rHigh = 0;
@@ -177,9 +177,29 @@ const WarpBackground = memo(() => {
         for (let i = 0; i < STAR_COUNT; i++) stars.push(new Star());
 
         let reqId: number;
-        const render = () => {
-            let { intensity, low, mid, high } = coreAudioData?.current || { intensity: 0, low: 0, mid: 0, high: 0 };
+        let isTabVisible = true;
+        let lastAnimFrame = 0;
+        const TARGET_FPS = 30;
+        const THROTTLE_MS = 1000 / TARGET_FPS;
 
+        const handleVisibilityChange = () => {
+            isTabVisible = !document.hidden;
+            if (isTabVisible) {
+                render(performance.now()); // Re-kick the loop on wake
+            }
+        };
+
+        const render = (time: number) => {
+            if (!isTabVisible) return; // Exit loop if tab is buried
+
+            if (time - lastAnimFrame < THROTTLE_MS) {
+                reqId = requestAnimationFrame(render);
+                return;
+            }
+            lastAnimFrame = time;
+
+            let { intensity, low, mid, high } = coreAudioData?.current || { intensity: 0, low: 0, mid: 0, high: 0 };
+            
             if (!isPlayingRef.current) {
                 intensity = 0; low = 0; mid = 0; high = 0;
             }
@@ -195,7 +215,6 @@ const WarpBackground = memo(() => {
             sLow = Math.max(sLow * 0.96, rawTLow);
             sMid = Math.max(sMid * 0.96, rawTMid);
             sHigh = Math.max(sHigh * 0.96, rawTHigh);
-            // Increased threshold and faster decay so it doesn't stay 'lit' too long
             const thresholdedInt = Math.max(0, intensity - 0.15) * 1.15;
             sInt = Math.max(sInt * 0.88, thresholdedInt);
 
@@ -204,7 +223,6 @@ const WarpBackground = memo(() => {
 
             const currentThemeColors = themeColorsRef.current;
 
-            // PERFORMANCE TARGET: Hard-Capped max velocities and inline speed calculations
             const bassSpeed = (6 + Math.min(sLow * 120, 250) + Math.min(sInt * 30, 60));
             const midSpeed = (4 + Math.min(sMid * 80, 150) + Math.min(sInt * 20, 40));
             const highSpeed = (3 + Math.min(sHigh * 50, 100) + Math.min(sInt * 10, 20));
@@ -223,7 +241,6 @@ const WarpBackground = memo(() => {
                 const heat = layer === 'bass' ? sLow : layer === 'mid' ? sMid : sHigh;
                 ctx.strokeStyle = `rgba(${currentThemeColors[layer as keyof typeof currentThemeColors]}, ${Math.min(1.0, 0.6 + heat * 2.0 + sInt * 0.8)})`;
 
-                // CRITICAL PERF PATCH: ShadowBlur triggers 100% GPU Spikes on Integrated laptops during audio peaks. Must remain 0.
                 ctx.shadowBlur = 0;
                 ctx.shadowColor = 'transparent';
 
@@ -255,10 +272,12 @@ const WarpBackground = memo(() => {
             reqId = requestAnimationFrame(render);
         };
 
-        render();
+        render(performance.now());
+        document.addEventListener('visibilitychange', handleVisibilityChange);
 
         return () => {
             window.removeEventListener('resize', updateDimensions);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
             cancelAnimationFrame(reqId);
         };
     }, []);
@@ -293,11 +312,11 @@ const WarpBackground = memo(() => {
     };
 
     return (
-        <div className="fixed inset-0 z-0 bg-black overflow-hidden pointer-events-none flex items-center justify-center">
+        <div className="fixed inset-0 z-0 bg-transparent overflow-hidden pointer-events-none flex items-center justify-center">
             {/* PHYSICS STARFIELD CANVAS (Hardware Accelerated) */}
             <canvas
                 ref={canvasRef}
-                className={`absolute inset-0 w-full h-full z-10 transition-opacity duration-1000 opacity-100`}
+                className={`absolute inset-0 w-full h-full z-[8] transition-opacity duration-1000 opacity-100 mix-blend-screen`}
                 style={{ transform: 'translateZ(0)' }}
             />
             {/* 3D PARALLAX BACKGROUND LOGO W/ ZERO-LATENCY DIRECT DOM MANIPULATION */}
@@ -312,7 +331,7 @@ const WarpBackground = memo(() => {
                         className="absolute inset-0 bg-primary/20 rounded-full blur-[100px] pointer-events-none transition-opacity duration-300"
                         style={{
                             transform: `scale(calc(0.5 + (var(--audio-intensity, 0) * 0.3)))`,
-                            opacity: `calc(0.05 + (var(--audio-intensity, 0) * 0.1))`
+                            opacity: `calc(0.02 + (var(--audio-intensity, 0) * 0.08))`
                         }}
                     />
 
@@ -322,8 +341,8 @@ const WarpBackground = memo(() => {
                             alt="SpaceJamz Background"
                             className="w-[52vw] md:w-[37vw] xl:w-[26vw] max-w-xl max-h-[22vh] md:max-h-[30vh] object-contain"
                             style={{
-                                filter: "brightness(calc(0.5 + var(--audio-intensity, 0) * 0.2)) drop-shadow(0 0 calc(10px + var(--bass-kick, 0) * 10px) rgba(0,0,0,0.9)) sepia(calc(var(--audio-intensity, 0) * 0.5)) hue-rotate(180deg)",
-                                transform: "scale(calc(1 + var(--bass-kick, 0) * 0.03)) translateY(calc(var(--bass-kick, 0) * 5px))",
+                                filter: "brightness(calc(0.35 + var(--audio-intensity, 0) * 0.15)) drop-shadow(0 0 calc(10px + var(--bass-kick, 0) * 5px) rgba(0,0,0,0.9)) sepia(calc(var(--audio-intensity, 0) * 0.3)) hue-rotate(180deg)",
+                                transform: "scale(calc(1 + var(--bass-kick, 0) * 0.02)) translateY(calc(var(--bass-kick, 0) * 3px))",
                                 transition: "transform 0.08s ease-out, filter 0.08s ease-out"
                             }}
                         />
