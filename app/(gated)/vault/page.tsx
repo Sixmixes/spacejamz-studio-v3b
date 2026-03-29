@@ -312,7 +312,7 @@ export default function V3BHome() {
             const data = await res.json();
             const stemsObj = data.stems;
             
-            const newTracks = [];
+            const newTracks: any[] = [];
             for (const [stemName, stemUrl] of Object.entries(stemsObj)) {
                 newTracks.push({
                     id: crypto.randomUUID(),
