@@ -93,28 +93,28 @@ export default function MatrixCore() {
                 <div className="absolute top-[55%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] sm:w-[1400px] h-[250px] sm:h-[400px] rounded-[100%] border-t-[4px] border-white/5 opacity-40 z-10" style={{ filter: 'blur(3px)' }} />
             </div>
 
-            <div className="relative z-20 flex flex-col items-center justify-center w-full animate-in fade-in zoom-in-95 duration-1000 mt-2 lg:mt-4">
+            <div className="relative z-20 flex flex-col items-center justify-center w-full animate-in fade-in zoom-in-95 duration-1000 mt-0">
                 
                 {/* NEURAL IDENTITY GATEWAY (Telemetry Overhaul) */}
-                <div className="w-[calc(100%-40px)] xl:w-[calc(100%-600px)] mb-4">
+                <div className="w-[calc(100%-40px)] xl:w-full mb-0 border-b-0">
                     <NeuralIdentityTerminal />
                 </div>
 
-                {/* 3D Chrome Emulated Logo */}
-                <div className="relative mb-4 group cursor-default scale-90 sm:scale-100">
-                    <h1 className="text-5xl sm:text-7xl md:text-9xl lg:text-[10rem] font-black font-bebas tracking-[0.25em] text-transparent bg-clip-text bg-gradient-to-b from-primary via-primary/80 to-primary/40 drop-shadow-[0_20px_50px_rgba(var(--color-primary),0.8)] text-center relative z-10" 
-                        style={{ WebkitTextStroke: '2px rgba(var(--color-primary),0.2)' }}>
+                {/* 3D Retro Web Emulated Logo */}
+                <div className="relative mb-0 group cursor-default scale-90 sm:scale-100">
+                    <h1 className="text-5xl sm:text-7xl md:text-9xl lg:text-[10rem] font-black font-bebas tracking-[0.25em] text-transparent bg-clip-text bg-gradient-to-b from-[#00ffff] via-[#ff00ff] to-[#00ffff] drop-shadow-[0_10px_30px_rgba(255,0,255,0.8)] text-center relative z-10" 
+                        style={{ WebkitTextStroke: '2px rgba(0,255,255,0.5)' }}>
                         SPACEJAMZ
                     </h1>
                     <div className="absolute -inset-4 bg-primary/20 blur-[100px] rounded-full opacity-40 group-hover:opacity-60 transition-opacity duration-1000 z-0" />
                     <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-[120%] h-[1px] bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
                 </div>
                 
-                <h2 className="text-[9px] sm:text-[10px] md:text-[11px] font-mono text-primary tracking-[0.3em] sm:tracking-[1.2em] uppercase mb-4 lg:mb-6 text-center cyber-flicker-slow px-10 relative z-20 bg-black py-1 border-y border-primary/20 font-black italic w-full">
+                <h2 className="text-[9px] sm:text-[10px] md:text-[11px] font-mono text-[#00ffff] tracking-[0.3em] sm:tracking-[1.2em] uppercase mb-0 text-center cyber-flicker-slow px-10 relative z-20 bg-black py-1 border-y border-dashed border-[#ff00ff]/60 font-black italic w-full">
                     The Human Vanguard Architecture
                 </h2>
 
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 lg:gap-0 w-full px-4 sm:px-12 lg:px-0 relative group/grid">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-0 w-full relative group/grid">
                     {/* Grid Overlay Mask */}
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/grid:opacity-100 transition-opacity duration-700 pointer-events-none z-10" />
                     
@@ -122,8 +122,8 @@ export default function MatrixCore() {
                         <Link 
                             key={gate.id} 
                             href={gate.href} 
-                            className={`relative flex flex-col p-5 sm:p-6 lg:p-8 min-h-[180px] sm:min-h-[240px] lg:min-h-[220px] justify-between bg-black border border-primary/10 hover:border-primary/80 transition-all duration-700 group/card overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,1)] lg:border-r-0 last:lg:border-r z-20 hover:z-30 hover:scale-[1.03] hover:shadow-[0_0_60px_rgba(var(--color-primary),0.2)]`} 
-                            style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%)', animationDelay: `${i * 100}ms` }}
+                            className={`relative flex flex-col p-4 min-h-[160px] justify-between bg-black border border-dashed border-[#ff00ff]/30 hover:border-[#00ffff] transition-all duration-700 group/card overflow-hidden z-20 hover:z-30 hover:shadow-[0_0_30px_#00ffff]`} 
+                            style={{ animationDelay: `${i * 100}ms` }}
                         >
                             {/* Cinematic Live Portrait Engine (Dynamic Seamless Loops) */}
                             <div className="absolute inset-0 z-0 opacity-10 group-hover/card:opacity-60 transition-opacity duration-1000">

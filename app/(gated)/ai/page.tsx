@@ -181,46 +181,46 @@ export default function NeuralStudio() {
     }
 
     return (
-        <div className="flex flex-col items-center justify-start min-h-screen pb-40 relative bg-black/90 p-4 lg:p-12">
+        <div className="flex flex-col items-center justify-start min-h-screen pb-0 relative bg-black p-0">
             
-            <NeuralIdentityTerminal className="mb-12" />
+            <NeuralIdentityTerminal className="mb-0" />
 
-            <div className="w-full max-w-[1800px] mb-12 flex flex-col md:flex-row justify-between items-end border-b border-primary/30 pb-8 gap-6 animate-in fade-in duration-700">
-                <div className="flex items-start gap-4">
-                    <Sparkles className="w-12 h-12 text-primary cyber-flicker-slow drop-shadow-[0_0_15px_rgba(var(--color-primary),0.5)]" />
+            <div className="w-full mb-0 flex flex-col md:flex-row justify-between items-end border-b border-dashed border-[#00ffff] pb-2 gap-0 animate-in fade-in duration-700">
+                <div className="flex items-start gap-2">
+                    <Sparkles className="w-8 h-8 text-[#ff00ff] cyber-flicker-slow drop-shadow-[0_0_10px_#ff00ff]" />
                     <div>
-                        <h1 className="text-4xl md:text-6xl font-black font-bebas text-white tracking-widest uppercase mb-1 drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">NEURAL STUDIO</h1>
-                        <p className="font-mono text-[10px] text-primary uppercase tracking-[0.5em] font-bold">[ SUNO-GRADE PRODUCTION FOR ORIGINAL WORKS ]</p>
+                        <h1 className="text-4xl md:text-6xl font-black font-bebas text-[#00ffff] tracking-widest uppercase mb-0 drop-shadow-[0_0_5px_#00ffff]">NEURAL STUDIO</h1>
+                        <p className="font-mono text-[10px] text-[#ff00ff] uppercase tracking-[0.5em] font-bold drop-shadow-md">[ SUNO-GRADE PRODUCTION FOR ORIGINAL WORKS ]</p>
                     </div>
                 </div>
-                <div className="flex flex-col items-end gap-2 bg-black/80 border-2 border-primary/40 p-4 shadow-[0_0_20px_rgba(var(--color-primary),0.1)]" style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%)' }}>
-                    <div className="flex items-center gap-3 text-yellow-500 mb-1">
-                        <Coins size={16} />
-                        <span className="font-bebas text-2xl tracking-widest">{currentUser?.coinsBalance?.toLocaleString() || '0'} C</span>
+                <div className="flex flex-col items-end gap-1 bg-black border border-dashed border-[#ff00ff] p-2" style={{ clipPath: 'none' }}>
+                    <div className="flex items-center gap-2 text-yellow-500 mb-0">
+                        <Coins size={12} />
+                        <span className="font-bebas text-xl tracking-widest">{currentUser?.coinsBalance?.toLocaleString() || '0'} C</span>
                     </div>
-                    <span className="text-[8px] font-mono text-gray-500 tracking-widest uppercase">Treasury Credits Remaining</span>
+                    <span className="text-[6px] font-mono text-gray-500 tracking-widest uppercase">Treasury Credits Remaining</span>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 w-full max-w-[1700px] mb-20 z-20 px-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-0 w-full mb-0 z-20 px-0">
                 {(['flixsynth', 'deforum', 'vocal_dna', 'neural_swap'] as const).map(tab => (
                     <div 
                         key={tab}
-                        className="group relative bg-[#050505]/90 border-2 border-primary/10 hover:border-primary/60 transition-all duration-500 overflow-hidden shadow-[0_20px_40px_rgba(0,0,0,0.8)] p-1"
-                        style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%)' }}
+                        className="group relative bg-black border border-dashed border-[#ff00ff]/30 hover:border-[#00ffff] transition-all duration-500 overflow-hidden p-0"
+                        style={{ clipPath: 'none' }}
                     >
-                        <div className="p-10 flex flex-col items-center text-center gap-8 relative z-10">
-                            <div className={`p-8 bg-primary/10 border-2 border-primary/20 rounded-full group-hover:scale-110 group-hover:bg-primary/20 transition-all duration-500 shadow-[0_0_30px_rgba(var(--color-primary),0.05)]`}>
-                                {tab === 'flixsynth' && <ImageIcon size={56} className="text-primary" />}
-                                {tab === 'deforum' && <Video size={56} className="text-primary" />}
-                                {tab === 'vocal_dna' && <Terminal size={56} className="text-primary" />}
-                                {tab === 'neural_swap' && <Database size={56} className="text-primary" />}
+                        <div className="p-4 flex flex-col items-center text-center gap-2 relative z-10">
+                            <div className={`p-4 bg-transparent border border-dashed border-[#00ffff] rounded-none group-hover:border-[#ff00ff] transition-all duration-500`}>
+                                {tab === 'flixsynth' && <ImageIcon size={32} className="text-[#00ffff]" />}
+                                {tab === 'deforum' && <Video size={32} className="text-[#00ffff]" />}
+                                {tab === 'vocal_dna' && <Terminal size={32} className="text-[#00ffff]" />}
+                                {tab === 'neural_swap' && <Database size={32} className="text-[#00ffff]" />}
                             </div>
-                            <div className="min-h-[120px] flex flex-col justify-center">
-                                <h3 className="text-3xl font-black font-bebas text-white tracking-[0.2em] mb-2 italic uppercase">
+                            <div className="min-h-[80px] flex flex-col justify-center">
+                                <h3 className="text-xl font-black font-bebas text-[#00ffff] tracking-[0.2em] mb-1 italic uppercase drop-shadow-[0_0_5px_#00ffff]">
                                     {tab === 'flixsynth' ? 'FLIXSYNTH ART' : tab === 'deforum' ? 'VIDEO ENGINE' : tab === 'vocal_dna' ? 'NEURAL BLUEPRINT' : 'NEURAL SWAP'}
                                 </h3>
-                                <p className="text-[10px] font-mono text-primary/40 uppercase tracking-[0.3em] font-bold max-w-[260px] leading-relaxed">
+                                <p className="text-[9px] font-mono text-[#ff00ff] opacity-80 uppercase tracking-[0.3em] font-bold leading-relaxed">
                                     {tab === 'flixsynth' ? 'Forge original album covers and visual identities' : 
                                      tab === 'deforum' ? 'Cinematic music video sequencing for original works' :
                                      tab === 'vocal_dna' ? 'Clone and Practice your identity for Original Works' :
@@ -229,12 +229,12 @@ export default function NeuralStudio() {
                             </div>
                             <button 
                                 onClick={() => { setActiveTab(tab); setIsModalOpen(true); setNeuralState('IDLE'); setLastOutput(null); }}
-                                className="mt-4 px-12 py-4 bg-primary text-black font-mono text-[11px] font-black uppercase tracking-[0.3em] hover:bg-white transition-all shadow-[0_5px_15px_rgba(var(--color-primary),0.2)]"
+                                className="mt-2 px-6 py-2 bg-transparent text-[#ff00ff] border border-dashed border-[#ff00ff] font-mono text-[9px] font-black uppercase tracking-[0.3em] hover:text-[#00ffff] hover:border-[#00ffff] transition-colors"
                             >
                                 [ LAUNCH TERMINAL ]
                             </button>
                         </div>
-                        <div className="absolute inset-0 bg-gradient-to-t from-primary/10 to-transparent group-hover:opacity-100 opacity-20 transition-opacity" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#00ffff]/5 to-transparent group-hover:opacity-100 opacity-20 transition-opacity" />
                     </div>
                 ))}
             </div>

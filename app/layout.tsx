@@ -93,7 +93,7 @@ export default function RootLayout({
 
                 {/* INNER SCROLLABLE / INTERACTIVE REALM */}
                 <div className="audio-filter-target interface-interactive flex-1 flex flex-col z-[50] relative overflow-y-auto w-full h-full custom-scrollbar pt-[var(--content-top-offset,0px)]">
-                  <main className="flex-1 w-full pb-32 pt-[max(80px,var(--content-pt,80px))] overflow-x-hidden transition-all duration-700">
+                  <main className="flex-1 w-full pb-32 pt-[62px] overflow-x-hidden transition-all duration-700 flex flex-col">
                       {children}
                   </main>
                 </div>
