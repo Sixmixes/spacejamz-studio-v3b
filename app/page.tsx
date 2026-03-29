@@ -37,7 +37,7 @@ export default function MatrixCore() {
             <div className="absolute inset-0 pointer-events-none z-[40] bg-[radial-gradient(circle_at_center,rgba(var(--color-primary),0.08)_0,transparent_100%)] opacity-40 shadow-[inset_0_0_100px_rgba(0,0,0,0.8)]" />
             
             {/* TACTICAL HUD WIDGETS (SIDES) */}
-            <div className="absolute top-20 left-10 hidden xl:flex flex-col gap-8 z-[50] animate-in slide-in-from-left-8 duration-1000">
+            <div className="absolute top-[200px] left-10 hidden xl:flex flex-col gap-8 z-[50] animate-in slide-in-from-left-8 duration-1000">
                 <div className="flex flex-col gap-2">
                     <div className="flex items-center gap-3">
                         <Terminal size={14} className="text-primary animate-pulse" />
@@ -63,7 +63,7 @@ export default function MatrixCore() {
                 </div>
             </div>
 
-            <div className="absolute top-20 right-10 hidden xl:flex flex-col gap-8 items-end z-[50] animate-in slide-in-from-right-8 duration-1000">
+            <div className="absolute top-[200px] right-10 hidden xl:flex flex-col gap-8 items-end z-[50] animate-in slide-in-from-right-8 duration-1000">
                 <div className="bg-black/60 border-r-4 border-yellow-500 p-4 space-y-2 backdrop-blur-md text-right">
                     <div className="flex items-center justify-end gap-3 text-yellow-500 mb-1">
                         <span className="font-bebas text-2xl tracking-widest">Active nodes</span>
@@ -79,18 +79,19 @@ export default function MatrixCore() {
                 </div>
             </div>
 
-            {/* CSS Cinematic Space Background Layer (Planet Eclipse) */}
-            <div className="absolute inset-0 z-0 flex items-center justify-center pointer-events-none opacity-80 mix-blend-screen overflow-hidden">
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60vw] h-[60vw] max-w-[1000px] max-h-[1000px] rounded-full bg-blue-900/10 blur-[150px] animate-pulse" />
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[60%] w-[45vw] h-[45vw] max-w-[700px] max-h-[700px] rounded-full bg-cyan-500/5 blur-[120px]" />
+            {/* CSS Cinematic Space Background Layer (Fiery Upside-Down Firmament) */}
+            <div className="absolute inset-0 z-0 flex items-start justify-center pointer-events-none opacity-90 mix-blend-color-dodge overflow-hidden">
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/3 w-[120vw] h-[80vh] rounded-full bg-orange-600/20 blur-[200px] animate-pulse" />
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-10 w-[80vw] h-[60vh] rounded-[100%] bg-red-600/10 blur-[150px]" />
+                <div className="absolute top-[10%] left-1/2 -translate-x-1/2 w-[60vw] h-[40vh] rounded-full bg-yellow-500/5 blur-[100px]" />
                 
-                {/* CSS Planet Black Hole Base */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[45%] w-[300px] h-[300px] sm:w-[500px] sm:h-[500px] rounded-full shadow-[0_0_200px_rgba(0,255,200,0.1)] border-b-[3px] border-primary/40 bg-black/95 z-0">
-                    <div className="absolute inset-0 rounded-full shadow-[inset_0_-30px_70px_rgba(var(--color-primary),0.15)]" />
+                {/* CSS Planet Black Hole Base (Pushed Up) */}
+                <div className="absolute -top-[10%] left-1/2 -translate-x-1/2 w-[400px] h-[400px] sm:w-[600px] sm:h-[600px] rounded-[100%] shadow-[0_0_200px_rgba(255,100,0,0.15)] border-b-[2px] border-orange-500/40 bg-black/98 z-0">
+                    <div className="absolute inset-0 rounded-full shadow-[inset_0_-40px_100px_rgba(255,50,0,0.2)]" />
                 </div>
                 
-                {/* Horizon Line / Planetary Ring */}
-                <div className="absolute top-[55%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] sm:w-[1400px] h-[250px] sm:h-[400px] rounded-[100%] border-t-[4px] border-white/5 opacity-40 z-10" style={{ filter: 'blur(3px)' }} />
+                {/* Horizon Line / Planetary Ring (Fiery) */}
+                <div className="absolute top-[30%] left-1/2 -translate-x-1/2 w-[1200px] sm:w-[1800px] h-[300px] sm:h-[500px] rounded-[100%] border-t-[3px] border-orange-500/30 opacity-60 z-10" style={{ filter: 'blur(4px)' }} />
             </div>
 
             <div className="relative z-20 flex flex-col items-center justify-center w-full animate-in fade-in zoom-in-95 duration-1000 mt-0">

@@ -112,15 +112,16 @@ export const SpaceWarpScene = () => {
       meshRef.current.setMatrixAt(i, tempObject.matrix);
 
       // update and apply color
-      // Map colors closer to SpaceJamz neon cyan/magenta based on bass hits
+      // Map colors closer to fiery orange/red matching the "upside-down cosmic ocean" theme
       const depthRatio = Math.max(0, 1 - (tempPos.z / (-Z_BOUNDS / 2)));
       
       if (tempPos.z > 0) {
-        tempColor.setHSL(0.5, 1.0, 1.0); // White flash near camera
+        tempColor.setHSL(0.1, 1.0, 0.9); // Fiery white/yellow flash near camera
       } else {
-        // Shift hue based on depth and inject magenta/cyan based on audio intensity
-        const hue = 0.5 + (audioIntensity * 0.3) - (depthRatio * 0.1);
-        tempColor.setHSL(hue, 1.0, depthRatio);
+        // Shift hue based on depth and inject fiery orange/red based on audio intensity
+        const baseHue = 0.02 + (Math.random() * 0.08); // Red to Orange range
+        const hue = baseHue + (audioIntensity * 0.05);
+        tempColor.setHSL(hue, 1.0, depthRatio * 0.7 + 0.3); // Keep brightness high
       }
       
       meshRef.current.setColorAt(i, tempColor);
