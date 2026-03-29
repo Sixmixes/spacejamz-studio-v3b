@@ -127,18 +127,21 @@ export default function WrldChanger() {
     <>
       {/* TRIGGER GATEWAY */}
       <div
-        className={`fixed top-6 left-6 z-[300000] cursor-pointer pointer-events-auto transition-all duration-250 ${isOpen && !isSpinning && !isClosing ? 'opacity-0 scale-0 pointer-events-none' : 'opacity-100 scale-100'}`}
+        className={`fixed top-0 right-0 z-[10005] h-[52px] lg:h-[62px] flex items-center justify-center px-4 lg:px-6 cursor-pointer pointer-events-auto transition-all duration-250 bg-black border-b border-l border-primary/20 hover:bg-primary/5 group border-r-0 ${isOpen && !isSpinning && !isClosing ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
         onClick={handleOpen}
       >
-        <div
-          className={`relative transition-all duration-250 ${isSpinning ? 'animate-handshake-grow' : 'scale-100 rotate-0'}`}
-          style={{
-            transform: `scale(calc(1.0 + (var(--audio-intensity, 0) * 0.05 * var(--reactivity-sensitivity, 1))))`,
-          }}
-        >
-          <div className="text-white/40 hover:text-white/80 transition-colors duration-300">
-            <Globe className={`w-5 h-5 md:w-6 md:h-6 ${isSpinning ? 'animate-[spin_0.3s_linear_infinite]' : 'animate-[spin_10s_linear_infinite]'}`} />
-          </div>
+        <div className="flex items-center gap-3">
+            <span className="hidden lg:inline font-mono text-[9px] uppercase tracking-[0.4em] font-black italic text-primary/60 group-hover:text-primary transition-colors">WRLD_SIM</span>
+            <div
+              className={`relative transition-all duration-250 ${isSpinning ? 'animate-[pulse_0.1s_linear_infinite_ease-out]' : ''}`}
+              style={{
+                transform: `scale(calc(1.0 + (var(--audio-intensity, 0) * 0.05 * var(--reactivity-sensitivity, 1))))`,
+              }}
+            >
+              <div className="text-primary/60 group-hover:text-primary transition-colors duration-300">
+                <Globe className={`w-4 h-4 lg:w-5 lg:h-5 ${isSpinning ? 'animate-[spin_0.3s_linear_infinite]' : 'animate-[spin_10s_linear_infinite]'}`} />
+              </div>
+            </div>
         </div>
       </div>
 
