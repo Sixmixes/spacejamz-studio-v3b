@@ -2,6 +2,58 @@ import { NextResponse } from 'next/server';
 import { google } from 'googleapis';
 import { Readable } from 'stream';
 
+export async function GET(request: Request) {
+    try {
+        const { searchParams } = new URL(request.url);
+        const fileId = searchParams.get('fileId');
+
+        if (!fileId) return NextResponse.json({ error: 'Missing fileId' }, { status: 400 });
+
+        const clientId = process.env.GOOGLE_DRIVE_CLIENT_ID;
+        const clientSecret = process.env.GOOGLE_DRIVE_CLIENT_SECRET;
+        const refreshToken = process.env.GOOGLE_DRIVE_REFRESH_TOKEN;
+
+        if (!clientId || !clientSecret || !refreshToken) {
+            return NextResponse.json({ error: 'Drive Credentials Missing' }, { status: 500 });
+        }
+
+        const oauth2Client = new google.auth.OAuth2(clientId, clientSecret, 'https://developers.google.com/oauthplayground');
+        oauth2Client.setCredentials({ refresh_token: refreshToken });
+        const drive = google.drive({ version: 'v3', auth: oauth2Client });
+
+        // Retrieve metadata first to get the correct MIME type
+        const metadata = await drive.files.get({
+            fileId: fileId,
+            fields: 'name, mimeType, size'
+        });
+
+        // Steam the actual bytes from Google's physical server array
+        const response = await drive.files.get({
+            fileId: fileId,
+            alt: 'media'
+        }, { responseType: 'stream' });
+
+        const nodeStream = response.data as Readable;
+        const webStream = Readable.toWeb(nodeStream);
+
+        const headers = new Headers();
+        headers.set('Content-Type', metadata.data.mimeType || 'application/octet-stream');
+        headers.set('Content-Disposition', `inline; filename="${metadata.data.name}"`);
+        if (metadata.data.size) headers.set('Content-Length', metadata.data.size);
+        
+        headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+
+        return new Response(webStream as any, {
+            status: 200,
+            headers,
+        });
+
+    } catch (err: any) {
+        console.error('Proxy GET Error:', err);
+        return NextResponse.json({ error: 'Failed to stream from personal drive matix' }, { status: 500 });
+    }
+}
+
 export async function POST(request: Request) {
     try {
         const formData = await request.formData();
@@ -13,24 +65,18 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Missing file payload.' }, { status: 400 });
         }
 
-        // Parse Service Account Keys Securely
-        const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
-        const privateKey = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+        const clientId = process.env.GOOGLE_DRIVE_CLIENT_ID;
+        const clientSecret = process.env.GOOGLE_DRIVE_CLIENT_SECRET;
+        const refreshToken = process.env.GOOGLE_DRIVE_REFRESH_TOKEN;
 
-        if (!clientEmail || !privateKey) {
-            return NextResponse.json({ error: '30TB Matrix is not mapped in Identity Environment.' }, { status: 500 });
+        if (!clientId || !clientSecret || !refreshToken) {
+            return NextResponse.json({ error: 'Personal Drive Matrix is not mapped in Identity Environment.' }, { status: 500 });
         }
 
-        const jwtClient = new google.auth.JWT({
-            email: clientEmail,
-            key: privateKey,
-            scopes: ['https://www.googleapis.com/auth/drive.file']
-        });
+        const oauth2Client = new google.auth.OAuth2(clientId, clientSecret, 'https://developers.google.com/oauthplayground');
+        oauth2Client.setCredentials({ refresh_token: refreshToken });
+        const drive = google.drive({ version: 'v3', auth: oauth2Client });
 
-        await jwtClient.authorize();
-        const drive = google.drive({ version: 'v3', auth: jwtClient });
-
-        // Convert incoming Blob to Node Stream
         const arrayBuffer = await file.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
         const stream = new Readable();
@@ -42,7 +88,6 @@ export async function POST(request: Request) {
             mimeType: mimeType || 'application/octet-stream',
         };
 
-        // If the user has explicitly linked a 30TB Drive Shared Folder, mount it.
         if (process.env.GOOGLE_DRIVE_FOLDER_ID) {
             requestBody.parents = [process.env.GOOGLE_DRIVE_FOLDER_ID];
         }
@@ -52,33 +97,24 @@ export async function POST(request: Request) {
             body: stream,
         };
 
-        // Execute API Upload
+        console.log("Starting Personal Drive Synthesis sequence...");
         const driveResponse = await drive.files.create({
             requestBody,
             media: media,
-            fields: 'id, webViewLink, webContentLink',
+            supportsAllDrives: true,
+            fields: 'id',
         });
 
         const fileId = driveResponse.data.id;
         
-        // Unseal the asset so the SpaceJamz Client can render it
-        if (fileId) {
-            await drive.permissions.create({
-                fileId: fileId,
-                requestBody: {
-                    role: 'reader',
-                    type: 'anyone',
-                },
-            });
-        }
+        // Return our own proxy URL instead of relying on public Google subdomains
+        const proxyUrl = `/api/storage/drive?fileId=${fileId}`;
+        console.log("Synthesized Proxy Link:", proxyUrl);
 
-        // Return the raw direct-download link if available, otherwise fallback to standard viewer
-        const directUrl = driveResponse.data.webContentLink || driveResponse.data.webViewLink;
-
-        return NextResponse.json({ success: true, url: directUrl, fileId: fileId }, { status: 200 });
+        return NextResponse.json({ success: true, url: proxyUrl, fileId: fileId }, { status: 200 });
 
     } catch (error: any) {
-        console.error('Google Drive Matrix Error:', error);
-        return NextResponse.json({ error: error.message || 'Fatal Drive Sync Error' }, { status: 500 });
+        console.error('Personal Google Drive Matrix Error:', error);
+        return NextResponse.json({ error: error.message || 'Fatal Personal Drive Sync Error' }, { status: 500 });
     }
 }

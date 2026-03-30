@@ -5,7 +5,7 @@ import AudioEngine from "@/components/global/AudioEngine";
 import WarpBackground from "@/components/global/WarpBackground";
 import SpaceWarpNoSSR from "@/components/global/SpaceWarpNoSSR";
 import StickyPlayer from "@/components/ui/StickyPlayer";
-import SpaceThemeWrapper from "@/components/global/SpaceThemeWrapper";
+import WrldChangerEnv from "@/components/global/WrldChangerEnv";
 import WrldChanger from "@/components/global/WrldChanger";
 import AgeVerificationModal from "@/components/global/AgeVerificationModal";
 import AuthEngine from "@/components/global/AuthEngine";
@@ -41,13 +41,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${raj.variable} h-full antialiased`}>
-      <body className="min-h-screen flex flex-col bg-black text-white overflow-hidden p-0 m-0">
+    <html lang="en" className={`${raj.variable} h-auto antialiased`}>
+      <body className="min-h-screen flex flex-col bg-black text-white overflow-x-hidden p-0 m-0">
           
           <AuthEngine />
           <AgeVerificationModal />
           <AirdropModal />
-          <SpaceThemeWrapper>
+          <WrldChangerEnv />
+          <div className="contents">
             {/* BACKGROUND AUDIO-VISUAL PHYSICS ENGINE */}
             <AudioEngine />
             
@@ -93,7 +94,7 @@ export default function RootLayout({
 
                 {/* INNER SCROLLABLE / INTERACTIVE REALM */}
                 <div className="audio-filter-target interface-interactive flex-1 flex flex-col z-[50] relative overflow-y-auto w-full h-full custom-scrollbar pt-[var(--content-top-offset,0px)]">
-                  <main className="flex-1 w-full pb-32 pt-[62px] overflow-x-hidden transition-all duration-700 flex flex-col">
+                  <main className="flex-1 w-full pb-[90px] pt-[62px] overflow-x-hidden transition-all duration-700 flex flex-col">
                       {children}
                   </main>
                 </div>
@@ -104,7 +105,7 @@ export default function RootLayout({
             
             {/* SYSTEM NAVIGATION HUD */}
             <NavigationHUD />
-          </SpaceThemeWrapper>
+          </div>
 
       </body>
     </html>

@@ -45,8 +45,8 @@ const SortableTrackItem = memo(function SortableTrackItem({ track, index, isThis
     return (
         <div
             ref={setNodeRef}
-            style={style}
-            className={`flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-4 md:p-6 transition-all duration-300 bg-black/40 backdrop-blur-md border border-solid border-[#00ffff]/20 rounded-2xl shadow-[inset_0_0_20px_rgba(0,255,255,0.05)] ${desyncClass} ${isThisPlaying ? 'active-playback' : ''} ${isDragging ? 'opacity-80 scale-[1.02] shadow-[0_0_30px_rgba(0,255,255,0.3)]' : ''}`}
+            style={{ ...style, clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%)' }}
+            className={`flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-4 md:p-6 transition-all duration-300 bg-black/60 backdrop-blur-md border border-solid border-primary/20 shadow-[inset_0_0_20px_rgba(var(--color-primary),0.05)] ${desyncClass} ${isThisPlaying ? 'active-playback bg-primary/10 border-primary/60' : 'hover:border-primary/40'} ${isDragging ? 'opacity-80 scale-[1.02] shadow-[0_0_30px_rgba(var(--color-primary),0.3)]' : ''}`}
         >
             <div className="flex items-center gap-2 sm:gap-6 cursor-pointer flex-1 min-w-0" onClick={() => !isEditing && playTestTrack(track)}>
                 
@@ -425,46 +425,61 @@ export default function V3BHome() {
     }
 
     return (
-        <div className="flex flex-col items-center justify-start min-h-screen pt-24 pb-24 relative overflow-hidden">
+        <div className="flex flex-col items-center justify-start min-h-screen pt-32 pb-48 relative overflow-hidden bg-transparent">
             
-            <div className="w-[95%] max-w-7xl z-[60] mb-8">
-                <NeuralIdentityTerminal />
+            {/* CINEMATIC B-ROLL BACKGROUND LAYER */}
+            <div className="fixed inset-0 z-[-1] flex items-center justify-center pointer-events-none overflow-hidden">
+                <video 
+                    src={`/api/neural-assets?node=VAULT&pilot=${currentUser?.uid || 'anon'}`}
+                    autoPlay 
+                    loop 
+                    muted 
+                    playsInline 
+                    className="w-full h-full object-cover opacity-20 mix-blend-screen scale-110 blur-[2px]"
+                />
+                <div className="absolute inset-0 bg-gradient-to-b from-black via-[#050505]/80 to-black z-10" />
             </div>
 
-            {/* Massive Outer Cyber Panel -> Glassmorphism */}
-            <div className="bg-black/40 backdrop-blur-xl border border-solid border-[#00ffff]/20 rounded-3xl p-6 md:p-12 w-[95%] max-w-7xl mb-24 z-50 overflow-hidden desync-1 shadow-[0_0_50px_rgba(0,255,255,0.05)]">
+            <div className="absolute top-8 left-0 right-0 z-[100] pointer-events-none px-4 md:px-8">
+                <NeuralIdentityTerminal className="pointer-events-auto shadow-[0_30px_60px_rgba(0,0,0,0.8)]" />
+            </div>
+
+            {/* Massive Outer Cyber Panel -> Glassmorphism / RIG ARCHITECTURE */}
+            <div className="bg-[#050505]/80 backdrop-blur-xl border-2 border-solid border-primary/20 p-8 md:p-14 w-full max-w-[1800px] mx-auto px-4 md:px-8 mb-24 z-50 overflow-hidden desync-1 shadow-[0_40px_100px_rgba(0,0,0,0.9)]" 
+                 style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 40px), calc(100% - 40px) 100%, 0 100%)' }}>
                 
                 {/* UP NEXT QUEUE LOGIC & TELEMETRY VAULT (MOVED TO TOP) */}
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-2 mb-4">
-                    <div className="flex flex-col">
-                         <h2 className="text-2xl font-black text-white uppercase tracking-[0.2em] font-mono drop-shadow-[0_0_5px_rgba(255,255,255,0.4)]">AUDIO VAULT</h2>
-                         <div className="flex items-center gap-2 mt-1">
-                             <p className="text-[10px] text-gray-400 font-mono tracking-widest uppercase">Target Payload Status</p>
-                             {isShuffleToggle && <span className="text-[#00ffff] text-[8px] font-mono border border-solid border-[#00ffff]/40 bg-[#00ffff]/10 px-1 py-0.5 rounded tracking-widest">SMART SHUFFLE ACTIVE</span>}
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 mb-10 pb-8 border-b-2 border-primary/20">
+                    <div className="flex flex-col gap-2">
+                         <h2 className="text-4xl md:text-6xl font-black text-white uppercase tracking-widest font-bebas drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)] italic">Neural Audio Gateway</h2>
+                         <div className="flex items-center gap-4 mt-1">
+                             <p className="text-[10px] md:text-[11px] text-primary/60 font-mono tracking-[0.4em] uppercase font-black">Target Payload Processing Node</p>
+                             {isShuffleToggle && <span className="text-black font-black text-[9px] font-mono bg-primary px-3 py-1 tracking-widest shadow-[0_0_15px_rgba(var(--color-primary),0.5)]">SMART SHUFFLE ACTIVE</span>}
                          </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-4">
                         <button 
                             onClick={analyzeAllTracks} 
                             disabled={isAnalyzingAll}
-                            className={`font-mono text-[9px] px-3 py-1 border transition-all ${isAnalyzingAll ? 'border-primary/50 text-primary animate-pulse bg-primary/10' : 'border-white/20 text-gray-400 hover:text-white hover:border-white hover:bg-white/5'}`}
-                            style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%)' }}
+                            className={`font-mono text-[10px] px-6 py-3 border-2 transition-all font-black tracking-widest uppercase ${isAnalyzingAll ? 'border-primary/50 text-white animate-pulse bg-primary/20 shadow-[0_0_20px_rgba(var(--color-primary),0.3)]' : 'border-white/20 text-gray-400 hover:text-white hover:border-primary/60 hover:bg-primary/5'}`}
+                            style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%)' }}
                         >
                             {isAnalyzingAll ? 'ANALYZING BATCH...' : 'ANALYZE ARRAY'}
                         </button>
-                        <CyberButton onClick={() => setIsIngestModalOpen(true)} text="Acquire Target" kbd="INP" />
+                        <CyberButton onClick={() => setIsIngestModalOpen(true)} text="Acquire Target Data" className="h-12 px-8" />
                     </div>
                 </div>
 
                 {upNextTrack && (
-                    <div className="mb-6 rounded-2xl p-3 sm:p-4 flex items-center gap-4 desync-4 border border-solid border-[#00ffff]/30 bg-[#00ffff]/5 backdrop-blur-sm">
-                        <div className="w-10 h-10 bg-black/60 border border-[#00ffff]/40 rounded-xl flex items-center justify-center flex-shrink-0 relative overflow-hidden group">
-                            <div className="absolute inset-0 bg-[#00ffff]/20 animate-pulse group-hover:bg-[#00ffff]/40 transition-colors" />
-                            <Radio className="w-5 h-5 text-[#00ffff] drop-shadow-[0_0_8px_rgba(0,255,255,0.8)]" />
+                    <div className="mb-8 rounded-none p-5 flex items-center gap-6 border border-solid border-primary/40 bg-primary/10 backdrop-blur-md shadow-[0_0_30px_rgba(var(--color-primary),0.1)] relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 w-1 h-full bg-primary animate-pulse" />
+                        <div className="absolute -inset-4 bg-primary/20 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+                        <div className="w-14 h-14 bg-black/80 border-2 border-primary/40 flex items-center justify-center flex-shrink-0 relative group-hover:scale-110 transition-transform duration-500 shadow-[0_0_20px_rgba(var(--color-primary),0.3)]" style={{ clipPath: 'polygon(0 0, 100% 0, 100%calc(100%-10px), calc(100%-10px) 100%, 0 100%)' }}>
+                            <Radio className="w-6 h-6 text-primary drop-shadow-[0_0_8px_rgba(var(--color-primary),0.8)] animate-pulse" />
                         </div>
-                        <div className="flex flex-col min-w-0 pr-2">
-                             <span className="text-[9px] font-mono text-primary/70 tracking-[0.3em] uppercase mb-0.5 cyber-flicker-slow">Queue Output / Next Protocol</span>
-                             <span className="text-white text-xs sm:text-sm font-bold uppercase tracking-widest truncate drop-shadow-[0_0_5px_rgba(255,255,255,0.4)]">{upNextTrack.title}</span>
+                        <div className="flex flex-col min-w-0 pr-4 relative z-10">
+                             <span className="text-[10px] font-mono text-primary/80 tracking-[0.4em] uppercase mb-1 cyber-flicker-slow font-black">Queued Decryption Protocol</span>
+                             <span className="text-white text-lg sm:text-2xl font-black font-bebas uppercase tracking-widest truncate drop-shadow-[0_2px_5px_rgba(0,0,0,0.8)]">{upNextTrack.title}</span>
                         </div>
                     </div>
                 )}
@@ -596,8 +611,8 @@ export default function V3BHome() {
                                 );
                             })}
                         </div>
-                        <div className="flex flex-col gap-3 relative z-10 mt-2 border-t border-white/5 pt-4">
-                            <div className="flex justify-between items-center text-[10px] font-mono text-gray-400 tracking-widest uppercase">
+                        <div className="flex flex-col gap-3 relative z-10 mt-2 border-t border-white/5 pt-6">
+                            <div className="flex justify-between items-center text-[10px] font-mono text-primary/80 tracking-[0.3em] uppercase font-black">
                                 <span>ANALYZER RESOLUTION (FFT)</span>
                             </div>
                             <div className="grid grid-cols-3 gap-2">

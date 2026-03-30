@@ -88,7 +88,7 @@ export default function NeuralStudio() {
                 setStatusMsg('SWAP COMPLETE. YOUR ACAPELLA REPLICA IS READY.');
                 setLastOutput('https://storage.googleapis.com/suno-generated/acapella-swapped.wav');
             } else {
-                const endpoint = activeTab === 'deforum' ? '/api/studio/deforum' : '/api/studio/generate';
+                const endpoint = activeTab === 'deforum' ? '/api/ai/deforum' : '/api/studio/generate';
                 let body: any = { prompt };
                 
                 if (activeTab === 'flixsynth' && faceImage) {
@@ -107,7 +107,11 @@ export default function NeuralStudio() {
                     throw new Error(errorData.error || 'Neural Gateway Timeout - Matrix Unresponsive');
                 }
                 const data = await response.json();
-                const outputUrl = data.imageUrl || data.videoUrl;
+                const outputUrl = data.url;
+
+                if (!outputUrl) {
+                    throw new Error('Neural Foundry returned an empty visual payload.');
+                }
 
                 setStatusMsg('ARCHIVING PAYLOAD TO SECURE CLOUD...');
                 let finalAssetUrl = outputUrl;
@@ -184,8 +188,10 @@ export default function NeuralStudio() {
         // Ensure proper mime mapping
         const isVideo = activeTab === 'deforum';
         const isAudio = activeTab === 'vocal_dna' || activeTab === 'neural_swap';
-        const mimeType = isAudio ? 'audio/wav' : isVideo ? 'video/mp4' : 'image/jpeg';
-        const ext = isAudio ? 'wav' : isVideo ? 'mp4' : 'jpg';
+        const isWebP = url.startsWith('data:image/webp') || url.endsWith('.webp');
+        
+        const mimeType = isAudio ? 'audio/wav' : isVideo ? 'video/mp4' : isWebP ? 'image/webp' : 'image/jpeg';
+        const ext = isAudio ? 'wav' : isVideo ? 'mp4' : isWebP ? 'webp' : 'jpg';
 
         return await uploadToDrive(blob, `user_assets/${currentUser.uid}/ai/${Date.now()}_gen.${ext}`, mimeType);
     };
@@ -229,64 +235,118 @@ export default function NeuralStudio() {
             </div>
         );
     }
-
     return (
-        <div className="flex flex-col items-center justify-start min-h-screen pb-0 relative bg-black p-0">
+        <div className="flex flex-col items-center justify-start min-h-screen pb-32 relative bg-black p-0 overflow-x-hidden">
             
-            <NeuralIdentityTerminal className="mb-0" />
-
-            <div className="w-full mb-0 flex flex-col md:flex-row justify-between items-end border-b border-solid border-[#00ffff]/20 pb-4 gap-4 animate-in fade-in duration-700">
-                <div className="flex items-start gap-2">
-                    <Sparkles className="w-8 h-8 text-[#00ffff] cyber-flicker-slow drop-shadow-[0_0_10px_#00ffff]" />
-                    <div>
-                        <h1 className="text-4xl md:text-6xl font-black font-bebas text-white tracking-widest uppercase mb-0 drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">NEURAL STUDIO</h1>
-                        <p className="font-mono text-[10px] text-[#00ffff]/70 uppercase tracking-[0.5em] font-bold drop-shadow-md">[ SUNO-GRADE PRODUCTION FOR ORIGINAL WORKS ]</p>
-                    </div>
-                </div>
-                <div className="flex flex-col items-end gap-1 bg-black/40 backdrop-blur-xl border border-[#00ffff]/20 rounded-2xl p-4 shadow-[0_0_30px_rgba(0,255,255,0.05)]">
-                    <div className="flex items-center gap-2 text-[#00ffff] mb-0">
-                        <Coins size={12} />
-                        <span className="font-bebas text-2xl tracking-widest text-white">{currentUser?.coinsBalance?.toLocaleString() || '0'} C</span>
-                    </div>
-                    <span className="text-[7px] font-mono text-gray-400 tracking-widest uppercase">Treasury Credits Remaining</span>
-                </div>
+            {/* CINEMATIC B-ROLL BACKGROUND LAYER */}
+            <div className="fixed inset-0 z-[-1] flex items-center justify-center pointer-events-none overflow-hidden">
+                <video 
+                    src={`/api/neural-assets?node=NEURAL&pilot=system`}
+                    autoPlay 
+                    loop 
+                    muted 
+                    playsInline 
+                    className="w-full h-full object-cover opacity-20 mix-blend-screen scale-110 blur-md"
+                />
+                <div className="absolute inset-0 bg-gradient-to-b from-black via-black/60 to-black z-10" />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-0 w-full mb-0 z-20 px-0">
-                {(['flixsynth', 'deforum', 'vocal_dna', 'neural_swap'] as const).map(tab => (
-                    <div 
-                        key={tab}
-                        className="group relative bg-black/40 backdrop-blur-xl border border-[#00ffff]/20 rounded-2xl hover:border-[#00ffff]/60 hover:shadow-[0_0_40px_rgba(0,255,255,0.15)] transition-all duration-500 overflow-hidden p-0 m-2"
-                        style={{ clipPath: 'none' }}
-                    >
-                        <div className="p-6 flex flex-col items-center text-center gap-4 relative z-10">
-                            <div className={`p-4 bg-transparent border border-solid border-[#00ffff]/30 rounded-2xl group-hover:border-[#00ffff]/80 group-hover:bg-[#00ffff]/5 transition-all duration-500 shadow-[inset_0_0_20px_rgba(0,255,255,0.05)]`}>
-                                {tab === 'flixsynth' && <ImageIcon size={32} className="text-[#00ffff]" />}
-                                {tab === 'deforum' && <Video size={32} className="text-[#00ffff]" />}
-                                {tab === 'vocal_dna' && <Terminal size={32} className="text-[#00ffff]" />}
-                                {tab === 'neural_swap' && <Database size={32} className="text-[#00ffff]" />}
-                            </div>
-                            <div className="min-h-[80px] flex flex-col justify-center">
-                                <h3 className="text-xl font-black font-bebas text-white tracking-[0.2em] mb-1 italic uppercase drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">
-                                    {tab === 'flixsynth' ? 'FLIXSYNTH ART' : tab === 'deforum' ? 'VIDEO ENGINE' : tab === 'vocal_dna' ? 'NEURAL BLUEPRINT' : 'NEURAL SWAP'}
-                                </h3>
-                                <p className="text-[9px] font-mono text-gray-400 uppercase tracking-[0.3em] font-bold leading-relaxed group-hover:text-[#00ffff]/80 transition-colors">
-                                    {tab === 'flixsynth' ? 'Forge original album covers and visual identities' : 
-                                     tab === 'deforum' ? 'Cinematic music video sequencing for original works' :
-                                     tab === 'vocal_dna' ? 'Clone and Practice your identity for Original Works' :
-                                     'Replace Suno voices with your Neural Blueprint'}
-                                </p>
-                            </div>
-                            <button 
-                                onClick={() => { setActiveTab(tab); setIsModalOpen(true); setNeuralState('IDLE'); setLastOutput(null); }}
-                                className="mt-4 px-8 py-3 bg-transparent text-[#00ffff] border border-solid border-[#00ffff]/30 rounded-xl font-mono text-[9px] font-black uppercase tracking-[0.3em] hover:bg-[#00ffff]/10 hover:border-[#00ffff]/60 transition-all shadow-lg"
-                            >
-                                [ LAUNCH TERMINAL ]
-                            </button>
+            <div className="relative z-50 w-full">
+                <NeuralIdentityTerminal className="mb-0" />
+            </div>
+
+            <div className="relative z-40 w-full max-w-[1400px] mx-auto px-4 md:px-8 pt-20 flex flex-col items-center">
+
+                <div className="w-full mb-12 flex flex-col md:flex-row justify-between items-end border-b border-solid border-primary/20 pb-8 gap-6 animate-in fade-in slide-in-from-top-4 duration-700">
+                    <div className="flex items-start gap-4">
+                        <div className="p-4 bg-primary/10 border border-primary/20 rounded-full shadow-[0_0_20px_rgba(var(--color-primary),0.2)]">
+                            <Sparkles className="w-8 h-8 text-primary cyber-flicker-slow" />
                         </div>
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#00ffff]/10 to-transparent group-hover:opacity-100 opacity-0 transition-opacity" />
+                        <div>
+                            <h1 className="text-4xl md:text-7xl font-black font-bebas text-white tracking-widest uppercase mb-1 drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">NEURAL FOUNDRY</h1>
+                            <p className="font-mono text-[10px] sm:text-[11px] text-primary/70 uppercase tracking-[0.5em] font-bold italic">[ SYNTHESIZING ORIGINAL MISSION ASSETS ]</p>
+                        </div>
                     </div>
-                ))}
+                    <div className="flex flex-col items-end gap-2 bg-black/60 backdrop-blur-xl border border-primary/20 rounded-2xl p-6 shadow-[0_0_40px_rgba(0,0,0,0.5)]">
+                        <div className="flex items-center gap-3 text-white mb-0">
+                            <Coins size={16} className="text-yellow-500" />
+                            <span className="font-bebas text-4xl tracking-widest">{currentUser?.coinsBalance?.toLocaleString() || '0'} C</span>
+                        </div>
+                        <span className="text-[8px] font-mono text-primary/40 tracking-widest uppercase font-black">Treasury Liquid Balance</span>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full mb-20">
+                    {(['flixsynth', 'deforum', 'vocal_dna', 'neural_swap'] as const).map(tab => (
+                        <div 
+                            key={tab}
+                            className="group relative bg-black/60 backdrop-blur-3xl border border-primary/20 rounded-2xl hover:border-primary/60 hover:shadow-[0_0_50px_rgba(var(--color-primary),0.15)] transition-all duration-700 overflow-hidden"
+                            style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%)' }}
+                        >
+                            {/* Diagnostic Background Element */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-primary/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                            <div className="absolute -right-4 -top-4 w-24 h-24 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/20 transition-all duration-1000" />
+                            
+                            <div className="p-8 flex flex-col items-center text-center gap-6 relative z-10">
+                                <div className={`p-5 bg-black/80 border-2 border-primary/10 rounded-2xl group-hover:border-primary/60 group-hover:scale-110 transition-all duration-500 shadow-[inset_0_0_20px_rgba(var(--color-primary),0.1)]`}>
+                                    {tab === 'flixsynth' && <ImageIcon size={32} className="text-primary" />}
+                                    {tab === 'deforum' && <Video size={32} className="text-primary" />}
+                                    {tab === 'vocal_dna' && <Terminal size={32} className="text-primary" />}
+                                    {tab === 'neural_swap' && <Database size={32} className="text-primary" />}
+                                </div>
+                                <div className="min-h-[100px] flex flex-col justify-center">
+                                    <h3 className="text-2xl font-black font-bebas text-white tracking-[0.2em] mb-2 uppercase drop-shadow-[0_0_10px_rgba(255,255,255,0.1)] group-hover:text-primary transition-colors">
+                                        {tab === 'flixsynth' ? 'FLIXSYNTH' : tab === 'deforum' ? 'DEFORUM' : tab === 'vocal_dna' ? 'VOCAL DNA' : 'NEURAL SWAP'}
+                                    </h3>
+                                    <p className="text-[10px] font-mono text-gray-500 uppercase tracking-[0.2em] font-bold leading-relaxed group-hover:text-gray-300 transition-colors px-2">
+                                        {tab === 'flixsynth' ? 'Forge original album covers and visual identities' : 
+                                         tab === 'deforum' ? 'Cinematic music video sequencing for original works' :
+                                         tab === 'vocal_dna' ? 'Clone and Practice your identity for Original Works' :
+                                         'Replace Suno voices with your Neural Blueprint'}
+                                    </p>
+                                </div>
+                                <button 
+                                    onClick={() => { setActiveTab(tab); setIsModalOpen(true); setNeuralState('IDLE'); setLastOutput(null); }}
+                                    className="mt-4 w-full px-8 py-4 bg-black/40 text-primary border border-primary/30 rounded-xl font-mono text-[10px] font-black uppercase tracking-[0.4em] hover:bg-primary hover:text-black transition-all shadow-xl group-hover:border-primary/80"
+                                >
+                                    [ TERMINAL_BOOT ]
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                {/* RECENT ARCHIVES (Matching core landing grid) */}
+                <div className="w-full flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+                    <div className="flex items-center justify-between border-b border-primary/20 pb-4">
+                        <h2 className="text-3xl font-black font-bebas text-white tracking-[0.3em] uppercase italic">NEURAL_HISTORY_FETCH</h2>
+                        <button 
+                            onClick={() => window.location.href='/pod'}
+                            className="font-mono text-[9px] text-primary/60 hover:text-primary tracking-widest uppercase transition-colors"
+                        >
+                            [ VIEW_ALL_ARCHIVES ]
+                        </button>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 w-full">
+                        {[...Array(6)].map((_, i) => (
+                            <div 
+                                key={i}
+                                className="aspect-[4/5] bg-black/60 backdrop-blur-md border border-primary/10 rounded-2xl p-4 flex flex-col justify-end items-center opacity-40 hover:opacity-100 hover:border-primary/40 transition-all cursor-pointer group/node"
+                                style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%)' }}
+                            >
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    <ImageIcon size={32} className="text-primary/10 group-hover/node:scale-125 transition-transform duration-700" />
+                                </div>
+                                <div className="relative z-10 w-full">
+                                    <div className="w-4 h-[1px] bg-primary/20 group-hover/node:w-full transition-all duration-700 mb-2" />
+                                    <span className="font-mono text-[7px] text-primary/40 group-hover/node:text-primary tracking-widest uppercase block mb-1">NODE_S_{i}</span>
+                                    <span className="font-bebas text-lg text-white/40 group-hover/node:text-white tracking-widest uppercase block truncate">EMPTY_SLOT</span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
             </div>
 
             <NeuralModal 
@@ -294,193 +354,267 @@ export default function NeuralStudio() {
                 onClose={() => setIsModalOpen(false)} 
                 title={activeTab === 'flixsynth' ? 'FLIXSYNTH ART STUDIO' : activeTab === 'deforum' ? 'VIDEO ENGINE' : activeTab === 'vocal_dna' ? 'NEURAL BLUEPRINT' : 'NEURAL SWAP CONVERSION'}
             >
-                <div className="flex flex-col gap-10">
-                    <div className="flex flex-col gap-4">
-                        <label className="text-[10px] font-mono text-primary/60 uppercase tracking-widest flex justify-between font-bold">
-                            <span>{activeTab === 'neural_swap' ? 'SUNO ASSET URL' : 'NEURAL PROMPT PAYLOAD'}</span>
-                            <span className="text-yellow-500 tracking-widest bg-yellow-500/10 px-2 border border-yellow-500/30 font-black">
-                                [ {activeTab === 'deforum' ? '5' : activeTab === 'vocal_dna' ? '10' : activeTab === 'neural_swap' ? '8' : '2'} COINS ]
-                            </span>
-                        </label>
-                        <textarea 
-                            value={prompt}
-                            onChange={(e) => setPrompt(e.target.value)}
-                            placeholder={activeTab === 'deforum' ? "Describe the music video sequence..." : 
-                                         activeTab === 'neural_swap' ? "Paste Suno link or Archive Path..." : "Describe the visual vision..."}
-                            className="w-full min-h-[160px] bg-black border-2 border-primary/20 p-8 font-mono text-white text-sm focus:outline-none focus:border-primary/60 transition-colors custom-scrollbar placeholder:text-primary/20"
-                        />
-                        {(activeTab === 'flixsynth' || activeTab === 'deforum') && (
-                            <div className="flex w-full justify-end mt-1">
-                                <button 
-                                    onClick={generateRAPG}
-                                    className="flex items-center gap-2 bg-black hover:bg-[#00ffff]/10 border border-[#00ffff]/40 px-4 py-3 rounded-lg font-mono text-[10px] font-black text-[#00ffff] uppercase tracking-[0.2em] transition-all shadow-[0_0_15px_rgba(0,255,255,0.1)]"
-                                >
-                                    <Sparkles size={14} className="animate-pulse" /> [ SYSTEM OVERRIDE: R.A.P.G. ]
-                                </button>
-                            </div>
-                        )}
-                    </div>
-
-                    {activeTab === 'flixsynth' && (
-                        <div className="flex flex-col gap-6 bg-primary/5 p-8 border border-primary/10">
-                            <label className="text-[10px] font-mono text-primary/60 uppercase tracking-widest font-black border-b border-primary/20 pb-2 w-fit">OPTIONAL: SOURCE IMAGE OVERRIDE</label>
-                            <div className="flex items-center gap-10">
-                                <div className="w-32 h-32 bg-black/40 backdrop-blur-md border border-solid border-primary/30 rounded-2xl flex items-center justify-center relative overflow-hidden group hover:border-primary/60 hover:shadow-[0_0_30px_rgba(var(--color-primary),0.2)] transition-all">
-                                    {facePreview ? (
-                                        <img src={facePreview} className="w-full h-full object-cover" />
-                                    ) : (
-                                        <ImageIcon className="text-primary/10 group-hover:text-primary transition-colors" size={32} />
-                                    )}
-                                    <input type="file" onChange={handleFaceChange} accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" />
-                                </div>
-                                <div className="flex flex-col gap-2">
-                                    <span className="text-[11px] font-mono text-primary uppercase tracking-[0.2em] font-black italic">Visual Reference Layer</span>
-                                    <p className="text-[9px] font-mono text-gray-500 uppercase tracking-widest max-w-xs leading-relaxed">
-                                        Upload an existing drawing, photo, or abstract shape. The Neural Engine will derive structure from this asset while synthesizing the new prompt.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {activeTab === 'vocal_dna' && (
-                        <div className="flex flex-col gap-5 p-8 bg-primary/5 border border-primary/20">
-                            <div className="flex flex-col gap-2">
-                                <h5 className="text-xl font-black font-bebas text-white tracking-widest uppercase italic">Neural Blueprint Enrollment</h5>
-                                <p className="text-[10px] font-mono text-primary/80 uppercase tracking-widest leading-relaxed font-bold italic mb-2">
-                                    "THIS IS YOU. PRACTICE HITTING THE SONGS THE WAY THE NEURAL ENGINE MAKES THEM, OR JUST COPY THE VOCAL CHAIN—BECOME THE ARCHITECT OF ORIGINAL WORKS."
-                                </p>
-                            </div>
-                            <div className="flex flex-col gap-3 pb-4">
-                                <label className={`flex items-center gap-4 cursor-pointer p-3 border transition-all ${consentLikeness ? 'border-primary bg-primary/10' : 'border-white/10 opacity-60'}`}>
-                                    <input type="checkbox" checked={consentLikeness} onChange={(e) => setConsentLikeness(e.target.checked)} className="peer sr-only" />
-                                    <div className="w-4 h-4 border border-primary peer-checked:bg-primary transition-colors flex items-center justify-center">
-                                        {consentLikeness && <CheckCircle2 className="text-black" size={12} />}
-                                    </div>
-                                    <span className="text-[9px] font-mono text-white uppercase tracking-widest">I authorize neural voice enrollment for original works.</span>
-                                </label>
-                                <label className={`flex items-center gap-4 cursor-pointer p-3 border transition-all ${consentResale ? 'border-primary bg-primary/10' : 'border-white/10 opacity-60'}`}>
-                                    <input type="checkbox" checked={consentResale} onChange={(e) => setConsentResale(e.target.checked)} className="peer sr-only" />
-                                    <div className="w-4 h-4 border border-primary peer-checked:bg-primary transition-colors flex items-center justify-center">
-                                        {consentResale && <CheckCircle2 className="text-black" size={12} />}
-                                    </div>
-                                    <span className="text-[9px] font-mono text-white uppercase tracking-widest">I authorize vocal chain distribution on the treasury network.</span>
-                                </label>
-                            </div>
-
-                            <div className="w-full flex flex-col gap-6 p-10 bg-black/40 backdrop-blur-md border border-solid border-primary/20 rounded-2xl text-center group cursor-pointer hover:border-primary/60 hover:bg-primary/5 transition-all relative">
-                                <input 
-                                    type="file" 
-                                    accept="audio/*"
-                                    onChange={(e) => { 
-                                        if (e.target.files?.[0]) {
-                                            setVocalStem(e.target.files[0]);
-                                            setVocalStemName(e.target.files[0].name);
-                                        }
-                                    }}
-                                    className="absolute inset-0 opacity-0 cursor-pointer" 
-                                />
-                                <div className="flex flex-col items-center gap-4">
-                                    <Cpu className="text-primary/20 group-hover:text-primary transition-colors" size={48} />
-                                    <span className="text-xs font-mono text-primary/60 uppercase tracking-[0.3em] font-black">
-                                        {vocalStemName ? `DNA PAYLOAD: ${vocalStemName}` : 'INJECT ORIGINAL DRY VOCAL STEM'}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div className="mt-8 pt-8 border-t border-primary/20 flex flex-col gap-5">
-                                <div className="flex items-center gap-3">
-                                    <Zap className="text-yellow-500 animate-pulse" size={18} />
-                                    <h6 className="text-sm font-mono text-white tracking-widest uppercase font-black">Studio Collaborative Slot</h6>
-                                </div>
-                                <p className="text-[9px] font-mono text-gray-500 tracking-[0.2em] uppercase leading-relaxed">
-                                    Too busy to finish the track? Outsource the labor. The SpaceJamz Architect Team will manually refine, mix, and master your original work using this blueprint.
-                                </p>
-                                <div className="flex justify-between items-center p-4 bg-white/5 border border-white/10 italic">
-                                    <span className="text-[9px] font-mono text-primary uppercase font-bold">Collaborative Labor Fee:</span>
-                                    <span className="text-sm font-bebas text-white tracking-widest">500 TREASURY COINS</span>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {activeTab === 'neural_swap' && (
-                        <div className="flex flex-col gap-6 bg-primary/5 rounded-2xl p-8 border border-solid border-primary/20 backdrop-blur-sm">
-                             <div className="flex items-center gap-4">
-                                <Database className="text-primary animate-pulse" size={32} />
-                                <div>
-                                    <h5 className="text-lg font-black font-bebas text-white tracking-widest uppercase mb-1">Neural Swap : RVC V2 Pipeline</h5>
-                                    <p className="text-[9px] font-mono text-primary/60 uppercase tracking-widest">Convert Suno Guide Vocals into Neural Blueprint Replicas</p>
-                                </div>
-                             </div>
-                             <div className="grid grid-cols-3 gap-2">
-                                {['Demucs Stemming','Pitch Mapping','Timbre Injection'].map((step, i) => (
-                                    <div key={i} className="bg-black/40 border border-primary/10 p-3 text-center">
-                                        <div className="text-[8px] font-mono text-primary/40 mb-1">STEP 0{i+1}</div>
-                                        <div className="text-[9px] font-mono text-white uppercase tracking-tighter whitespace-nowrap">{step}</div>
-                                    </div>
-                                ))}
-                             </div>
-                        </div>
-                    )}
-
-                    <div className="relative group">
-                        <div className="absolute -inset-1 bg-primary/30 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-                        <CyberButton 
-                            text={neuralState === 'PROCESSING' ? 'SYNTHESIZING...' : 
-                                  activeTab === 'vocal_dna' ? 'TRANSMIT DNA BLUEPRINT' : 
-                                  activeTab === 'neural_swap' ? 'INITIATE NEURAL SWAP' : 'INITIATE NEURAL SYNTHESIS'}
-                            disabled={neuralState === 'PROCESSING' || 
-                                     (activeTab === 'vocal_dna' ? (!vocalStem || !consentLikeness || !consentResale) : !prompt)} 
-                            onClick={activeTab === 'vocal_dna' ? handleStemUpload : runGeneration}
-                            className="w-full h-24 text-3xl tracking-[0.1em] font-black relative z-10"
-                        />
-                    </div>
-
-                    {neuralState !== 'IDLE' && (
-                        <div className="mt-8 flex flex-col gap-10 animate-in fade-in duration-500 pt-12 border-t-2 border-white/5">
-                            <div className="flex items-center gap-4">
-                                <div className={`p-3 rounded-full ${neuralState === 'ERROR' ? 'bg-red-500/20' : 'bg-primary/20'} shadow-[0_0_20px_rgba(0,0,0,0.3)]`}>
-                                    {neuralState === 'PROCESSING' ? (
-                                        <Loader2 className="animate-spin text-primary" size={28} />
-                                    ) : neuralState === 'ERROR' ? (
-                                        <AlertCircle className="text-red-500" size={28} />
-                                    ) : <CheckCircle2 className="text-primary" size={28} />}
-                                </div>
-                                <span className={`font-mono text-xs uppercase tracking-[0.2em] font-black ${neuralState === 'ERROR' ? 'text-red-400 font-bold' : 'text-primary'}`}>{statusMsg}</span>
-                            </div>
-
-                            {lastOutput && (
-                                <div className="relative group pt-4">
-                                    <div className="absolute -inset-2 bg-primary/20 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
-                                    <div className="relative bg-[#050505] border-2 border-primary/30 p-4 shadow-[0_0_80px_rgba(0,0,0,0.9)]" style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 30px), calc(100% - 30px) 100%, 0 100%)' }}>
-                                        {activeTab === 'deforum' ? (
-                                            <video src={lastOutput} controls className="w-full rounded-sm" />
-                                        ) : (activeTab === 'neural_swap' || activeTab === 'vocal_dna') ? (
-                                            <div className="flex flex-col items-center gap-6 py-12 bg-primary/5 border border-primary/10">
-                                                <div className="p-6 bg-primary/20 rounded-full animate-pulse shadow-[0_0_30px_rgba(var(--color-primary),0.2)]">
-                                                    <Zap className="text-primary w-12 h-12" />
-                                                </div>
-                                                <audio src={lastOutput} controls className="w-full max-w-md accent-primary" />
-                                                <span className="font-mono text-[9px] text-primary/40 uppercase tracking-[0.4em]">Acoustic Replica Buffered</span>
-                                            </div>
-                                        ) : (
-                                            <img src={lastOutput} className="w-full aspect-square object-cover rounded-sm" />
-                                        )}
-                                    </div>
-                                    <div className="mt-8 flex flex-col sm:flex-row justify-between items-center px-4 gap-6">
-                                        <div className="flex gap-4">
-                                            {activeTab === 'vocal_dna' && (
-                                                <button className="px-10 py-3 bg-white text-black font-mono text-[11px] uppercase tracking-widest hover:bg-primary transition-all font-black">DOWNLOAD VOCAL CHAIN</button>
-                                            )}
-                                            <button onClick={() => window.open(lastOutput, '_blank')} className="px-10 py-3 bg-primary text-black font-mono text-[11px] uppercase tracking-widest hover:bg-white transition-all font-black">DOWNLOAD ASSET</button>
-                                        </div>
-                                    </div>
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16">
+                    
+                    {/* LEFT CONTROLS PORT - MOBILE ORDER 2 / DESKTOP ORDER 1 */}
+                    <div className="lg:col-span-5 flex flex-col gap-8 order-2 lg:order-1">
+                        <div className="flex flex-col gap-5">
+                            <label className="text-[11px] font-mono text-primary uppercase tracking-[0.2em] flex justify-between font-black items-center">
+                                <span className="flex items-center gap-2">
+                                    <div className="w-1.5 h-4 bg-primary/40 rounded-full" />
+                                    {activeTab === 'neural_swap' ? 'TARGET PAYLOAD URL' : 'NEURAL PROMPT PAYLOAD'}
+                                </span>
+                                <span className="text-yellow-500 tracking-widest bg-yellow-500/10 px-3 py-1 border border-yellow-500/30 font-black text-[9px] drop-shadow-[0_0_10px_rgba(234,179,8,0.3)]">
+                                    [ {activeTab === 'deforum' ? '5' : activeTab === 'vocal_dna' ? '10' : activeTab === 'neural_swap' ? '8' : '2'} COINS ]
+                                </span>
+                            </label>
+                            <textarea 
+                                value={prompt}
+                                onChange={(e) => setPrompt(e.target.value)}
+                                placeholder={activeTab === 'deforum' ? "Describe the music video sequence..." : 
+                                             activeTab === 'neural_swap' ? "Paste Suno link or Archive Path..." : "Describe the visual vision..."}
+                                className="w-full min-h-[180px] bg-black/80 border-2 border-primary/20 p-8 font-mono text-white text-sm focus:outline-none focus:border-primary/60 transition-all custom-scrollbar placeholder:text-primary/10 shadow-[inset_0_0_30px_rgba(var(--color-primary),0.02)]"
+                                style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%)' }}
+                            />
+                            {(activeTab === 'flixsynth' || activeTab === 'deforum') && (
+                                <div className="flex w-full justify-end">
+                                    <button 
+                                        onClick={generateRAPG}
+                                        className="flex items-center gap-3 bg-black/60 hover:bg-primary/10 border border-primary/30 px-6 py-4 rounded-xl font-mono text-[10px] font-black text-primary uppercase tracking-[0.3em] transition-all hover:border-primary/60 shadow-xl"
+                                    >
+                                        <Sparkles size={16} className="animate-pulse" /> [ RANDOMIZE_CORE ]
+                                    </button>
                                 </div>
                             )}
                         </div>
-                    )}
+
+                        {activeTab === 'flixsynth' && (
+                            <div className="flex flex-col gap-6 bg-primary/5 p-8 border border-primary/10 relative overflow-hidden group/opt">
+                                <div className="absolute top-0 right-0 w-2 h-full bg-primary/5 group-hover/opt:bg-primary/20 transition-all" />
+                                <label className="text-[10px] font-mono text-primary/80 uppercase tracking-widest font-black border-b border-primary/20 pb-3 w-fit">OPTIONAL: SOURCE_IMAGE_OVERRIDE</label>
+                                <div className="flex items-center gap-8">
+                                    <div className="w-28 h-28 bg-black/60 backdrop-blur-md border-[1px] border-solid border-primary/30 rounded-2xl flex items-center justify-center relative overflow-hidden group hover:border-primary/80 hover:shadow-[0_0_40px_rgba(var(--color-primary),0.2)] transition-all flex-shrink-0">
+                                        {facePreview ? (
+                                            <img src={facePreview} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <ImageIcon className="text-primary/20 group-hover:text-primary transition-colors" size={32} />
+                                        )}
+                                        <input type="file" onChange={handleFaceChange} accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" />
+                                    </div>
+                                    <div className="flex flex-col gap-3">
+                                        <span className="text-[10px] font-mono text-primary uppercase tracking-[0.2em] font-black italic">Reference Layer</span>
+                                        <p className="text-[9px] font-mono text-gray-400 uppercase tracking-widest leading-relaxed">
+                                            The Neural Engine derives global structure from this asset during synthesis.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'vocal_dna' && (
+                            <div className="flex flex-col gap-8 p-10 bg-primary/5 border border-primary/20 rounded-2xl">
+                                <div className="flex flex-col gap-3">
+                                    <h5 className="text-2xl font-black font-bebas text-white tracking-widest uppercase italic">Neural Enrollment</h5>
+                                    <p className="text-[10px] font-mono text-primary/60 uppercase tracking-widest leading-relaxed">
+                                        AUTHORIZE NEURAL ACCESS TO BIOMETRIC DNA FOR SYTHESIS OF ORIGINAL MISSION ASSETS.
+                                    </p>
+                                </div>
+                                <div className="flex flex-col gap-4">
+                                    <label className={`flex items-center gap-4 cursor-pointer p-4 border transition-all ${consentLikeness ? 'border-primary bg-primary/10' : 'border-white/10 opacity-40 hover:opacity-100 hover:border-white/30'}`}>
+                                        <input type="checkbox" checked={consentLikeness} onChange={(e) => setConsentLikeness(e.target.checked)} className="peer sr-only" />
+                                        <div className="w-5 h-5 border-2 border-primary/40 peer-checked:bg-primary transition-all flex items-center justify-center">
+                                            {consentLikeness && <CheckCircle2 className="text-black" size={14} />}
+                                        </div>
+                                        <span className="text-[9px] font-mono text-white uppercase tracking-widest font-black italic">Authorize Identity Enrollment</span>
+                                    </label>
+                                    <label className={`flex items-center gap-4 cursor-pointer p-4 border transition-all ${consentResale ? 'border-primary bg-primary/10' : 'border-white/10 opacity-40 hover:opacity-100 hover:border-white/30'}`}>
+                                        <input type="checkbox" checked={consentResale} onChange={(e) => setConsentResale(e.target.checked)} className="peer sr-only" />
+                                        <div className="w-5 h-5 border-2 border-primary/40 peer-checked:bg-primary transition-all flex items-center justify-center">
+                                            {consentResale && <CheckCircle2 className="text-black" size={14} />}
+                                        </div>
+                                        <span className="text-[9px] font-mono text-white uppercase tracking-widest font-black italic">Authorize Chain Distribution</span>
+                                    </label>
+                                </div>
+
+                                <div className="w-full flex flex-col gap-8 p-12 bg-black/60 border-2 border-dashed border-primary/20 rounded-3xl text-center group cursor-pointer hover:border-primary/60 hover:bg-primary/5 transition-all relative overflow-hidden">
+                                    <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    <input 
+                                        type="file" 
+                                        accept="audio/*"
+                                        onChange={(e) => { 
+                                            if (e.target.files?.[0]) {
+                                                setVocalStem(e.target.files[0]);
+                                                setVocalStemName(e.target.files[0].name);
+                                            }
+                                        }}
+                                        className="absolute inset-0 opacity-0 cursor-pointer z-10" 
+                                    />
+                                    <div className="flex flex-col items-center gap-5 relative z-0">
+                                        <div className="p-5 rounded-full bg-primary/10 border border-primary/20 group-hover:scale-110 transition-transform duration-700">
+                                            <Cpu className="text-primary/40 group-hover:text-primary transition-colors animate-pulse" size={40} />
+                                        </div>
+                                        <span className="text-[11px] font-mono text-primary uppercase tracking-[0.4em] font-black">
+                                            {vocalStemName ? `ENROLLED: ${vocalStemName}` : 'INJECT DRY VOCAL STEM'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'neural_swap' && (
+                            <div className="flex flex-col gap-8 bg-primary/5 rounded-3xl p-10 border border-solid border-primary/20 backdrop-blur-sm relative overflow-hidden">
+                                 <div className="absolute -left-10 -top-10 w-40 h-40 bg-primary/5 rounded-full blur-[80px]" />
+                                 <div className="flex items-center gap-6 relative z-10">
+                                    <div className="p-4 bg-primary/20 rounded-2xl border border-primary/40">
+                                        <Database className="text-primary animate-pulse" size={40} />
+                                    </div>
+                                    <div>
+                                        <h5 className="text-2xl font-black font-bebas text-white tracking-widest uppercase italic mb-1">RVC Neural Blueprint</h5>
+                                        <p className="text-[10px] font-mono text-primary/60 uppercase tracking-widest font-black">Timbre Injection Mapping Pipeline</p>
+                                    </div>
+                                 </div>
+                                 <div className="grid grid-cols-1 gap-4 relative z-10">
+                                    {['ST-01: Demucs Neural Stemming','ST-02: Pitch Variance Mapping','ST-03: Timbre Reconstruction'].map((step, i) => (
+                                        <div key={i} className="bg-black/80 border border-primary/10 p-5 flex items-center justify-between group-hover:border-primary/40 transition-all">
+                                            <div className="text-[11px] font-mono text-white uppercase tracking-widest">{step}</div>
+                                            <div className="w-2 h-2 rounded-full bg-primary/20 animate-pulse" />
+                                        </div>
+                                    ))}
+                                 </div>
+                            </div>
+                        )}
+
+                        <div className="relative group/btn mt-4">
+                            <div className="absolute -inset-2 bg-primary/40 blur-2xl opacity-0 group-hover/btn:opacity-100 transition-opacity duration-1000" />
+                            <CyberButton 
+                                text={neuralState === 'PROCESSING' ? 'SYNTHESIZING...' : 
+                                      activeTab === 'vocal_dna' ? 'TRANSMIT DNA PAYLOAD' : 
+                                      activeTab === 'neural_swap' ? 'INITIATE NEURAL SWAP' : 'INITIATE NEURAL SYNTHESIS'}
+                                disabled={neuralState === 'PROCESSING' || 
+                                         (activeTab === 'vocal_dna' ? (!vocalStem || !consentLikeness || !consentResale) : !prompt)} 
+                                onClick={activeTab === 'vocal_dna' ? handleStemUpload : runGeneration}
+                                className="w-full h-28 text-3xl md:text-5xl tracking-[0.2em] font-black relative z-10 drop-shadow-[0_0_20px_rgba(var(--color-primary),0.5)]"
+                                style={{ clipPath: 'polygon(0 15px, 15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%)' }}
+                            />
+                        </div>
+                    </div>
+
+                    {/* RIGHT PREVIEW PORT - MOBILE ORDER 1 / DESKTOP ORDER 2 */}
+                    <div className="lg:col-span-7 order-1 lg:order-2">
+                        <div className="lg:sticky lg:top-0 flex flex-col gap-8">
+                            
+                            {/* Mission Status HUD */}
+                            <div className={`p-8 border-2 ${neuralState === 'ERROR' ? 'border-red-500/40 bg-red-500/10' : 'border-primary/20 bg-primary/5'} flex items-center justify-between rounded-3xl animate-in slide-in-from-right-4 duration-500 shadow-2xl overflow-hidden relative`}>
+                                <div className="absolute left-0 top-0 w-1 h-full bg-primary animate-pulse" />
+                                <div className="flex items-center gap-6 relative z-10">
+                                    <div className={`p-4 rounded-xl ${neuralState === 'ERROR' ? 'bg-red-500/20' : 'bg-black/60'} border border-primary/20 shadow-[0_0_20px_rgba(0,0,0,0.4)]`}>
+                                        {neuralState === 'PROCESSING' ? (
+                                            <Loader2 className="animate-spin text-primary" size={32} />
+                                        ) : neuralState === 'ERROR' ? (
+                                            <AlertCircle className="text-red-500 h-8 w-8" />
+                                        ) : neuralState === 'SUCCESS' ? (
+                                            <CheckCircle2 className="text-primary h-8 w-8" />
+                                        ) : <Terminal className="text-primary h-8 w-8 opacity-40 hover:opacity-100 transition-opacity" />}
+                                    </div>
+                                    <div className="flex flex-col gap-1">
+                                        <span className="text-[9px] font-mono text-primary/40 uppercase tracking-[0.5em] font-black">Protocol_Status</span>
+                                        <span className={`font-mono text-sm md:text-xl uppercase tracking-[0.1em] font-black italic drop-shadow-[0_0_10px_rgba(var(--color-primary),0.5)] ${neuralState === 'ERROR' ? 'text-red-500' : 'text-primary'}`}>
+                                            {neuralState === 'IDLE' ? 'READY_FOR_COMMAND' : statusMsg}
+                                        </span>
+                                    </div>
+                                </div>
+                                {neuralState === 'PROCESSING' && (
+                                    <div className="flex flex-col items-end gap-1 font-mono text-[8px] text-primary/30 uppercase tracking-widest hidden sm:flex">
+                                        <span className="animate-pulse">SYNTHESIZING...</span>
+                                        <div className="w-20 h-1 bg-primary/10 rounded-full overflow-hidden">
+                                            <div className="h-full bg-primary animate-progress" />
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* MAIN ASSET PREVIEW CONSOLE - 9:16 ARCHITECTURE */}
+                            <div className="relative group">
+                                <div className="absolute -inset-1 bg-gradient-to-r from-primary/30 to-transparent blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000 z-0" />
+                                <div className="relative bg-[#020202] border border-primary/20 aspect-[9/16] md:max-h-[700px] flex items-center justify-center shadow-[0_0_80px_rgba(0,0,0,0.9)] overflow-hidden" 
+                                     style={{ 
+                                        clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 30px), calc(100% - 30px) 100%, 0 100%)',
+                                        filter: 'drop-shadow(0 0 40px rgba(0,0,0,1))'
+                                     }}>
+                                    
+                                    {/* Scanline & Atmosphere grid */}
+                                    <div className="absolute inset-0 pointer-events-none opacity-20 scanlines opacity-10 z-20" />
+                                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--color-primary),0.02)_0,transparent_100%)] opacity-30 z-10" />
+
+                                    {lastOutput ? (
+                                        <div className="w-full h-full animate-in zoom-in-95 duration-1000 relative">
+                                            {activeTab === 'deforum' ? (
+                                                <video src={lastOutput} controls autoPlay loop className="w-full h-full object-cover" />
+                                            ) : (activeTab === 'neural_swap' || activeTab === 'vocal_dna') ? (
+                                                <div className="flex flex-col items-center justify-center gap-8 py-24 w-full h-full bg-black/40">
+                                                    <div className="relative">
+                                                        <div className="absolute -inset-8 bg-primary/10 blur-3xl rounded-full animate-pulse" />
+                                                        <div className="p-8 bg-black/80 border border-primary/30 rounded-full relative z-10 shadow-[0_0_40px_rgba(var(--color-primary),0.3)]">
+                                                            <Zap className="text-primary w-12 h-12 animate-pulse" />
+                                                        </div>
+                                                    </div>
+                                                    <div className="w-full max-w-[80%]">
+                                                        <audio src={lastOutput} controls className="w-full h-10 accent-primary drop-shadow-[0_0_10px_rgba(var(--color-primary),0.2)]" />
+                                                    </div>
+                                                    <span className="font-mono text-[9px] text-primary/40 uppercase tracking-[0.4em] font-black cyber-flicker-slow italic">Neural_Bitstream_Live</span>
+                                                </div>
+                                            ) : (
+                                                <img src={lastOutput} className="w-full h-full object-cover hover:scale-[1.05] transition-transform duration-[3s] cursor-zoom-in" />
+                                            )}
+                                            
+                                            {/* Tactical HUD Overlay for Generated Image */}
+                                            <div className="absolute inset-x-6 bottom-6 flex justify-between items-end pointer-events-none z-30">
+                                                <div className="flex flex-col gap-1">
+                                                    <span className="text-[7px] font-mono text-white/40 uppercase tracking-widest">Node_Archive_001</span>
+                                                    <span className="text-[10px] font-mono text-primary uppercase font-bold tracking-[0.2em]">{Date.now().toString().slice(-4)}_SYNTH</span>
+                                                </div>
+                                                <div className="w-10 h-[1px] bg-primary/40" />
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col items-center gap-6 opacity-10 group-hover:opacity-30 transition-all duration-1000">
+                                            <Database size={64} className="text-primary animate-pulse" />
+                                            <div className="flex flex-col items-center gap-1">
+                                                <span className="font-bebas text-3xl text-white tracking-[0.1em] uppercase">No_Asset_Latent</span>
+                                                <span className="font-mono text-[8px] text-primary/60 uppercase tracking-[0.3em]">Neural_Payload_Empty</span>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Corners / HUD details */}
+                                    <div className="absolute top-4 left-4 w-2 h-2 border-t border-l border-primary/40" />
+                                    <div className="absolute top-4 right-4 w-2 h-2 border-t border-r border-primary/40" />
+                                    <div className="absolute bottom-10 left-4 w-2 h-2 border-b border-l border-primary/40" />
+                                </div>
+
+                                {lastOutput && (
+                                    <div className="mt-8 flex flex-col sm:flex-row gap-6 animate-in slide-in-from-bottom-4 duration-700 delay-500">
+                                        <div className="flex-1 flex gap-4">
+                                            {activeTab === 'vocal_dna' && (
+                                                <button className="flex-1 py-5 bg-white text-black font-mono text-[11px] uppercase tracking-widest hover:bg-primary transition-all font-black border-2 border-white/20 shadow-2xl">DOWNLOAD_DNA_CHAIN</button>
+                                            )}
+                                            <button 
+                                                onClick={() => window.open(lastOutput, '_blank')} 
+                                                className="flex-1 py-5 bg-primary text-black font-mono text-[11px] uppercase tracking-widest hover:bg-white transition-all font-black border-2 border-primary/40 shadow-[0_0_30px_rgba(var(--color-primary),0.3)] animate-pulse hover:animate-none"
+                                            >
+                                                SYNC_TO_LOCAL_DRIVE
+                                            </button>
+                                        </div>
+                                        <div className="flex flex-col justify-center items-end hidden md:flex">
+                                            <span className="text-[10px] font-mono text-primary/40 uppercase tracking-[0.3em] font-black">Archive_Index</span>
+                                            <span className="text-[12px] font-mono text-white tracking-widest">#{Date.now().toString().slice(-6)}</span>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                    </div>
                 </div>
+            </div>
             </NeuralModal>
 
             <div className="fixed inset-0 pointer-events-none z-[100] opacity-10 mix-blend-overlay scanlines" />

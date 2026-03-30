@@ -30,10 +30,10 @@ export const NeuralModal = ({ isOpen, onClose, title, children }: NeuralModalPro
             <div className="absolute inset-0 bg-black/95 transition-opacity" onClick={onClose} />
             
             {/* Modal Container */}
-            <div className="relative w-full max-w-5xl bg-[#050505] border-2 border-primary/20 shadow-[0_0_100px_rgba(0,0,0,1)] group animate-in zoom-in-95 duration-700" 
+            <div className="relative w-full max-w-7xl bg-[#050505] border-2 border-primary/20 shadow-[0_0_120px_rgba(0,0,0,1)] group animate-in zoom-in-95 duration-1000" 
                  style={{ 
-                    clipPath: 'polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px)',
-                    filter: 'drop-shadow(0 0 30px rgba(var(--color-primary), 0.1))'
+                    clipPath: 'polygon(30px 0, 100% 0, 100% calc(100% - 30px), calc(100% - 30px) 100%, 0 100%, 0 30px)',
+                    filter: 'drop-shadow(0 0-40px rgba(var(--color-primary), 0.15))'
                  }}>
                 
                 {/* Tactical Overlays */}
@@ -70,8 +70,8 @@ export const NeuralModal = ({ isOpen, onClose, title, children }: NeuralModalPro
                 </div>
 
                 {/* Content Realm */}
-                <div className="relative z-20 p-10 md:p-14 max-h-[75vh] overflow-y-auto custom-scrollbar bg-gradient-to-b from-transparent to-black/40">
-                    <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,rgba(var(--color-primary),0.03)_0,transparent_100%)] opacity-50" />
+                <div className="relative z-20 p-6 md:p-12 max-h-[85vh] overflow-y-auto custom-scrollbar bg-gradient-to-b from-transparent to-black/60">
+                    <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,rgba(var(--color-primary),0.02)_0,transparent_100%)] opacity-30" />
                     {children}
                 </div>
 

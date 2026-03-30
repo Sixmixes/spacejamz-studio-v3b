@@ -11,11 +11,11 @@ export default function NeuralIdentityTerminal({ className = "" }: { className?:
 
     return (
         <div className={`w-full animate-in slide-in-from-top duration-1000 z-50 ${className}`}>
-           <div className="flex items-center justify-between border-y border-[#00ffff]/20 bg-black/40 backdrop-blur-2xl p-4 sm:p-8 rounded-none relative overflow-hidden group/terminal min-h-[160px] shadow-[0_0_30px_rgba(0,255,255,0.05)]">
+           <div className="flex flex-wrap items-center justify-between border-y border-[#00ffff]/20 bg-black/40 backdrop-blur-2xl p-4 sm:p-8 rounded-none relative overflow-hidden group/terminal min-h-[160px] shadow-[0_0_30px_rgba(0,255,255,0.05)] gap-y-6 sm:gap-y-0">
                 <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover/terminal:opacity-100 transition-opacity" />
                 
                 {/* LEFT: FINANCIAL TELEMETRY */}
-                <div className="flex items-center gap-6 md:gap-12 relative z-10 w-1/3 justify-start">
+                <div className="flex items-center justify-start sm:justify-start gap-6 md:gap-12 relative z-10 w-1/2 sm:w-1/3 order-2 sm:order-1">
                     <div className="flex flex-col">
                         <span className="font-mono text-[8px] sm:text-[10px] text-[#00ffff]/70 uppercase tracking-[0.5em] font-black underline mb-1">Neural_Credits</span>
                         <div className="flex items-center gap-3">
@@ -31,7 +31,7 @@ export default function NeuralIdentityTerminal({ className = "" }: { className?:
                 </div>
                 
             {/* CENTER: IDENTITY CORE */}
-            <div className="flex items-center justify-center gap-4 sm:gap-6 relative z-10 w-1/3">
+            <div className="flex items-center justify-center gap-4 sm:gap-6 relative z-10 w-full sm:w-1/3 order-1 sm:order-2">
                 {currentUser && !auth.currentUser?.isAnonymous ? (
                     <div className="flex items-center gap-4 sm:gap-6 group/profile cursor-pointer" onClick={() => signOut(auth)}>
                         <div className="flex flex-col items-end">
@@ -56,7 +56,7 @@ export default function NeuralIdentityTerminal({ className = "" }: { className?:
                 </div>
 
                 {/* RIGHT: PERFORMANCE TELEMETRY */}
-                <div className="flex items-center gap-6 md:gap-12 relative z-10 w-1/3 justify-end">
+                <div className="flex items-center justify-end sm:justify-end gap-6 md:gap-12 relative z-10 w-1/2 sm:w-1/3 order-3 sm:order-3">
                     <div className="flex flex-col items-end">
                         <span className="font-mono text-[8px] sm:text-[10px] text-[#00ffff]/70 uppercase tracking-[0.5em] font-black underline mb-1">Neural_XP</span>
                         <span className="font-bebas text-3xl sm:text-5xl text-white tracking-widest">{currentUser?.xp?.toLocaleString() || '0'} XP</span>

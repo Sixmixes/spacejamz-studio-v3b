@@ -77,8 +77,21 @@ export default function PrivateMatrix() {
     }
 
     return (
-        <div className="min-h-screen bg-black text-white relative overflow-hidden pb-32">
+        <div className="min-h-screen bg-transparent text-white relative overflow-visible pb-48">
             
+            {/* CINEMATIC B-ROLL BACKGROUND LAYER */}
+            <div className="fixed inset-0 z-[-1] flex items-center justify-center pointer-events-none overflow-hidden">
+                <video 
+                    src={`/api/neural-assets?node=MATRIX&pilot=${currentUser?.uid || 'anon'}`}
+                    autoPlay 
+                    loop 
+                    muted 
+                    playsInline 
+                    className="w-full h-full object-cover opacity-10 mix-blend-screen blur-[3px] scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-b from-black via-[#050505]/70 to-black z-10" />
+            </div>
+
             <div className="absolute top-8 left-0 right-0 z-[100] pointer-events-none px-4 md:px-8">
                 <NeuralIdentityTerminal className="pointer-events-auto shadow-[0_30px_60px_rgba(0,0,0,0.8)]" />
             </div>
@@ -130,7 +143,7 @@ export default function PrivateMatrix() {
                     <button 
                         key={tab} 
                         onClick={() => setActiveTab(tab)}
-                        className={`flex flex-col items-center justify-center p-4 md:p-8 transition-all duration-300 border-2 relative overflow-hidden group shadow-[0_10px_30px_rgba(0,0,0,0.5)] ${activeTab === tab ? 'bg-primary text-black border-white shadow-[0_0_30px_rgba(var(--color-primary),0.3)]' : 'bg-black/90 text-primary/40 border-primary/10 hover:border-primary/40'}`}
+                        className={`flex flex-col items-center justify-center p-4 md:p-8 transition-all duration-300 border relative overflow-hidden group shadow-[0_10px_30px_rgba(0,0,0,0.5)] ${activeTab === tab ? 'bg-primary text-black border-primary shadow-[0_0_30px_rgba(var(--color-primary),0.3)]' : 'bg-[#050505] text-primary/40 border-primary/20 hover:border-primary/60 hover:bg-primary/5 hover:text-primary/80'}`}
                         style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%)' }}
                     >
                         {tab === 'neural' && <ImageIcon size={24} className="mb-2" />}
@@ -183,7 +196,7 @@ export default function PrivateMatrix() {
                         ) : (
                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 md:gap-8">
                                 {generations.map((gen, i) => (
-                                    <div key={gen.id} className="group relative bg-black/95 border-2 border-primary/10 transition-all duration-500 hover:border-primary/60 shadow-[0_10px_30px_rgba(0,0,0,0.5)] p-0.5" style={{ animationDelay: `${i * 50}ms`, clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%)' }}>
+                                    <div key={gen.id} className="group relative bg-[#050505] border border-primary/20 transition-all duration-500 hover:border-primary/60 shadow-[0_10px_30px_rgba(0,0,0,0.5)] p-0.5" style={{ animationDelay: `${i * 50}ms`, clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%)' }}>
                                         <div className="aspect-square relative overflow-hidden bg-zinc-900/50">
                                             {gen.type === 'deforum' ? (
                                                 <video src={gen.assetUrl} className="w-full h-full object-cover opacity-70 group-hover:opacity-100" muted loop onMouseEnter={(e) => (e.target as HTMLVideoElement).play()} onMouseLeave={(e) => (e.target as HTMLVideoElement).pause()} />
@@ -236,7 +249,7 @@ export default function PrivateMatrix() {
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {tracks.map((track) => (
-                                    <div key={track.id} className="bg-black/80 border-2 border-primary/10 p-6 flex flex-col gap-4 group hover:border-primary/40 transition-all relative overflow-hidden" 
+                                    <div key={track.id} className="bg-[#050505]/90 border border-primary/20 p-6 flex flex-col gap-4 group hover:border-primary/60 transition-all relative overflow-hidden" 
                                          style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%)' }}>
                                         <div className="flex items-center gap-4">
                                             <div className="w-16 h-16 bg-zinc-900 border border-primary/20 flex items-center justify-center relative group-hover:border-primary/50 overflow-hidden">
@@ -256,7 +269,7 @@ export default function PrivateMatrix() {
                                                 {track.bpm || '128'} BPM
                                             </div>
                                         </div>
-                                        <div className="flex justify-between items-center bg-primary/5 p-3 border border-primary/10">
+                                        <div className="flex justify-between items-center bg-primary/5 p-3 border border-primary/20">
                                             <span className="text-[8px] font-mono text-primary/60 uppercase">Cloud Path: /user_assets/tracks/...</span>
                                             <div className="flex gap-4">
                                                 <button className="text-primary/40 hover:text-primary transition-colors"><Trash2 size={14} /></button>
@@ -321,7 +334,7 @@ export default function PrivateMatrix() {
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                                 {dna.map((blueprint) => (
-                                    <div key={blueprint.id} className="bg-[#050505] border-2 border-primary/20 p-8 flex flex-col gap-6 group hover:border-primary/60 transition-all shadow-2xl relative" style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%)' }}>
+                                    <div key={blueprint.id} className="bg-[#050505] border border-primary/20 p-8 flex flex-col gap-6 group hover:border-primary/60 transition-all shadow-2xl relative" style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%)' }}>
                                         <div className="flex items-center justify-between">
                                             <div className="p-3 bg-primary/10 rounded-lg">
                                                 <Zap className="text-primary w-6 h-6" />

@@ -70,6 +70,7 @@ export default function SpaceJamzArena() {
             await addDoc(collection(db, 'arena_tracks'), {
                 title: file.name.replace(/\.[^/.]+$/, ""),
                 artist: currentUser.displayName || 'Unknown Architect',
+                artistId: currentUser.uid,
                 url: data.url,
                 coverArt: currentUser.photoURL || 'https://images.unsplash.com/photo-1614113489855-66422ad300a4?auto=format&fit=crop&q=80',
                 cypherId: activeTab === 'cypher' ? 'week-04-flip' : 'freestyle',
@@ -79,6 +80,7 @@ export default function SpaceJamzArena() {
             await addDoc(collection(db, 'user_assets', currentUser.uid, 'tracks'), {
                 title: file.name.replace(/\.[^/.]+$/, ""),
                 url: data.url,
+                artistId: currentUser.uid,
                 type: 'human_beat',
                 createdAt: serverTimestamp(),
             });
@@ -109,7 +111,21 @@ export default function SpaceJamzArena() {
     };
 
     return (
-        <div className="flex flex-col items-center justify-start min-h-screen pb-32 relative overflow-hidden bg-black text-white px-4 md:px-8 pt-[120px]">
+        <div className="flex flex-col items-center justify-start min-h-screen pb-32 relative overflow-hidden bg-transparent text-white px-4 md:px-8 pt-[120px]">
+            
+            {/* CINEMATIC B-ROLL BACKGROUND LAYER */}
+            <div className="fixed inset-0 z-[-1] flex items-center justify-center pointer-events-none overflow-hidden">
+                <video 
+                    src={`/api/neural-assets?node=ARENA&pilot=cypher`}
+                    autoPlay 
+                    loop 
+                    muted 
+                    playsInline 
+                    className="w-full h-full object-cover opacity-15 mix-blend-screen scale-110 blur-[2px]"
+                />
+                <div className="absolute inset-0 bg-gradient-to-b from-black via-[#050505]/80 to-black z-10" />
+            </div>
+
             <div className="w-full max-w-7xl z-[60] mb-8">
                 <NeuralIdentityTerminal />
             </div>

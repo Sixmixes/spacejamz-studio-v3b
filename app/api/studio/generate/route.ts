@@ -44,10 +44,25 @@ export async function POST(request: Request) {
 
     console.log('[VELOCITY STUDIO] Object Decoded:', output);
 
-    // Replicate's newer SDK sometimes returns File streams or Arrays of files.
-    // Flux specifically generates arrays, e.g., ["https://..."] 
     let finalUrl = '';
-    if (Array.isArray(output)) {
+    
+    // NEW NEURAL DECODING LOGIC: Replicate SDK now returns ReadableStreams for some models
+    if (Array.isArray(output) && output[0] instanceof ReadableStream) {
+      console.log('[VELOCITY STUDIO] Decoding Neural Bitstream...');
+      const reader = (output[0] as ReadableStream).getReader();
+      const chunks: Uint8Array[] = [];
+      
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+      }
+      
+      const buffer = Buffer.concat(chunks.map(chunk => Buffer.from(chunk)));
+      const base64 = buffer.toString('base64');
+      finalUrl = `data:image/webp;base64,${base64}`;
+      console.log('[VELOCITY STUDIO] Neural Bitstream Synthesis Complete.');
+    } else if (Array.isArray(output)) {
         finalUrl = typeof output[0] === 'string' ? output[0] : (output[0].url ? output[0].url() : output[0]);
     } else if (typeof output === 'object' && output !== null && 'url' in output) {
         finalUrl = typeof (output as any).url === 'function' ? (output as any).url() : (output as any).url;
@@ -57,7 +72,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ 
         url: finalUrl,
-        status: 'success' // Payload decoded flawlessly
+        status: 'success'
     });
 
   } catch (error: any) {

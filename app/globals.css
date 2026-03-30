@@ -248,6 +248,22 @@
     --interface-corner-radius: 0.5rem;
   }
 
+  /* DEAD SPACE 'RIG' INDUSTRIAL SURVIVAL THEME */
+  .theme-rig {
+    --color-background: 8 9 12;
+    --color-surface: 15 18 22;
+    --color-surface-highlight: 25 30 35;
+    --color-text-main: 220 225 230;
+    --color-primary: 0 190 255; /* Diagnostic Cyan */
+    --color-secondary: 255 120 0; /* RIG Amber/Copper */
+    --color-accent: 255 255 255;
+    --cursor-global: crosshair;
+    --interface-border-width: 2px;
+    --interface-border-style: solid;
+    --interface-corner-radius: 0.15rem;
+    --interface-glow: 0 0 15px rgba(0, 190, 255, 0.4);
+  }
+
   /* HIGH CONTRAST THEMES */
   .theme-void {
     --color-primary: 255 255 255;
@@ -356,13 +372,18 @@
   .interface-border-wrapper {
     position: fixed;
     inset: 12px;
-    border: var(--interface-border-width) var(--interface-border-style) rgba(var(--color-primary), calc(0.2 + (var(--audio-intensity, 0) * 0.5)));
+    border: var(--interface-border-width) var(--interface-border-style) rgba(var(--color-primary), calc(0.1 + (var(--audio-intensity, 0) * 0.3)));
     border-radius: var(--interface-corner-radius);
     pointer-events: none; 
     z-index: 999;
+    background: 
+      linear-gradient(rgba(var(--color-background), 0.05) 50%, transparent 50%),
+      radial-gradient(circle at center, transparent 80%, rgba(var(--color-secondary), 0.03) 100%);
+    background-size: 100% 4px, 100% 100%;
     box-shadow: 
-      inset 0 0 calc(20px + (var(--audio-intensity, 0) * 30px)) rgba(var(--color-primary), 0.15),
-      0 0 calc(15px + (var(--audio-intensity, 0) * 20px)) rgba(var(--color-primary), 0.2);
+      inset 0 0 40px rgba(var(--color-background), 0.8),
+      inset 0 0 calc(5px + (var(--audio-intensity, 0) * 20px)) rgba(var(--color-primary), 0.1),
+      0 0 30px rgba(0, 0, 0, 0.5);
     transition: border-color 0.1s ease, box-shadow 0.1s ease;
     display: flex;
     flex-direction: column;
@@ -389,20 +410,25 @@
 
   .spacejamz-brand-text {
     font-family: var(--hero-font, "Bebas Neue", sans-serif);
-    letter-spacing: var(--hero-tracking, -0.05em);
+    letter-spacing: var(--hero-tracking, 0.1em);
     display: inline-block;
     white-space: nowrap; 
     overflow: hidden;    
     text-overflow: clip;
-    background: linear-gradient(180deg, #fff 0%, rgba(var(--color-text-main)/0.8) 40%, rgba(var(--color-surface)/0.95) 48%, rgb(var(--color-primary)) 55%, rgb(var(--color-secondary)) 75%, rgb(var(--color-accent)) 100%);
+    background: linear-gradient(180deg, 
+      rgba(var(--color-text-main), 0.1) 0%, 
+      rgba(var(--color-primary), 0.4) 45%, 
+      rgba(var(--color-primary), 0.1) 50%, 
+      rgba(var(--color-secondary), 0.3) 100%);
     -webkit-background-clip: text; background-clip: text; color: transparent;
-    -webkit-text-stroke: 1.5px rgba(255,255,255,0.95);
+    -webkit-text-stroke: 1px rgba(var(--color-primary), 0.2);
     filter: 
-      drop-shadow(0 0 calc(20px + (var(--audio-intensity) * 40px)) rgba(var(--color-primary), calc(0.3 + var(--audio-intensity) * 0.7)))
-      drop-shadow(0 0 calc(var(--bass-kick) * 50px) rgba(255, 255, 255, calc(var(--bass-kick) * 0.5)));
+      drop-shadow(0 0 2px rgba(var(--color-primary), 0.4))
+      drop-shadow(0 0 10px rgba(var(--color-background), 1));
     transform: scale(calc(var(--hero-scale, 1.0) + (var(--bass-kick) * 0.05)));
     transform-origin: center;
     transition: transform 0.1s cubic-bezier(0.16, 1, 0.3, 1), font-size 0.5s ease;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
   }
 
   ::-webkit-scrollbar { width: 8px; height: 8px; }

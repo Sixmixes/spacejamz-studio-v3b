@@ -50,7 +50,7 @@ export async function POST(request: Request) {
         if (videoItem) finalUrl = videoItem;
     }
 
-    return NextResponse.json({ videoUrl: finalUrl, status: 'success' });
+    return NextResponse.json({ url: finalUrl, status: 'success' });
 
   } catch (error: any) {
     console.error('[AI FOUNDRY] Deforum Error:', error);

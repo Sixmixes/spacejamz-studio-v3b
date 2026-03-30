@@ -1,23 +1,22 @@
 'use client';
 import React, { useState, useEffect, useRef, memo } from 'react';
-import { useThemeStore, SpaceTheme } from '@/store/useThemeStore';
+import { createPortal } from 'react-dom';
+import { useWorldStore } from '@/store/useWorldStore';
 import { useAudioStore } from '@/store/useAudioStore';
 import { Globe, RefreshCw, Database, Zap, Swords, Trophy, Skull, Crown, Ghost, Droplet, Sparkles } from 'lucide-react';
 import { CyberButton } from '@/components/ui/CyberButton';
 
 const WORLDS = [
-  { id: 'cosmos', name: 'COSMOS', icon: Zap, color: 'text-cyan-400', desc: 'Neural Network Default', core: 'OPT-60', latency: '12ms', type: 'STANDARD' },
-  { id: 'domination', name: 'DOMINATION', icon: Swords, color: 'text-red-500', desc: 'Global Domination Engine', core: 'WAR-99', latency: '8ms', type: 'HOSTILE' },
-  { id: 'ledger', name: 'LEDGER', icon: Database, color: 'text-emerald-400', desc: 'Asset Management Monolith', core: 'DB-X1', latency: '15ms', type: 'STABLE' },
-  { id: 'battle', name: 'BATTLE', icon: Swords, color: 'text-red-500', desc: 'Symmetric Combat Engine', core: 'WAR-99', latency: '8ms', type: 'HOSTILE' },
-  { id: 'arena', name: 'ARENA', icon: Trophy, color: 'text-orange-500', desc: 'High-Performance Matrix', core: 'VFX-1X', latency: '4ms', type: 'COMPETITIVE' },
-  { id: 'toxic', name: 'TOXIC', icon: Skull, color: 'text-lime-400', desc: 'Corrosive Visual Override', core: 'BIO-HZ', latency: '18ms', type: 'HAZARD' },
-  { id: 'royal', name: 'ROYAL', icon: Crown, color: 'text-yellow-400', desc: 'Legendary Status Vault', core: 'KNG-01', latency: '15ms', type: 'SECURE' },
-  { id: 'ghastly', name: 'GHASTLY', icon: Ghost, color: 'text-purple-500', desc: 'Spectral Frequency Shift', core: 'PHM-33', latency: '22ms', type: 'ANOMALY' },
-  { id: 'abyss', name: 'ABYSS', icon: Droplet, color: 'text-blue-500', desc: 'Deep Ocean Simulation', core: 'DVK-00', latency: '30ms', type: 'PRESSURE' },
-  { id: 'neon', name: 'NEON', icon: Sparkles, color: 'text-pink-500', desc: 'Cyberpunk Overdrive', core: 'NKT-88', latency: '6ms', type: 'OVERDRIVE' },
-  { id: 'void', name: 'VOID', icon: Skull, color: 'text-white', desc: 'High Contrast Null Space', core: '0x00', latency: '0ms', type: 'MONOCHROME' },
-  { id: 'inferno', name: 'INFERNO', icon: Zap, color: 'text-orange-600', desc: 'Maximum Saturation Array', core: 'MAGMA', latency: '1ms', type: 'CRITICAL' },
+  { id: 'CYBERDECK_PRIME', name: 'CYBERDECK PRIME', icon: Zap, color: 'text-fuchsia-500', desc: 'Neural Network Default', core: 'OPT-60', latency: '12ms', type: 'STANDARD' },
+  { id: 'ABYSSAL_SINGULARITY', name: 'ABYSSAL SINGULARITY', icon: Droplet, color: 'text-indigo-500', desc: 'Deep Void Engine', core: 'DVK-00', latency: '8ms', type: 'PRESSURE' },
+  { id: 'SOLAR_SUPERNOVA', name: 'SOLAR SUPERNOVA', icon: Zap, color: 'text-orange-600', desc: 'Maximum Saturation Array', core: 'MAGMA', latency: '1ms', type: 'CRITICAL' },
+  { id: 'SILICON_GRAVE', name: 'SILICON GRAVE', icon: Skull, color: 'text-orange-800', desc: 'Corrosive Override', core: 'BIO-HZ', latency: '18ms', type: 'HAZARD' },
+  { id: 'SECTOR_7_SYNDICATE', name: 'SECTOR 7 SYNDICATE', icon: Swords, color: 'text-cyan-400', desc: 'Symmetric Combat Engine', core: 'WAR-99', latency: '8ms', type: 'HOSTILE' },
+  { id: 'QUANTUM_MATRIX', name: 'QUANTUM MATRIX', icon: Database, color: 'text-emerald-400', desc: 'Asset Management Monolith', core: 'DB-X1', latency: '15ms', type: 'STABLE' },
+  { id: 'ZERO_G_ANOMALY', name: 'ZERO-G ANOMALY', icon: Ghost, color: 'text-slate-400', desc: 'Spectral Frequency Shift', core: 'PHM-33', latency: '22ms', type: 'ANOMALY' },
+  { id: 'ASTRAL_PROJECTION', name: 'ASTRAL PROJECTION', icon: Sparkles, color: 'text-white', desc: 'High Contrast Null Space', core: '0x00', latency: '0ms', type: 'MONOCHROME' },
+  { id: 'LIQUID_CHROME', name: 'LIQUID CHROME', icon: Database, color: 'text-gray-300', desc: 'Metallic Flux Generator', core: 'CRM-12', latency: '15ms', type: 'SECURE' },
+  { id: 'NEON_DOJO', name: 'NEON DOJO', icon: Trophy, color: 'text-rose-600', desc: 'High-Performance Matrix', core: 'VFX-1X', latency: '4ms', type: 'COMPETITIVE' },
 ] as const;
 
 // MEMOIZED SIMULATION CARD TO PREVENT NEURAL THRASH
@@ -25,7 +24,7 @@ const SimulationCard = memo(({ world, isActive, i, handleSelect }: {
   world: typeof WORLDS[number],
   isActive: boolean,
   i: number,
-  handleSelect: (id: SpaceTheme) => void
+  handleSelect: (id: string) => void
 }) => {
   const delayClass = `desync-${(i % 5) + 1}`;
   const Icon = world.icon;
@@ -56,14 +55,18 @@ const SimulationCard = memo(({ world, isActive, i, handleSelect }: {
 SimulationCard.displayName = 'SimulationCard';
 
 export default function WrldChanger() {
-  const { activeTheme, setTheme } = useThemeStore();
+  const activeTheme = useWorldStore(state => state.activeWorld);
+  const setTheme = useWorldStore(state => state.setActiveWorld);
   const targetFrequency = useAudioStore(state => state.targetFrequency);
   const setTargetFrequency = useAudioStore(state => state.setTargetFrequency);
   
   const [isOpen, setIsOpen] = useState(false);
   const [isSpinning, setIsSpinning] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => setMounted(true), []);
 
   // PURGE SCROLL MEMORY ON BOOT
   useEffect(() => {
@@ -115,9 +118,9 @@ export default function WrldChanger() {
     handleCancel();
   };
 
-  const handleSelect = (id: SpaceTheme) => {
+  const handleSelect = (id: string) => {
     setTheme(id);
-    document.documentElement.className = `theme-${id}`;
+    handleAccept(); // Launch visually then retract the hud
   };
 
   const activeWorld = WORLDS.find(w => w.id === activeTheme) || WORLDS[0];
@@ -145,8 +148,8 @@ export default function WrldChanger() {
         </div>
       </div>
 
-      {/* OVERLAY HUD */}
-      {isOpen && (
+      {/* OVERLAY HUD PORTAL TO BREAK FREE OF NAVBAR CONSTRAINTS */}
+      {mounted && isOpen && createPortal(
         <div
           className={`fixed inset-0 z-[250000] backdrop-blur-md flex items-start justify-center p-2 pt-4 scanlines overflow-hidden transition-all duration-500 ${isClosing ? 'opacity-0 pointer-events-none' : 'opacity-100 scale-100'}`}
           style={{ background: `radial-gradient(circle at 70% 50%, rgb(var(--color-primary) / 0.1) 0%, rgba(0,0,0,0.92) 80%), linear-gradient(135deg, rgba(0,0,0,0.85), rgba(0,0,0,0.96))` }}
@@ -294,7 +297,8 @@ export default function WrldChanger() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
