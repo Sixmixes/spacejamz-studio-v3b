@@ -1,7 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import { motion, useMotionValue, useTransform, AnimatePresence } from 'framer-motion';
-import { X, Image as ImageIcon, LayoutGrid } from 'lucide-react';
+import { X, Image as ImageIcon, LayoutGrid, Check } from 'lucide-react';
 
 export default function MobilePodGallery({ generations, equipBanner, deleteGeneration, toggleGridView }: { generations: any[], equipBanner: (url: string) => void, deleteGeneration: (id: string) => void, toggleGridView: () => void }) {
     const [stack, setStack] = useState(generations);
@@ -11,30 +11,36 @@ export default function MobilePodGallery({ generations, equipBanner, deleteGener
     const handleDragEnd = (event: any, info: any, assetId: string) => {
         // If swiped left (dislike) - Trash it
         if (info.offset.x < -100) {
-            deleteGeneration(assetId);
-            setStack((prev) => prev.filter(g => g.id !== assetId));
+            handleCardAction(assetId, 'trash');
         } 
         // If swiped right (like) - Keep it on your page
         else if (info.offset.x > 100) {
-            setStack((prev) => prev.filter(g => g.id !== assetId));
+            handleCardAction(assetId, 'keep');
         }
+    };
+
+    const handleCardAction = (assetId: string, action: 'keep' | 'trash') => {
+        if (action === 'trash') {
+            deleteGeneration(assetId);
+        }
+        setStack((prev) => prev.filter(g => g.id !== assetId));
     };
 
     if (stack.length === 0) {
         return (
             <div className="w-full h-[60vh] flex flex-col items-center justify-center p-8 text-center text-primary/40 font-mono text-xs animate-in fade-in">
                 NO MORE IMAGES IN STACK.
-                <button onClick={() => setStack(generations)} className="mt-4 border border-primary/20 bg-primary/10 px-4 py-2 text-white hover:bg-primary/20">RESET DECK</button>
+                <button onClick={() => setStack(generations)} className="mt-4 border border-primary bg-primary/20 px-6 py-3 text-white font-bold tracking-widest uppercase hover:bg-primary transition-all">RESET DECK</button>
             </div>
         );
     }
 
     return (
-        <div className="relative w-full h-[calc(100dvh-450px)] min-h-[320px] max-h-[500px] flex items-center justify-center overflow-visible touch-pan-y mt-4 mb-16">
+        <div className="relative w-full h-full min-h-[400px] flex 1 items-center justify-center overflow-visible touch-pan-y">
             
             <button 
                 onClick={toggleGridView}
-                className="absolute -top-10 right-4 z-50 p-2.5 bg-[#00ffff]/10 border border-[#00ffff]/40 rounded-full text-[#00ffff] shadow-[0_0_15px_rgba(0,255,255,0.2)] backdrop-blur-md active:scale-95 transition-transform"
+                className="absolute top-2 right-4 z-50 p-2.5 bg-[#00ffff]/10 border border-[#00ffff]/40 rounded-full text-[#00ffff] shadow-[0_0_15px_rgba(0,255,255,0.2)] backdrop-blur-md active:scale-95 transition-transform"
             >
                 <LayoutGrid size={18} />
             </button>
@@ -51,7 +57,7 @@ export default function MobilePodGallery({ generations, equipBanner, deleteGener
                             stackLength={stack.length}
                             handleDragEnd={handleDragEnd}
                             equipBanner={equipBanner}
-                            deleteGeneration={deleteGeneration}
+                            handleCardAction={handleCardAction}
                         />
                     );
                 })}
@@ -64,7 +70,7 @@ export default function MobilePodGallery({ generations, equipBanner, deleteGener
     );
 }
 
-function Card({ gen, isTop, index, stackLength, handleDragEnd, equipBanner, deleteGeneration }: any) {
+function Card({ gen, isTop, index, stackLength, handleDragEnd, equipBanner, handleCardAction }: any) {
     const x = useMotionValue(0);
     // Twirl physics when dragged horizontally
     const rotate = useTransform(x, [-200, 200], [-15, 15]);
@@ -98,6 +104,7 @@ function Card({ gen, isTop, index, stackLength, handleDragEnd, equipBanner, dele
             className={`absolute w-[82vw] max-w-[380px] h-full rounded-2xl overflow-hidden border border-[#00ffff]/30 shadow-[0_20px_50px_rgba(0,0,0,0.8)] bg-black ${isTop ? 'z-40' : 'z-10'}`}
             style={{ x, rotate, opacity: isTop ? opacity : 1 }}
             animate={{ scale, y: yOffset }}
+            exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.2 } }}
             transition={{ type: 'spring', stiffness: 300, damping: 20 }}
             drag={isTop ? "x" : false}
             dragConstraints={{ left: 0, right: 0 }}
@@ -132,23 +139,32 @@ function Card({ gen, isTop, index, stackLength, handleDragEnd, equipBanner, dele
             {/* INTERACTIVE HUD */}
             {isTop && (
                 <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-between p-6">
-                    {/* RED X (Top Left / Right) */}
-                    <div className="w-full flex justify-between">
-                        <button 
-                            onClick={(e) => { e.stopPropagation(); deleteGeneration(gen.id); }}
-                            className="pointer-events-auto p-4 bg-red-600/20 backdrop-blur-md rounded-full border border-red-500/50 text-red-500 hover:bg-red-500 hover:text-white transition shadow-[0_0_20px_rgba(239,68,68,0.3)] active:scale-90"
-                        >
-                            <X size={24} />
-                        </button>
-                    </div>
+                    {/* TOP STATUS BAR (Optional Empty Space or Info) */}
+                    <div className="w-full h-12"></div>
 
-                    {/* MAKE PROFILE BANNER (Middle / Center-Bottom) */}
-                    <div className="mt-auto mb-10 w-full flex justify-center">
+                    {/* DESKTOP CLICK CONTROLS (Bottom Left/Right and Banner) */}
+                    <div className="mt-auto pb-2 w-full flex justify-between items-center gap-2">
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); handleCardAction(gen.id, 'trash'); }}
+                            className="pointer-events-auto p-3 sm:p-4 bg-red-600/20 backdrop-blur-md rounded-full border border-red-500/50 text-red-500 hover:bg-red-500 hover:text-white transition shadow-[0_0_20px_rgba(239,68,68,0.3)] active:scale-90 flex-shrink-0"
+                            title="Discard"
+                        >
+                            <X size={28} />
+                        </button>
+
                         <button 
                             onClick={(e) => { e.stopPropagation(); equipBanner(gen.assetUrl); }}
-                            className="pointer-events-auto flex items-center gap-2 bg-black/80 backdrop-blur-xl border border-primary/50 text-primary px-8 py-4 rounded-full font-bebas text-xl tracking-widest uppercase hover:bg-primary hover:text-black transition active:scale-95 shadow-[0_0_30px_rgba(var(--color-primary),0.3)]"
+                            className="pointer-events-auto flex items-center gap-2 bg-primary/10 backdrop-blur-xl border-2 border-primary/80 text-primary px-4 sm:px-6 py-3 rounded-full font-bebas text-lg tracking-widest uppercase hover:bg-primary hover:text-black transition active:scale-95 shadow-[0_0_30px_rgba(var(--color-primary),0.5)] whitespace-nowrap"
                         >
-                            <ImageIcon size={20} /> IDENTITY BANNER
+                            <ImageIcon size={18} className="hidden sm:block" /> IDENTITY BANNER
+                        </button>
+                        
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); handleCardAction(gen.id, 'keep'); }}
+                            className="pointer-events-auto p-3 sm:p-4 bg-green-600/20 backdrop-blur-md rounded-full border border-green-500/50 text-green-500 hover:bg-green-500 hover:text-white transition shadow-[0_0_20px_rgba(34,197,94,0.3)] active:scale-90 flex-shrink-0"
+                            title="Keep"
+                        >
+                            <Check size={28} />
                         </button>
                     </div>
                 </div>

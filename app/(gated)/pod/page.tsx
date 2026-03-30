@@ -15,11 +15,13 @@ import { toast } from 'react-hot-toast';
 import { CyberAvatarModal } from '@/components/global/CyberAvatarModal';
 import { useRouter } from 'next/navigation';
 import MobilePodGallery from '@/components/global/MobilePodGallery';
+import NeuralStudioApp from '@/components/global/NeuralStudioApp';
 
 export default function PrivateMatrix() {
     const { currentUser, isArchitect } = useUserStore();
     const router = useRouter();
-    const [isMobileGalleryView, setIsMobileGalleryView] = useState(true);
+    const [isSwipeDeckView, setIsSwipeDeckView] = useState(true);
+    const [isStudioOpen, setIsStudioOpen] = useState(false);
     const { setCurrentTrack, setPlaylist, isPlaying, setIsPlaying, currentTrack } = useAudioStore();
     const [generations, setGenerations] = useState<any[]>([]);
     const [tracks, setTracks] = useState<any[]>([]);
@@ -148,18 +150,18 @@ export default function PrivateMatrix() {
             <div className="w-full max-w-[1800px] mx-auto px-4 md:px-8 pt-2 md:pt-6">
                 {activeTab === 'neural' && (
                     <div className="animate-in fade-in zoom-in-95 duration-500">
-                        <div className="flex flex-row items-center justify-between mb-3 md:mb-8 border-b-2 border-primary/20 pb-2 md:pb-4">
-                            <div className="flex items-center gap-3 md:gap-6">
-                                <div className="p-2.5 md:p-4 bg-primary/10 border border-primary/30 rounded-full shadow-[0_0_15px_rgba(var(--color-primary),0.2)] shrink-0">
-                                    <Layout className="w-5 h-5 md:w-8 md:h-8 text-primary" />
+                        <div className="flex flex-row items-center justify-between mb-2 md:mb-4 border-b-2 border-primary/20 pb-2 md:pb-3">
+                            <div className="flex items-center gap-3 md:gap-4">
+                                <div className="p-2 md:p-3 bg-primary/10 border border-primary/30 rounded-full shadow-[0_0_15px_rgba(var(--color-primary),0.2)] shrink-0">
+                                    <Layout className="w-5 h-5 md:w-6 md:h-6 text-primary" />
                                 </div>
                                 <div className="flex flex-col">
-                                    <h2 className="text-2xl md:text-5xl font-black font-bebas tracking-widest uppercase text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)] leading-none">Neural Archives</h2>
-                                    <p className="font-mono text-[8px] sm:text-[11px] text-primary/60 uppercase tracking-[0.1em] md:tracking-[0.5em] font-bold italic mt-1 leading-tight pr-4">GPU-Accelerated Visual Identity Payloads</p>
+                                    <h2 className="text-2xl md:text-3xl font-black font-bebas tracking-widest uppercase text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)] leading-none">Neural Archives</h2>
+                                    <p className="font-mono text-[8px] sm:text-[10px] text-primary/60 uppercase tracking-[0.1em] md:tracking-[0.3em] font-bold italic mt-1 leading-tight pr-4">GPU-Accelerated Visual Identity Payloads</p>
                                 </div>
                             </div>
-                            <div className="hidden sm:flex gap-4">
-                                <CyberButton text="AI FOUNDRY" onClick={() => router.push('/ai')} className="h-14 px-8" />
+                            <div className="flex gap-4">
+                                <CyberButton text="OPEN STUDIO" onClick={() => setIsStudioOpen(true)} className="h-8 md:h-10 px-3 md:px-6 text-[10px] md:text-xs scale-90" />
                             </div>
                         </div>
 
@@ -172,28 +174,35 @@ export default function PrivateMatrix() {
                             <div className="h-64 flex flex-col items-center justify-center border-2 border-dashed border-primary/20 bg-primary/5 p-12 text-center opacity-60">
                                 <ImageIcon size={48} className="text-primary/20 mb-4" />
                                 <h3 className="text-2xl font-bebas tracking-widest uppercase">No Visual Payload</h3>
-                                <p className="font-mono text-[10px] uppercase tracking-widest mt-2">Initialize the AI Foundry to archive assets.</p>
+                                <p className="font-mono text-[10px] uppercase tracking-widest mt-2 mb-6">Initialize the AI Foundry to archive assets.</p>
+                                <CyberButton text="OPEN STUDIO" onClick={() => setIsStudioOpen(true)} />
                             </div>
                         ) : (
                             <>
-                                {/* Mobile Swipe Gallery */}
-                                {isMobileGalleryView && (
-                                    <div className="block sm:hidden -mx-4">
-                                        <MobilePodGallery 
-                                            generations={generations}
-                                            equipBanner={equipBanner}
-                                            deleteGeneration={deleteGeneration}
-                                            toggleGridView={() => setIsMobileGalleryView(false)}
-                                        />
+                                {/* Swipe Gallery */}
+                                {isSwipeDeckView && (
+                                    <div className="flex items-center justify-center -mx-4 w-full h-[calc(100vh-280px)] md:h-[calc(100vh-320px)] mt-2 md:mt-0 pb-16">
+                                        <div className="w-full h-full max-w-lg">
+                                            <MobilePodGallery 
+                                                generations={generations}
+                                                equipBanner={equipBanner}
+                                                deleteGeneration={deleteGeneration}
+                                                toggleGridView={() => setIsSwipeDeckView(false)}
+                                            />
+                                        </div>
                                     </div>
                                 )}
 
                                 {/* Standard Desktop / Active Grid View */}
-                                <div className={`${isMobileGalleryView ? 'hidden sm:grid' : 'grid'} grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 md:gap-8`}>
-                                    {!isMobileGalleryView && (
-                                        <button onClick={() => setIsMobileGalleryView(true)} className="sm:hidden col-span-full mb-4 text-[10px] font-mono border px-4 py-2 border-primary/20 bg-primary/10 text-primary flex items-center justify-center uppercase font-bold">
-                                            REACTIVATE SWIPE DECK VIEW
-                                        </button>
+                                <div className={`${isSwipeDeckView ? 'hidden' : 'grid'} grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 md:gap-8`}>
+                                    {!isSwipeDeckView && (
+                                        <div className="col-span-full flex justify-center w-full mb-6 mt-4">
+                                            <CyberButton 
+                                                text="REACTIVATE SWIPE DECK VIEW" 
+                                                onClick={() => setIsSwipeDeckView(true)} 
+                                                className="w-full max-w-sm h-14"
+                                            />
+                                        </div>
                                     )}
                                     {generations.map((gen, i) => (
                                         <AssetMatrix key={gen.id}>
@@ -453,6 +462,14 @@ export default function PrivateMatrix() {
             {/* Pip-Boy Filter Layer (Subtle) */}
             <div className="fixed inset-0 pointer-events-none z-[100] opacity-5 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%)] bg-[length:100%_2px]" />
             <CyberAvatarModal />
+            {isStudioOpen && (
+                <div className="fixed inset-0 z-[400000]">
+                    <NeuralStudioApp 
+                        embeddedFlixSynthOnly={true} 
+                        onEmbeddedClose={() => setIsStudioOpen(false)} 
+                    />
+                </div>
+            )}
         </div>
     );
 }
