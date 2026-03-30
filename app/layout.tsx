@@ -11,6 +11,10 @@ import AgeVerificationModal from "@/components/global/AgeVerificationModal";
 import AuthEngine from "@/components/global/AuthEngine";
 import NavigationHUD from "@/components/global/NavigationHUD";
 import AirdropModal from "@/components/global/AirdropModal";
+import CursorEngine from "@/components/global/CursorEngine";
+import GlobalIdentityHeader from "@/components/global/GlobalIdentityHeader";
+import GlobalActionFab from "@/components/global/GlobalActionFab";
+import ArchitectEditor from "@/components/global/ArchitectEditor";
 
 const raj = Rajdhani({
   variable: "--font-rajdhani",
@@ -44,6 +48,7 @@ export default function RootLayout({
     <html lang="en" className={`${raj.variable} h-auto antialiased`}>
       <body className="min-h-screen flex flex-col bg-black text-white overflow-x-hidden p-0 m-0">
           
+          <CursorEngine />
           <AuthEngine />
           <AgeVerificationModal />
           <AirdropModal />
@@ -57,6 +62,8 @@ export default function RootLayout({
             
             <WarpBackground />
             
+            <GlobalIdentityHeader />
+
             {/* PHASE 3: THE HIGH-TECH INTERFACE BORDER */}
             <div className="interface-border-wrapper">
                 <div className="interface-border-glow-top" />
@@ -92,12 +99,13 @@ export default function RootLayout({
                 <div className="absolute inset-y-0 left-0 w-[var(--border-thickness,2px)] bg-gradient-to-b from-transparent via-primary to-transparent z-[1000] opacity-[var(--border-opacity,0.6)]" />
                 <div className="absolute inset-y-0 right-0 w-[var(--border-thickness,2px)] bg-gradient-to-b from-transparent via-primary to-transparent z-[1000] opacity-[var(--border-opacity,0.6)]" />
 
-                {/* INNER SCROLLABLE / INTERACTIVE REALM */}
-                <div className="audio-filter-target interface-interactive flex-1 flex flex-col z-[50] relative overflow-y-auto w-full h-full custom-scrollbar pt-[var(--content-top-offset,0px)]">
-                  <main className="flex-1 w-full pb-[90px] pt-[62px] overflow-x-hidden transition-all duration-700 flex flex-col">
-                      {children}
-                  </main>
-                </div>
+            </div>
+
+            {/* INNER SCROLLABLE / INTERACTIVE REALM (Native Body Scrolling) */}
+            <div className="audio-filter-target interface-interactive flex-1 flex flex-col z-[50] relative w-full pt-[var(--content-top-offset,0px)]">
+              <main className="flex-1 w-full pb-[88px] sm:pb-[80px] pt-0 overflow-x-hidden transition-all duration-700 flex flex-col">
+                  {children}
+              </main>
             </div>
             
             {/* DOCKED AUDIO CONTROLLER OVERLAY */}
@@ -105,6 +113,12 @@ export default function RootLayout({
             
             {/* SYSTEM NAVIGATION HUD */}
             <NavigationHUD />
+            
+            {/* TACTICAL FLOATING ACTION BUTTON */}
+            <GlobalActionFab />
+
+            {/* LIVE CSS ARCHITECT ENGINE */}
+            <ArchitectEditor />
           </div>
 
       </body>

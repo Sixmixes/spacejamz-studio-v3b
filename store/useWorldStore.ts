@@ -12,44 +12,44 @@ export const WORLD_THEMES: Record<string, WorldTheme> = {
     CYBERDECK_PRIME: { 
         id: 'CYBERDECK_PRIME', 
         name: 'Cyberdeck Prime', 
-        bgCss: 'radial-gradient(ellipse at center, #1b0a2a 0%, #000000 100%)', 
-        accent: '#ff00ff' 
+        bgCss: 'radial-gradient(ellipse at center, #001a1a 0%, #000000 100%)', 
+        accent: '#00ffff'  // Legacy Neon Cyan
     },
     ABYSSAL_SINGULARITY: { 
         id: 'ABYSSAL_SINGULARITY', 
         name: 'Abyssal Singularity', 
         bgCss: 'radial-gradient(circle at 50% 50%, #15002b 0%, #06000d 50%, #000000 100%)', 
-        accent: '#4b0082' 
+        accent: '#bf00ff'  // Legacy Deep Neon Purple
     },
     SOLAR_SUPERNOVA: { 
         id: 'SOLAR_SUPERNOVA', 
         name: 'Solar Supernova', 
-        bgCss: 'radial-gradient(circle at top, #4a0f00 0%, #1a0200 60%, #000000 100%)', 
-        accent: '#ff4500' 
+        bgCss: 'radial-gradient(circle at top, #2a0800 0%, #1a0200 60%, #000000 100%)', 
+        accent: '#ff3300'  // Legacy Neon Orange
     },
     SILICON_GRAVE: { 
         id: 'SILICON_GRAVE', 
         name: 'Silicon Grave', 
-        bgCss: 'linear-gradient(to bottom, #2a1205 0%, #0c0500 100%)', 
-        accent: '#b7410e' 
+        bgCss: 'linear-gradient(to bottom, #0a1c00 0%, #000500 100%)', 
+        accent: '#39ff14'  // Legacy Matrix Green
     },
     SECTOR_7_SYNDICATE: { 
         id: 'SECTOR_7_SYNDICATE', 
         name: 'Sector 7 Syndicate', 
-        bgCss: 'linear-gradient(135deg, #001015 0%, #000510 100%)', 
-        accent: '#00ffff' 
+        bgCss: 'linear-gradient(135deg, #1f0003 0%, #0a0001 100%)', 
+        accent: '#ff003c'  // Legacy Cyberpunk Red
     },
     QUANTUM_MATRIX: { 
         id: 'QUANTUM_MATRIX', 
         name: 'Quantum Matrix', 
-        bgCss: 'radial-gradient(ellipse at bottom, #001a00 0%, #000500 100%)', 
-        accent: '#00ff00' 
+        bgCss: 'radial-gradient(ellipse at bottom, #001a1a 0%, #000505 100%)', 
+        accent: '#00fa9a'  // Medium Spring Green / Mint
     },
     ZERO_G_ANOMALY: { 
         id: 'ZERO_G_ANOMALY', 
         name: 'Zero-G Anomaly', 
-        bgCss: 'radial-gradient(circle at center, #1a2025 0%, #050a0f 100%)', 
-        accent: '#708090' 
+        bgCss: 'radial-gradient(circle at center, #0f1520 0%, #050a0f 100%)', 
+        accent: '#00bfff'  // Deep Sky Blue
     },
     ASTRAL_PROJECTION: { 
         id: 'ASTRAL_PROJECTION', 
@@ -66,8 +66,8 @@ export const WORLD_THEMES: Record<string, WorldTheme> = {
     NEON_DOJO: { 
         id: 'NEON_DOJO', 
         name: 'Neon Dojo', 
-        bgCss: 'linear-gradient(to right, #1a0005 0%, #000000 50%, #1a0005 100%)', 
-        accent: '#dc143c' 
+        bgCss: 'linear-gradient(to right, #1a000f 0%, #000000 50%, #1a000f 100%)', 
+        accent: '#ff0055'  // Synthwave Hot Pink
     },
 };
 

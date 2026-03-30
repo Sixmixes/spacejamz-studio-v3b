@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useRouter } from 'next/navigation';
@@ -11,6 +11,11 @@ export default function NavigationHUD() {
     const pathname = usePathname();
     const router = useRouter();
     const [isOpen, setIsOpen] = useState(false);
+
+    // Explicit Route Top-Alignment Vector (Bypasses Next.js Soft-Scroll Memory)
+    useEffect(() => {
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    }, [pathname]);
 
     const links = [
         { name: 'Core', href: '/', icon: Globe },
@@ -97,7 +102,7 @@ export default function NavigationHUD() {
                         <div className="flex flex-col items-end">
                             <span className="font-mono text-[6px] uppercase tracking-widest text-primary/30 leading-none mb-1 font-black underline">Neural_Sync</span>
                             <div className="flex items-center gap-2">
-                                <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_green]" />
+                                <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-[pulse_3s_ease-in-out_infinite] shadow-[0_0_12px_rgba(34,197,94,0.6)]" />
                                 <span className="font-mono text-[8px] uppercase tracking-widest text-green-500 font-bold leading-none italic">ESTABLISHED</span>
                             </div>
                         </div>
@@ -107,7 +112,7 @@ export default function NavigationHUD() {
 
             {/* MOBILE OVERLAY MENU */}
             <div className={`fixed inset-0 z-[9999] bg-black/95 backdrop-blur-xl transition-all duration-500 lg:hidden ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none translate-x-full'}`}>
-                <div className="flex flex-col h-full pt-28 px-10 gap-2">
+                <div className="flex flex-col h-full overflow-y-auto pt-28 pb-32 px-10 gap-2 scrollbar-none overscroll-contain">
                     <span className="font-mono text-[8px] text-primary/40 uppercase tracking-[0.8em] mb-10 font-bold italic border-b border-primary/20 pb-4">Main Navigation Sequence</span>
                     {links.map((link, i) => {
                         const isActive = pathname === link.href;

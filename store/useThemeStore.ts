@@ -1,7 +1,17 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export type SpaceTheme = 'cosmos' | 'battle' | 'arena' | 'domination' | 'ledger' | 'toxic' | 'royal' | 'ghastly' | 'abyss' | 'neon' | 'void' | 'inferno';
+export type SpaceTheme = 
+    | 'CYBERDECK_PRIME' 
+    | 'ABYSSAL_SINGULARITY' 
+    | 'SOLAR_SUPERNOVA' 
+    | 'SILICON_GRAVE' 
+    | 'SECTOR_7_SYNDICATE' 
+    | 'QUANTUM_MATRIX' 
+    | 'ZERO_G_ANOMALY' 
+    | 'ASTRAL_PROJECTION' 
+    | 'LIQUID_CHROME' 
+    | 'NEON_DOJO';
 
 interface ThemeState {
     activeTheme: SpaceTheme;
@@ -11,11 +21,9 @@ interface ThemeState {
 export const useThemeStore = create<ThemeState>()(
     persist(
         (set) => ({
-            activeTheme: 'cosmos',
+            activeTheme: 'CYBERDECK_PRIME',
             setTheme: (theme) => set({ activeTheme: theme }),
         }),
-        {
-            name: 'sjs_theme_store',
-        }
+        { name: 'spacejamz-world-engine' }
     )
 );

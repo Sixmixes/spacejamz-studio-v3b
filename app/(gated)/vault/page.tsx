@@ -1,9 +1,9 @@
 'use client';
 import { useState, useEffect, useCallback, memo } from 'react';
-import { Play, Pause, Trash2, GripVertical, Radio, Edit2, ArrowUp, Activity, Check, X, Save, Scissors } from 'lucide-react';
+import { Play, Pause, Trash2, GripVertical, Radio, Edit2, ArrowUp, Activity, Check, X, Save, Scissors, Lock } from 'lucide-react';
 import { useAudioStore } from '@/store/useAudioStore';
 import { CyberButton } from '@/components/ui/CyberButton';
-import NeuralIdentityTerminal from '@/components/global/NeuralIdentityTerminal';
+import { useUserStore } from '@/store/useUserStore';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -125,12 +125,16 @@ const SortableTrackItem = memo(function SortableTrackItem({ track, index, isThis
     );
 });
 
-export default function V3BHome() {
+export default function ArchitectSuite() {
+    const { currentUser, isArchitect } = useUserStore();
+    const isFounder = currentUser?.role === 'FOUNDER' || isArchitect;
+
     const currentTrack = useAudioStore(state => state.currentTrack);
     const isPlaying = useAudioStore(state => state.isPlaying);
     const reactivitySensitivity = useAudioStore(state => state.reactivitySensitivity);
     const reactivityThreshold = useAudioStore(state => state.reactivityThreshold);
     const targetFrequency = useAudioStore(state => state.targetFrequency);
+    const analyzerMode = useAudioStore(state => state.analyzerMode);
     const isShuffleToggle = useAudioStore(state => state.isShuffleToggle);
     const shuffledQueue = useAudioStore(state => state.shuffledQueue);
     const queueIndex = useAudioStore(state => state.queueIndex);
@@ -143,13 +147,21 @@ export default function V3BHome() {
     const setReactivityThreshold = useAudioStore(state => state.setReactivityThreshold);
     const setTargetFrequency = useAudioStore(state => state.setTargetFrequency);
     const setAnalyzerMode = useAudioStore(state => state.setAnalyzerMode);
-    const analyzerMode = useAudioStore(state => state.analyzerMode);
 
+    const [tracks, setTracks] = useState<any[]>(ARCHITECT_SUITE_TRACKS);
     const [linkInput, setLinkInput] = useState('');
-    const [uploadStatus, setUploadStatus] = useState<'idle' | 'analyzing'>('idle');
+    const [uploadStatus, setUploadStatus] = useState<'idle' | 'analyzing' | 'extracting' | 'complete' | 'error'>('idle');
+    const [statusMsg, setStatusMsg] = useState('');
+    const [isSysAdmin, setIsSysAdmin] = useState(false);
     const [isIngestModalOpen, setIsIngestModalOpen] = useState(false);
-    
-    // The master visual array
+    const [isMounted, setIsMounted] = useState(false);
+    const [editTargetId, setEditTargetId] = useState<string | null>(null);
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
+    // Subscribe to track configurations dynamicallyhe master visual array
     const [dynamicTracks, setDynamicTracks] = useState<any[]>(ARCHITECT_SUITE_TRACKS);
     const [analyzingTrackId, setAnalyzingTrackId] = useState<string | null>(null);
     const [extractingTrackId, setExtractingTrackId] = useState<string | null>(null);
@@ -424,8 +436,33 @@ export default function V3BHome() {
         }
     }
 
+    if (!isMounted) return null;
+
+    if (!isFounder) {
+        return (
+            <div className="relative flex flex-1 w-full flex-col justify-start overflow-visible bg-transparent group/main shrink-0 min-h-max pt-0 pb-0 shadow-[0_0_80px_rgba(239,68,68,0.1)]">
+                                <div className="flex-1 w-full max-w-[1400px] mx-auto p-4 md:p-8 flex flex-col items-center justify-center animate-in zoom-in-95 duration-1000">
+                    <div className="w-full max-w-2xl bg-[#050505] relative p-8 md:p-16 border border-red-500/30 font-mono shadow-[inset_0_0_100px_rgba(239,68,68,0.1)] flex flex-col items-center justify-center aspect-video" style={{ clipPath: 'polygon(30px 0, 100% 0, 100% calc(100% - 30px), calc(100% - 30px) 100%, 0 100%, 0 30px)' }}>
+                        <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-red-500/50 to-transparent shadow-[0_0_10px_rgba(239,68,68,1)]"></div>
+                        <Lock size={56} className="text-red-500 mb-4 animate-[pulse_2s_infinite] drop-shadow-[0_0_15px_rgba(239,68,68,0.8)]" />
+                        <h2 className="text-3xl md:text-5xl font-black tracking-[0.2em] uppercase text-white mb-4 text-center">
+                            PRIORITY CLEARANCE
+                        </h2>
+                        <div className="w-full max-w-sm h-[1px] bg-gradient-to-r from-transparent via-red-500/40 to-transparent mb-6"></div>
+                        <p className="text-[10px] md:text-xs text-red-400 text-center tracking-[0.2em] leading-relaxed uppercase max-w-lg mb-8 opacity-80 backdrop-blur-md">
+                            VAULT INFRASTRUCTURE DETECTED AN UNAUTHORIZED BIOSIGNATURE.<br/>
+                            GLOBAL STATE PERMISSIONS ARE LOCKED TO [ THE ARCHITECT ].
+                        </p>
+                        
+                        <CyberButton onClick={() => window.location.href = '/pod'} text="RETURN TO PERSONAL POD" className="scale-90 opacity-80 hover:opacity-100 hover:scale-95 transition-all" />
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
-        <div className="flex flex-col items-center justify-start min-h-screen pt-32 pb-48 relative overflow-hidden bg-transparent">
+        <div className="relative flex flex-1 w-full flex-col justify-start overflow-visible bg-transparent group/main shrink-0 min-h-max pt-0 pb-0">
             
             {/* CINEMATIC B-ROLL BACKGROUND LAYER */}
             <div className="fixed inset-0 z-[-1] flex items-center justify-center pointer-events-none overflow-hidden">
@@ -441,12 +478,11 @@ export default function V3BHome() {
             </div>
 
             <div className="absolute top-8 left-0 right-0 z-[100] pointer-events-none px-4 md:px-8">
-                <NeuralIdentityTerminal className="pointer-events-auto shadow-[0_30px_60px_rgba(0,0,0,0.8)]" />
+                {/* NEURAL IDENTITY GATEWAY DELEGATED TO PERSISTENT LAYOUT ENGINE */}
             </div>
 
             {/* Massive Outer Cyber Panel -> Glassmorphism / RIG ARCHITECTURE */}
-            <div className="bg-[#050505]/80 backdrop-blur-xl border-2 border-solid border-primary/20 p-8 md:p-14 w-full max-w-[1800px] mx-auto px-4 md:px-8 mb-24 z-50 overflow-hidden desync-1 shadow-[0_40px_100px_rgba(0,0,0,0.9)]" 
-                 style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 40px), calc(100% - 40px) 100%, 0 100%)' }}>
+            <div className="cyber-glitch-container flex-1 bg-black/60 backdrop-blur-xl border-y border-solid border-primary/20 p-8 md:p-14 w-full flex flex-col justify-start z-50 overflow-hidden shadow-[0_40px_100px_rgba(0,0,0,0.9)]">
                 
                 {/* UP NEXT QUEUE LOGIC & TELEMETRY VAULT (MOVED TO TOP) */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 mb-10 pb-8 border-b-2 border-primary/20">

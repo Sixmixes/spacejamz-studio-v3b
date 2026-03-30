@@ -7,7 +7,6 @@ import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { ShieldCheck, UploadCloud, FileAudio, AlertTriangle, Zap, CheckCircle2 } from 'lucide-react';
 import { CyberButton } from '@/components/ui/CyberButton';
-import NeuralIdentityTerminal from '@/components/global/NeuralIdentityTerminal';
 
 export default function NeuralBlueprintEnrollment() {
     const user = useUserStore(state => state.currentUser);
@@ -103,7 +102,7 @@ export default function NeuralBlueprintEnrollment() {
     };
 
     return (
-        <div className="flex flex-col items-center justify-start min-h-screen pb-40 relative bg-black text-white p-4 pt-24 lg:pt-32">
+        <div className="relative flex flex-1 w-full flex-col justify-start overflow-visible group/main shrink-0 min-h-max pt-16 pb-0 text-white px-4 bg-black">
             
             {/* AMBIENT BACKGROUND FX */}
             <div className="fixed inset-0 pointer-events-none opacity-20">
@@ -114,7 +113,7 @@ export default function NeuralBlueprintEnrollment() {
             <div className="w-full max-w-5xl z-50 animate-in fade-in zoom-in-95 duration-700">
                 
                 {/* NEURAL IDENTITY GATEWAY (Telemetry Overhaul) */}
-                <NeuralIdentityTerminal className="mb-12" />
+                {/* NEURAL IDENTITY GATEWAY DELEGATED TO PERSISTENT LAYOUT ENGINE */}
 
                 {/* HEADERS */}
                 <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6 mb-12 border-b-2 border-primary/40 pb-10 relative">

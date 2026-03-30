@@ -34,7 +34,29 @@ export async function GET(request: Request) {
         }, { responseType: 'stream' });
 
         const nodeStream = response.data as Readable;
-        const webStream = Readable.toWeb(nodeStream);
+        
+        const webStream = new ReadableStream({
+            start(controller) {
+                nodeStream.on('data', (chunk) => {
+                    try {
+                        if (controller.desiredSize !== null) {
+                            controller.enqueue(chunk);
+                        }
+                    } catch (e) {
+                        nodeStream.destroy();
+                    }
+                });
+                nodeStream.on('end', () => {
+                    try { controller.close(); } catch (e) {}
+                });
+                nodeStream.on('error', (err) => {
+                    try { controller.error(err); } catch (e) {}
+                });
+            },
+            cancel() {
+                nodeStream.destroy();
+            }
+        });
 
         const headers = new Headers();
         headers.set('Content-Type', metadata.data.mimeType || 'application/octet-stream');
@@ -43,7 +65,7 @@ export async function GET(request: Request) {
         
         headers.set('Cache-Control', 'public, max-age=31536000, immutable');
 
-        return new Response(webStream as any, {
+        return new Response(webStream, {
             status: 200,
             headers,
         });

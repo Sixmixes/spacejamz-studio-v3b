@@ -120,7 +120,7 @@ export default function WrldChanger() {
 
   const handleSelect = (id: string) => {
     setTheme(id);
-    handleAccept(); // Launch visually then retract the hud
+    // Modal stays open to observe real-time background transition
   };
 
   const activeWorld = WORLDS.find(w => w.id === activeTheme) || WORLDS[0];
@@ -152,7 +152,7 @@ export default function WrldChanger() {
       {mounted && isOpen && createPortal(
         <div
           className={`fixed inset-0 z-[250000] backdrop-blur-md flex items-start justify-center p-2 pt-4 scanlines overflow-hidden transition-all duration-500 ${isClosing ? 'opacity-0 pointer-events-none' : 'opacity-100 scale-100'}`}
-          style={{ background: `radial-gradient(circle at 70% 50%, rgb(var(--color-primary) / 0.1) 0%, rgba(0,0,0,0.92) 80%), linear-gradient(135deg, rgba(0,0,0,0.85), rgba(0,0,0,0.96))` }}
+          style={{ background: `radial-gradient(circle at 70% 50%, rgb(var(--color-primary) / 0.15) 0%, rgba(0,0,0,0.4) 80%), linear-gradient(135deg, rgba(0,0,0,0.3), rgba(0,0,0,0.5))` }}
         >
           {/* Ambient Glow */}
           <div className="fixed top-1/2 right-1/4 -translate-y-1/2 w-[70vw] h-[80vh] bg-primary rounded-full blur-[250px] opacity-10 pointer-events-none" />
@@ -179,13 +179,13 @@ export default function WrldChanger() {
             </div>
 
             {/* MAIN HUD CONTENT */}
-            <div className="flex-1 flex flex-col cyber-panel border border-primary/40 shadow-[0_0_80px_rgb(var(--color-primary) / 0.15)] bg-black/40 overflow-hidden">
+            <div className="flex-1 flex flex-col cyber-panel border border-primary/40 shadow-[0_0_80px_rgb(var(--color-primary) / 0.15)] bg-black/20 overflow-hidden">
               <div
                 ref={scrollContainerRef}
                 className="flex-1 flex flex-col md:flex-row gap-0 overflow-y-auto md:overflow-hidden backdrop-blur-sm"
               >
                 {/* LEFT COLUMN: SIMULATION LIBRARY */}
-                <div className="w-full md:w-[40%] flex flex-col h-[50vh] md:h-full shrink-0 p-6 md:p-8 pt-10 md:pt-12 overflow-hidden bg-black/60 border-r border-primary/20 transition-all duration-700">
+                <div className="w-full md:w-[40%] flex flex-col h-[50vh] md:h-full shrink-0 p-6 md:p-8 pt-10 md:pt-12 overflow-hidden bg-black/30 border-r border-primary/20 transition-all duration-700">
                   <div className="flex items-center justify-between border-b border-primary/20 pb-4 mb-4">
                     <div className="flex items-center gap-2">
                       <Database className="w-5 h-5 text-primary" />

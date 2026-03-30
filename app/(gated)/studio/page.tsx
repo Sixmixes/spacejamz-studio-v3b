@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Play, Pause, TrendingUp, Sparkles, UploadCloud, Clock, Music } from 'lucide-react';
 import { CyberButton } from '@/components/ui/CyberButton';
-import NeuralIdentityTerminal from '@/components/global/NeuralIdentityTerminal';
 import { useAudioStore } from '@/store/useAudioStore';
 import { useUserStore } from '@/store/useUserStore';
 import { db } from '@/lib/firebase/config';
@@ -111,7 +110,7 @@ export default function SpaceJamzArena() {
     };
 
     return (
-        <div className="flex flex-col items-center justify-start min-h-screen pb-32 relative overflow-hidden bg-transparent text-white px-4 md:px-8 pt-[120px]">
+        <div className="relative flex flex-1 w-full flex-col justify-start overflow-visible bg-transparent group/main shrink-0 min-h-max pt-0 pb-0 text-white">
             
             {/* CINEMATIC B-ROLL BACKGROUND LAYER */}
             <div className="fixed inset-0 z-[-1] flex items-center justify-center pointer-events-none overflow-hidden">
@@ -127,10 +126,10 @@ export default function SpaceJamzArena() {
             </div>
 
             <div className="w-full max-w-7xl z-[60] mb-8">
-                <NeuralIdentityTerminal />
+                {/* NEURAL IDENTITY GATEWAY DELEGATED TO PERSISTENT LAYOUT ENGINE */}
             </div>
 
-            <div className="w-full max-w-7xl z-50 flex flex-col gap-6">
+            <div className="cyber-glitch-container flex-1 bg-black/60 backdrop-blur-3xl border-y border-solid border-[#00ffff]/20 p-8 md:p-14 w-full flex flex-col justify-start z-50 gap-6 overflow-hidden shadow-[0_40px_100px_rgba(0,0,0,0.9)]">
                 
                 <div className="relative w-full h-80 rounded-3xl overflow-hidden bg-zinc-900 border border-[#00ffff]/20 shadow-[0_0_50px_rgba(0,255,255,0.05)] group">
                     <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop" className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:scale-105 transition-transform duration-[10s]" alt="Cypher Background" />

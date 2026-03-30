@@ -3,14 +3,23 @@
 import { useState, useEffect } from 'react';
 import { useUserStore } from '@/store/useUserStore';
 import { db, storage } from '@/lib/firebase/config';
-import { collection, query, orderBy, onSnapshot, doc, updateDoc } from 'firebase/firestore';
-import { User, Zap, Coins, Image as ImageIcon, Video, Trash2, CheckCircle2, Layout, Award, Music, FileText, Microchip, ShoppingBag, Play, Pause } from 'lucide-react';
+import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { User, Zap, Coins, Image as ImageIcon, Video, Trash2, CheckCircle2, Layout, Award, Music, FileText, Microchip, ShoppingBag, Play, Pause, MousePointer2, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAudioStore } from '@/store/useAudioStore';
 import { CyberButton } from '@/components/ui/CyberButton';
-import NeuralIdentityTerminal from '@/components/global/NeuralIdentityTerminal';
+import CyberGlitchButton from '@/components/ui/CyberGlitchButton';
+import CyberGlitchModal from '@/components/ui/CyberGlitchModal';
+import AssetMatrix from '@/components/global/AssetMatrix';
+import { toast } from 'react-hot-toast';
+import { CyberAvatarModal } from '@/components/global/CyberAvatarModal';
+import { useRouter } from 'next/navigation';
+import MobilePodGallery from '@/components/global/MobilePodGallery';
 
 export default function PrivateMatrix() {
     const { currentUser, isArchitect } = useUserStore();
+    const router = useRouter();
+    const [isMobileGalleryView, setIsMobileGalleryView] = useState(true);
     const { setCurrentTrack, setPlaylist, isPlaying, setIsPlaying, currentTrack } = useAudioStore();
     const [generations, setGenerations] = useState<any[]>([]);
     const [tracks, setTracks] = useState<any[]>([]);
@@ -19,6 +28,7 @@ export default function PrivateMatrix() {
     const [isLoading, setIsLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'neural' | 'acoustic' | 'script' | 'dna' | 'arsenal'>('neural');
     const [activeBanner, setActiveBanner] = useState<string | null>(null);
+    const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
     useEffect(() => {
         if (!currentUser) return;
@@ -56,15 +66,27 @@ export default function PrivateMatrix() {
 
     const equipBanner = async (url: string) => {
         if (!currentUser) return;
+        // Fire custom event to spawn the Identity Injector modal with Live Calibration Mode
+        window.dispatchEvent(new CustomEvent('OPEN_BANNER_CALIBRATION', { detail: { url } }));
+    };
+
+    const equipCursor = async (cursorType: string) => {
+        if (!currentUser) return;
         try {
-            // Update the user's aesthetic profile in Firestore
-            await updateDoc(doc(db, 'users', currentUser.uid), {
-                customBannerUrl: url
-            });
-            // Update local state is handled via the store/observer usually
-            alert("NEURAL BANNER SYNCHRONIZED.");
-        } catch (err) {
-            console.error(err);
+            const userRef = doc(db, 'users', currentUser.uid);
+            await updateDoc(userRef, { customCursor: cursorType });
+            useUserStore.getState().setUser({ customCursor: cursorType });
+        } catch (error) {
+            console.error("Failed to update neural pointer:", error);
+        }
+    };
+
+    const deleteGeneration = async (id: string) => {
+        if (!currentUser) return;
+        try {
+            await deleteDoc(doc(db, 'user_assets', currentUser.uid, 'ai_generations', id));
+        } catch (error) {
+            console.error("Failed to expunge neural asset:", error);
         }
     };
 
@@ -77,7 +99,7 @@ export default function PrivateMatrix() {
     }
 
     return (
-        <div className="min-h-screen bg-transparent text-white relative overflow-visible pb-48">
+        <div className="relative flex flex-1 w-full flex-col justify-start overflow-visible bg-transparent group/main shrink-0 min-h-max pt-0 pb-0 text-white">
             
             {/* CINEMATIC B-ROLL BACKGROUND LAYER */}
             <div className="fixed inset-0 z-[-1] flex items-center justify-center pointer-events-none overflow-hidden">
@@ -92,93 +114,52 @@ export default function PrivateMatrix() {
                 <div className="absolute inset-0 bg-gradient-to-b from-black via-[#050505]/70 to-black z-10" />
             </div>
 
-            <div className="absolute top-8 left-0 right-0 z-[100] pointer-events-none px-4 md:px-8">
-                <NeuralIdentityTerminal className="pointer-events-auto shadow-[0_30px_60px_rgba(0,0,0,0.8)]" />
-            </div>
+            {/* NEURAL IDENTITY GATEWAY DELEGATED TO PERSISTENT LAYOUT ENGINE */}
 
-            {/* MASSIVE PILOT BANNER (Dynamic GPU Art) */}
-            <div className="relative w-full h-[40vh] bg-zinc-900 overflow-hidden border-b border-white/10 group">
-                {currentUser.customBannerUrl ? (
-                    <img src={currentUser.customBannerUrl} className="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-[10s] ease-linear" />
-                ) : (
-                    <div className="w-full h-full bg-[radial-gradient(circle_at_center,rgba(var(--color-primary),0.1)_0,transparent_100%)] flex items-center justify-center">
-                        <span className="font-mono text-[10px] text-gray-700 uppercase tracking-[1em]">No Aesthetic Data Detected</span>
-                    </div>
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
-                
-                {/* Profile Stats Floating Container */}
-                <div className="absolute bottom-12 left-8 md:left-20 flex items-end gap-10 animate-in slide-in-from-bottom-8 duration-700">
-                    <div className="relative group">
-                        <div className="w-32 h-32 md:w-48 md:h-48 bg-black border-2 border-primary p-1 overflow-hidden shadow-[0_0_50px_rgba(var(--color-primary),0.2)]" style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%)' }}>
-                            <img src={currentUser.photoURL || 'https://api.dicebear.com/7.x/identicon/svg?seed=pilot'} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                        </div>
-                        <div className="absolute -bottom-4 -right-4 bg-primary text-black px-4 py-1 font-black font-bebas text-xl md:text-3xl tracking-widest shadow-xl">
-                            LVL {Math.floor((currentUser.xp || 0) / 1000) + 1}
-                        </div>
-                    </div>
-                    
-                    <div className="flex flex-col mb-4">
-                        <div className="flex items-center gap-3 mb-2">
-                            <h1 className="text-4xl md:text-7xl font-black font-bebas tracking-widest uppercase drop-shadow-[0_5px_15px_rgba(0,0,0,0.8)] leading-none text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-400">
-                                {currentUser.displayName || 'UNKNOWN PILOT'}
-                            </h1>
-                            {currentUser.role === 'FOUNDER' && <Award className="text-yellow-500 drop-shadow-[0_0_10px_rgba(250,204,21,0.5)]" size={32} />}
-                        </div>
-                        <div className="flex items-center gap-6">
-                            <div className="flex items-center gap-2 font-mono text-xs text-primary bg-primary/10 px-3 py-1 border border-primary/20 tracking-widest uppercase">
-                                <Zap size={14} /> {currentUser.xp?.toLocaleString() || '0'} Matrix XP
-                            </div>
-                            <div className="flex items-center gap-2 font-mono text-xs text-yellow-500 bg-yellow-500/10 px-3 py-1 border border-yellow-500/20 tracking-widest uppercase">
-                                <Coins size={14} /> {currentUser.coinsBalance?.toLocaleString() || '0'} Treasury
-                            </div>
-                        </div>
-                    </div>
+            {/* TACTICAL NAVIGATION (POD CATEGORIES) */}
+            <div className="w-full max-w-[1800px] mx-auto px-2 md:px-8 mt-4 z-20">
+                <div className="flex sm:grid sm:grid-cols-5 gap-2 md:gap-4 overflow-x-auto pb-2 px-2 md:px-0 scrollbar-none snap-x snap-mandatory">
+                    {(['neural', 'acoustic', 'script', 'dna', 'arsenal'] as const).map(tab => (
+                        <button 
+                            key={tab} 
+                            onClick={() => setActiveTab(tab)}
+                            className={`shrink-0 w-[130px] sm:w-auto snap-center flex flex-col items-center justify-center p-3 md:p-4 transition-all duration-300 border relative overflow-hidden group shadow-[0_5px_15px_rgba(0,0,0,0.5)] ${activeTab === tab ? 'bg-[#00ffff]/10 text-[#00ffff] border-[#00ffff]/80 shadow-[0_0_20px_rgba(0,255,255,0.2)]' : 'bg-[#050505] text-white/70 font-bold border-white/10 hover:border-[#00ffff]/50 hover:bg-[#00ffff]/5 hover:text-white'}`}
+                            style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%)' }}
+                        >
+                            {tab === 'neural' && <ImageIcon size={16} className={`mb-1.5 md:w-[18px] md:h-[18px] ${activeTab === tab ? 'animate-pulse' : ''}`} />}
+                            {tab === 'acoustic' && <Music size={16} className={`mb-1.5 md:w-[18px] md:h-[18px] ${activeTab === tab ? 'animate-pulse' : ''}`} />}
+                            {tab === 'script' && <FileText size={16} className={`mb-1.5 md:w-[18px] md:h-[18px] ${activeTab === tab ? 'animate-pulse' : ''}`} />}
+                            {tab === 'dna' && <Microchip size={16} className={`mb-1.5 md:w-[18px] md:h-[18px] ${activeTab === tab ? 'animate-pulse' : ''}`} />}
+                            {tab === 'arsenal' && <ShoppingBag size={16} className={`mb-1.5 md:w-[18px] md:h-[18px] ${activeTab === tab ? 'animate-pulse' : ''}`} />}
+                            <span className="font-mono text-[9px] md:text-[10px] items-center text-center font-black uppercase tracking-[0.1em] px-1">
+                                {tab === 'neural' ? 'Neural Archives' : 
+                                 tab === 'acoustic' ? 'Acoustic Vault' : 
+                                 tab === 'script' ? 'Neural Script' : 
+                                 tab === 'dna' ? 'DNA Sequencer' : 'Cosmetic Arsenal'}
+                            </span>
+                            {/* Status Light */}
+                            <div className={`absolute top-2 right-2 w-1.5 h-1.5 rounded-full ${activeTab === tab ? 'bg-[#00ffff] animate-pulse shadow-[0_0_5px_rgba(0,255,255,0.8)]' : 'bg-primary/20'}`} />
+                        </button>
+                    ))}
                 </div>
             </div>
 
-            {/* TACTICAL NAVIGATION (POD CATEGORIES) */}
-            <div className="w-full max-w-[1800px] mx-auto px-4 md:px-8 mt-12 grid grid-cols-2 sm:grid-cols-5 gap-3 md:gap-6 z-20">
-                {(['neural', 'acoustic', 'script', 'dna', 'arsenal'] as const).map(tab => (
-                    <button 
-                        key={tab} 
-                        onClick={() => setActiveTab(tab)}
-                        className={`flex flex-col items-center justify-center p-4 md:p-8 transition-all duration-300 border relative overflow-hidden group shadow-[0_10px_30px_rgba(0,0,0,0.5)] ${activeTab === tab ? 'bg-primary text-black border-primary shadow-[0_0_30px_rgba(var(--color-primary),0.3)]' : 'bg-[#050505] text-primary/40 border-primary/20 hover:border-primary/60 hover:bg-primary/5 hover:text-primary/80'}`}
-                        style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%)' }}
-                    >
-                        {tab === 'neural' && <ImageIcon size={24} className="mb-2" />}
-                        {tab === 'acoustic' && <Music size={24} className="mb-2" />}
-                        {tab === 'script' && <FileText size={24} className="mb-2" />}
-                        {tab === 'dna' && <Microchip size={24} className="mb-2" />}
-                        {tab === 'arsenal' && <ShoppingBag size={24} className="mb-2" />}
-                        <span className="font-mono text-[9px] md:text-[10px] items-center text-center font-black uppercase tracking-[0.2em]">
-                            {tab === 'neural' ? 'Neural Archives' : 
-                             tab === 'acoustic' ? 'Acoustic Vault' : 
-                             tab === 'script' ? 'Neural Script' : 
-                             tab === 'dna' ? 'DNA Sequencer' : 'Cosmetic Arsenal'}
-                        </span>
-                        {/* Status Light */}
-                        <div className={`absolute top-2 right-2 w-1 h-1 rounded-full ${activeTab === tab ? 'bg-black animate-pulse' : 'bg-primary/20'}`} />
-                    </button>
-                ))}
-            </div>
-
             {/* NEURAL ARCHIVE DECK (AI Generations) */}
-            <div className="w-full max-w-[1800px] mx-auto px-4 md:px-8 pt-12 md:pt-20">
+            <div className="w-full max-w-[1800px] mx-auto px-4 md:px-8 pt-2 md:pt-6">
                 {activeTab === 'neural' && (
                     <div className="animate-in fade-in zoom-in-95 duration-500">
-                        <div className="flex items-center justify-between mb-8 md:mb-12 border-b-2 border-primary/20 pb-8">
-                            <div className="flex items-center gap-6">
-                                <div className="p-4 bg-primary/10 border border-primary/30 rounded-full shadow-[0_0_20px_rgba(var(--color-primary),0.2)]">
-                                    <Layout className="w-8 h-8 text-primary" />
+                        <div className="flex flex-row items-center justify-between mb-3 md:mb-8 border-b-2 border-primary/20 pb-2 md:pb-4">
+                            <div className="flex items-center gap-3 md:gap-6">
+                                <div className="p-2.5 md:p-4 bg-primary/10 border border-primary/30 rounded-full shadow-[0_0_15px_rgba(var(--color-primary),0.2)] shrink-0">
+                                    <Layout className="w-5 h-5 md:w-8 md:h-8 text-primary" />
                                 </div>
-                                <div>
-                                    <h2 className="text-3xl md:text-5xl font-black font-bebas tracking-widest uppercase text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">Neural Archives</h2>
-                                    <p className="font-mono text-[9px] sm:text-[11px] text-primary/60 uppercase tracking-[0.5em] font-bold italic">GPU-Accelerated Visual Identity Payloads</p>
+                                <div className="flex flex-col">
+                                    <h2 className="text-2xl md:text-5xl font-black font-bebas tracking-widest uppercase text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)] leading-none">Neural Archives</h2>
+                                    <p className="font-mono text-[8px] sm:text-[11px] text-primary/60 uppercase tracking-[0.1em] md:tracking-[0.5em] font-bold italic mt-1 leading-tight pr-4">GPU-Accelerated Visual Identity Payloads</p>
                                 </div>
                             </div>
                             <div className="hidden sm:flex gap-4">
-                                <CyberButton text="AI FOUNDRY" onClick={() => (window.location.href = '/ai')} className="h-14 px-8" />
+                                <CyberButton text="AI FOUNDRY" onClick={() => router.push('/ai')} className="h-14 px-8" />
                             </div>
                         </div>
 
@@ -194,35 +175,79 @@ export default function PrivateMatrix() {
                                 <p className="font-mono text-[10px] uppercase tracking-widest mt-2">Initialize the AI Foundry to archive assets.</p>
                             </div>
                         ) : (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 md:gap-8">
-                                {generations.map((gen, i) => (
-                                    <div key={gen.id} className="group relative bg-[#050505] border border-primary/20 transition-all duration-500 hover:border-primary/60 shadow-[0_10px_30px_rgba(0,0,0,0.5)] p-0.5" style={{ animationDelay: `${i * 50}ms`, clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%)' }}>
-                                        <div className="aspect-square relative overflow-hidden bg-zinc-900/50">
-                                            {gen.type === 'deforum' ? (
-                                                <video src={gen.assetUrl} className="w-full h-full object-cover opacity-70 group-hover:opacity-100" muted loop onMouseEnter={(e) => (e.target as HTMLVideoElement).play()} onMouseLeave={(e) => (e.target as HTMLVideoElement).pause()} />
-                                            ) : (gen.type === 'vocal_dna' || gen.type === 'neural_swap') ? (
-                                                <div className="w-full h-full flex flex-col items-center justify-center p-6 bg-[#050505] animate-in fade-in transition-all group-hover:bg-primary/5">
-                                                    <div className="mb-4 p-4 bg-primary/10 rounded-full group-hover:scale-110 transition-transform shadow-[0_0_20px_rgba(var(--color-primary),0.2)]">
-                                                        <Zap className="text-primary w-12 h-12" />
-                                                    </div>
-                                                    <span className="text-[10px] font-mono text-primary/80 uppercase tracking-widest font-black text-center mb-1">ACOUSTIC PAYLOAD</span>
-                                                    <span className="text-[8px] font-mono text-gray-500 uppercase tracking-widest text-center">{gen.type.replace('_',' ')}</span>
-                                                </div>
-                                            ) : (
-                                                <img src={gen.assetUrl} className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-all duration-700 group-hover:scale-110" />
-                                            )}
-                                            <div className="absolute inset-0 bg-black/90 opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col items-center justify-center p-6 gap-4 backdrop-blur-sm">
-                                                {gen.type === 'vocal_dna' || gen.type === 'neural_swap' ? (
-                                                    <audio src={gen.assetUrl} controls className="w-full accent-primary h-8 mb-2" />
-                                                ) : (
-                                                    <button onClick={() => equipBanner(gen.assetUrl)} className="w-full py-2 bg-primary text-black font-mono font-black text-[9px] uppercase tracking-widest hover:bg-white transition-all shadow-[0_0_15px_rgba(var(--color-primary),0.3)]">EQUIP BANNER</button>
-                                                )}
-                                                <button className="w-full py-2 bg-black border border-white/10 text-white font-mono font-bold text-[8px] uppercase tracking-widest hover:border-red-500 transition-all">EXPUNGE</button>
-                                            </div>
-                                        </div>
+                            <>
+                                {/* Mobile Swipe Gallery */}
+                                {isMobileGalleryView && (
+                                    <div className="block sm:hidden -mx-4">
+                                        <MobilePodGallery 
+                                            generations={generations}
+                                            equipBanner={equipBanner}
+                                            deleteGeneration={deleteGeneration}
+                                            toggleGridView={() => setIsMobileGalleryView(false)}
+                                        />
                                     </div>
-                                ))}
-                            </div>
+                                )}
+
+                                {/* Standard Desktop / Active Grid View */}
+                                <div className={`${isMobileGalleryView ? 'hidden sm:grid' : 'grid'} grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 md:gap-8`}>
+                                    {!isMobileGalleryView && (
+                                        <button onClick={() => setIsMobileGalleryView(true)} className="sm:hidden col-span-full mb-4 text-[10px] font-mono border px-4 py-2 border-primary/20 bg-primary/10 text-primary flex items-center justify-center uppercase font-bold">
+                                            REACTIVATE SWIPE DECK VIEW
+                                        </button>
+                                    )}
+                                    {generations.map((gen, i) => (
+                                        <AssetMatrix key={gen.id}>
+                                            <div 
+                                                onClick={() => setLightboxImage(gen.assetUrl)}
+                                                className="group relative bg-[#050505] border border-primary/20 transition-all duration-500 hover:border-primary/60 shadow-[0_10px_30px_rgba(0,0,0,0.5)] h-full w-full cursor-zoom-in aspect-[3/4] overflow-hidden rounded-2xl md:rounded-3xl"
+                                                style={{ animationDelay: `${i * 50}ms` }}
+                                            >
+                                                <div className="absolute inset-x-2 top-2 md:inset-x-4 md:top-4 flex justify-between gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-50">
+                                                    <button 
+                                                        onClick={(e) => { e.stopPropagation(); equipBanner(gen.assetUrl); }}
+                                                        className="bg-black/90 text-[8px] font-mono border border-[#00ffff]/40 text-[#00ffff] px-3 py-2 rounded uppercase tracking-widest hover:bg-[#00ffff] hover:text-black transition-colors shadow-[0_0_15px_rgba(0,255,255,0.3)] backdrop-blur-md"
+                                                    >
+                                                        BANNER
+                                                    </button>
+                                                    <button 
+                                                        onClick={(e) => { e.stopPropagation(); deleteGeneration(gen.id); }}
+                                                        className="bg-red-900/40 text-[8px] font-mono border border-red-500/40 text-red-500 px-3 py-2 rounded uppercase tracking-widest hover:bg-red-500 hover:text-black transition-colors shadow-[0_0_15px_rgba(239,68,68,0.3)] backdrop-blur-md"
+                                                    >
+                                                        EXPUNGE
+                                                    </button>
+                                                </div>
+
+                                                {gen.type === 'deforum' ? (
+                                                    <video src={gen.assetUrl} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" muted loop onMouseEnter={(e) => (e.target as HTMLVideoElement).play()} onMouseLeave={(e) => (e.target as HTMLVideoElement).pause()} />
+                                                ) : (gen.type === 'vocal_dna' || gen.type === 'neural_swap') ? (
+                                                    <div className="w-full h-full flex flex-col items-center justify-center p-6 bg-[#050505] transition-all group-hover:bg-primary/5">
+                                                        <div className="mb-4 p-4 bg-primary/10 rounded-full group-hover:scale-110 transition-transform shadow-[0_0_20px_rgba(var(--color-primary),0.2)]">
+                                                            <Zap className="text-primary w-12 h-12" />
+                                                        </div>
+                                                        <span className="text-[10px] font-mono text-primary/80 uppercase tracking-widest font-black text-center mb-1">ACOUSTIC PAYLOAD</span>
+                                                        <span className="text-[8px] font-mono text-gray-500 uppercase tracking-widest text-center">{gen.type.replace('_',' ')}</span>
+                                                    </div>
+                                                ) : (
+                                                    <img src={gen.assetUrl} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-all duration-700 group-hover:scale-110" />
+                                                )}
+                                                
+                                                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent pointer-events-none" />
+                                                
+                                                {/* TRADING CARD OVERLAY NATIVE TO GRID */}
+                                                <div className="absolute inset-x-2 bottom-2 md:inset-x-4 md:bottom-4 flex flex-col justify-end p-2 md:p-3 bg-black/80 backdrop-blur-md border border-primary/20 rounded-xl shadow-[0_0_30px_rgba(var(--color-primary),0.1)] transition-transform duration-300 transform translate-y-2 group-hover:translate-y-0 pointer-events-none">
+                                                    <div className="flex justify-between items-center border-b border-primary/20 pb-1 mb-1">
+                                                        <span className="text-[6px] md:text-[8px] font-mono text-white tracking-widest uppercase truncate">{gen.type === 'deforum' ? 'DEFORUM' : 'FLIXSYNTH'}</span>
+                                                        <span className="text-[6px] md:text-[8px] font-mono text-primary font-bold">{gen.price > 0 ? `${gen.price}C` : 'UNLISTED'}</span>
+                                                    </div>
+                                                    <p className="text-[6px] md:text-[7.5px] font-mono text-primary/70 uppercase tracking-widest leading-relaxed line-clamp-2">
+                                                        {gen.prompt || 'NO PROMPT'}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </AssetMatrix>
+                                    ))}
+                                </div>
+                            </>
                         )}
                     </div>
                 )}
@@ -249,33 +274,35 @@ export default function PrivateMatrix() {
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {tracks.map((track) => (
-                                    <div key={track.id} className="bg-[#050505]/90 border border-primary/20 p-6 flex flex-col gap-4 group hover:border-primary/60 transition-all relative overflow-hidden" 
-                                         style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%)' }}>
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-16 h-16 bg-zinc-900 border border-primary/20 flex items-center justify-center relative group-hover:border-primary/50 overflow-hidden">
-                                                <img src={track.artwork || 'https://api.dicebear.com/7.x/identicon/svg?seed='+track.id} className="w-full h-full object-cover opacity-60 group-hover:blur-sm" />
-                                                <button 
-                                                    onClick={() => { setCurrentTrack(track); setIsPlaying(true); }}
-                                                    className="absolute inset-0 flex items-center justify-center bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                >
-                                                    <Play size={24} className="text-primary fill-primary" />
-                                                </button>
+                                    <AssetMatrix key={track.id}>
+                                        <div className="bg-[#050505]/90 border border-primary/20 p-6 flex flex-col gap-4 group hover:border-primary/60 transition-all relative overflow-hidden h-full w-full" 
+                                             style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%)' }}>
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-16 h-16 bg-zinc-900 border border-primary/20 flex items-center justify-center relative group-hover:border-primary/50 overflow-hidden">
+                                                    <img src={track.artwork || 'https://api.dicebear.com/7.x/identicon/svg?seed='+track.id} className="w-full h-full object-cover opacity-60 group-hover:blur-sm" />
+                                                    <button 
+                                                        onClick={() => { setCurrentTrack(track); setIsPlaying(true); }}
+                                                        className="absolute inset-0 flex items-center justify-center bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                    >
+                                                        <Play size={24} className="text-primary fill-primary" />
+                                                    </button>
+                                                </div>
+                                                <div className="flex-1 flex flex-col overflow-hidden">
+                                                    <h3 className="text-xl font-bebas tracking-widest text-white truncate">{track.title}</h3>
+                                                    <span className="text-[10px] font-mono text-primary/40 uppercase tracking-widest">{track.artist || 'AUTHENTICATED PILOT'}</span>
+                                                </div>
+                                                <div className="text-[9px] font-mono text-gray-500 bg-white/5 px-2 py-1 border border-white/5 uppercase">
+                                                    {track.bpm || '128'} BPM
+                                                </div>
                                             </div>
-                                            <div className="flex-1 flex flex-col overflow-hidden">
-                                                <h3 className="text-xl font-bebas tracking-widest text-white truncate">{track.title}</h3>
-                                                <span className="text-[10px] font-mono text-primary/40 uppercase tracking-widest">{track.artist || 'AUTHENTICATED PILOT'}</span>
-                                            </div>
-                                            <div className="text-[9px] font-mono text-gray-500 bg-white/5 px-2 py-1 border border-white/5 uppercase">
-                                                {track.bpm || '128'} BPM
+                                            <div className="flex justify-between items-center bg-primary/5 p-3 border border-primary/20 mt-auto">
+                                                <span className="text-[8px] font-mono text-primary/60 uppercase">Cloud Path: /user_assets/tracks/...</span>
+                                                <div className="flex gap-4 relative z-10">
+                                                    <button className="text-primary/40 hover:text-red-500 transition-colors pointer-events-auto" onClick={(e) => e.stopPropagation()}><Trash2 size={14} /></button>
+                                                </div>
                                             </div>
                                         </div>
-                                        <div className="flex justify-between items-center bg-primary/5 p-3 border border-primary/20">
-                                            <span className="text-[8px] font-mono text-primary/60 uppercase">Cloud Path: /user_assets/tracks/...</span>
-                                            <div className="flex gap-4">
-                                                <button className="text-primary/40 hover:text-primary transition-colors"><Trash2 size={14} /></button>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    </AssetMatrix>
                                 ))}
                             </div>
                         )}
@@ -388,12 +415,44 @@ export default function PrivateMatrix() {
                                 ))
                             )}
                         </div>
+
+                        {/* --- POINTER AESTHETICS --- */}
+                        <div className="mt-16 flex items-center justify-between mb-8 border-b-2 border-primary/20 pb-4">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-primary/10 border border-primary/30 rounded-full">
+                                    <MousePointer2 className="w-6 h-6 text-primary" />
+                                </div>
+                                <div>
+                                    <h3 className="text-2xl font-black font-bebas tracking-widest uppercase text-white drop-shadow-[0_2px_5px_rgba(0,0,0,0.8)]">Tactical Pointers</h3>
+                                    <p className="font-mono text-[9px] text-primary/60 uppercase tracking-[0.4em]">Override Environmental Interface Cursor</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                            {['crosshair', 'cell', 'alias', 'copy', 'wait', 'crosshair'].map((cursor) => (
+                                <button 
+                                    key={cursor}
+                                    onClick={() => equipCursor(cursor)}
+                                    className={`aspect-video border flex flex-col items-center justify-center p-4 transition-all duration-300 shadow-[0_5px_20px_rgba(0,0,0,0.6)] group ${currentUser.customCursor === cursor ? 'bg-primary/20 border-primary cursor-pointer' : 'bg-[#050505] border-white/10 hover:border-primary/50 cursor-pointer'}`}
+                                    style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%)' }}
+                                >
+                                    <div className="h-10 w-10 flex items-center justify-center mb-2 bg-primary/5 rounded-full group-hover:bg-primary/20 transition-colors" style={{ cursor }}>
+                                        <MousePointer2 size={20} className={currentUser.customCursor === cursor ? 'text-primary' : 'text-gray-500 group-hover:text-white'} />
+                                    </div>
+                                    <span className="font-mono text-[9px] uppercase tracking-widest mt-1 text-center w-full truncate text-gray-400 group-hover:text-white">
+                                        {cursor === 'crosshair' ? 'Tactical' : cursor === 'cell' ? 'Vector' : cursor === 'alias' ? 'Neon Node' : cursor === 'copy' ? 'Duplicator' : cursor === 'wait' ? 'Neural Link' : 'Architect'}
+                                    </span>
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 )}
             </div>
             
             {/* Pip-Boy Filter Layer (Subtle) */}
             <div className="fixed inset-0 pointer-events-none z-[100] opacity-5 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%)] bg-[length:100%_2px]" />
+            <CyberAvatarModal />
         </div>
     );
 }

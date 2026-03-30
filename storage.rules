@@ -1,15 +1,26 @@
 rules_version = '2';
+
+// Craft rules to allow users secure upload control for avatars
 service firebase.storage {
   match /b/{bucket}/o {
     
-    // Unlock the Global Temporary Faces Buffer for Flixsynth
-    match /tmp-faces/{uid}/{fileName} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+    // Architect bypass
+    function isArchitect() {
+      return request.auth != null && (
+        firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role.upper() == '👑 THE ARCHITECT' ||
+        firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role.upper() == 'ARCHITECT'
+      );
     }
-
-    // Unlock the User Assets Partition (Including all AI generated outputs)
-    match /user_assets/{uid}/{allPaths=**} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+    
+    match /avatars/{userId}/{allPaths=**} {
+      // Anyone can see anyone's avatar
+      allow read: if true;
+      // Only the user themselves can write/delete an avatar or an architect over-ride
+      allow write: if request.auth != null && (request.auth.uid == userId || isArchitect());
+    }
+    
+    match /{allPaths=**} {
+      allow read, write: if isArchitect();
     }
   }
 }

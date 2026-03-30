@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { CircleDollarSign, Zap, Crosshair, Crown, Skull, Loader2, ShieldCheck, CheckCircle2, Terminal, Radio, Mic, LayoutDashboard, Headphones, Flame, Lock, Archive, ShoppingBag, Fingerprint, ChevronLeft } from 'lucide-react';
-import NeuralIdentityTerminal from '@/components/global/NeuralIdentityTerminal';
 import { getFunctions, httpsCallable } from 'firebase/functions';
+import { doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { db, auth, functions } from '@/lib/firebase/config';
 import { useUserStore } from '@/store/useUserStore';
 import { useRouter } from 'next/navigation';
@@ -94,6 +94,7 @@ export default function TreasuryPage() {
             }
             confirmMessage = `Transact ${item.cost.toLocaleString()} Coins to acquire ${item.name}? This action is irreversible.`;
             confirmAction = async () => {
+                if (!currentUser?.uid) return;
                 const userRef = doc(db, 'users', currentUser.uid);
                 await updateDoc(userRef, {
                     coinsBalance: currentCoins - item.cost,
@@ -114,6 +115,7 @@ export default function TreasuryPage() {
                 }
                 confirmMessage = `You missed Season ${item.season}. Transact ${item.missedSeasonCost.toLocaleString()} Coins to acquire ${item.name}?`;
                 confirmAction = async () => {
+                    if (!currentUser?.uid) return;
                     const userRef = doc(db, 'users', currentUser.uid);
                     await updateDoc(userRef, {
                         coinsBalance: currentCoins - item.missedSeasonCost,
@@ -253,9 +255,9 @@ export default function TreasuryPage() {
                     
                     // Specific Logic Checkers
                     const userPrestige = getPilotRank(currentXp).prestige;
-                    const isPrestigeLocked = item.requiredPrestige && userPrestige < item.requiredPrestige;
-                    const isXpLocked = item.requiredXp && currentXp < item.requiredXp;
-                    const missedSeason = item.currency === 'xp_unlock' && userOriginSeason > item.season;
+                    const isPrestigeLocked = !!item.requiredPrestige && userPrestige < item.requiredPrestige;
+                    const isXpLocked = !!item.requiredXp && currentXp < item.requiredXp;
+                    const missedSeason = item.currency === 'xp_unlock' && item.season !== undefined && userOriginSeason > item.season;
 
                     return (
                         <div key={item.id} className={`group relative bg-black/80 backdrop-blur-xl border ${item.border} rounded-3xl p-6 transition-all duration-500 overflow-hidden`}>
@@ -266,9 +268,9 @@ export default function TreasuryPage() {
                                     </div>
                                     <div className={`bg-black/80 border px-3 py-1.5 rounded-xl flex items-center gap-2 ${item.currency === 'coins' || missedSeason ? 'border-yellow-500/30' : (item.currency === 'xp_unlock' ? 'border-cyan-500/30' : 'border-white/20')}`}>
                                         {item.currency === 'coins' || missedSeason ? (
-                                            <><CircleDollarSign size={14} className="text-yellow-500" /><span className="font-bebas text-xl text-yellow-500 tracking-widest pt-1 leading-none">{(missedSeason ? item.missedSeasonCost : item.cost).toLocaleString()}</span></>
+                                            <><CircleDollarSign size={14} className="text-yellow-500" /><span className="font-bebas text-xl text-yellow-500 tracking-widest pt-1 leading-none">{(missedSeason ? (item.missedSeasonCost || 0) : (item.cost || 0)).toLocaleString()}</span></>
                                         ) : item.currency === 'xp_unlock' ? (
-                                            <><Fingerprint size={14} className="text-cyan-500" /><span className="font-bebas text-xl text-cyan-500 tracking-widest pt-1 leading-none">{item.requiredPrestige ? `PRESTIGE ${item.requiredPrestige}` : `${item.requiredXp.toLocaleString()} XP`}</span></>
+                                            <><Fingerprint size={14} className="text-cyan-500" /><span className="font-bebas text-xl text-cyan-500 tracking-widest pt-1 leading-none">{item.requiredPrestige ? `PRESTIGE ${item.requiredPrestige}` : `${(item.requiredXp || 0).toLocaleString()} XP`}</span></>
                                         ) : (
                                             <span className="font-bebas text-xl text-white tracking-widest pt-1 leading-none px-2">FREE</span>
                                         )}
@@ -297,7 +299,7 @@ export default function TreasuryPage() {
                                         `}
                                     >
                                         {isPrestigeLocked ? `REQUIRES PRESTIGE ${item.requiredPrestige}` : 
-                                         !missedSeason && isXpLocked ? `REQUIRES ${item.requiredXp.toLocaleString()} XP` :
+                                         !missedSeason && isXpLocked ? `REQUIRES ${(item.requiredXp || 0).toLocaleString()} XP` :
                                          item.currency === 'free' ? 'CLAIM SECURE SUBSTRATE' :
                                          !missedSeason && item.currency === 'xp_unlock' ? 'CLAIM REWARD [FREE]' :
                                          `PURCHASE MODULE`}
@@ -324,7 +326,7 @@ export default function TreasuryPage() {
     };
 
     return (
-        <div className="flex flex-col items-center justify-start min-h-screen pt-8 pb-40 relative overflow-hidden bg-transparent group/main selection:bg-yellow-500/20">
+        <div className="relative flex flex-1 w-full flex-col justify-start overflow-visible bg-transparent group/main shrink-0 min-h-max pt-0 pb-0 selection:bg-yellow-500/20">
             
             {/* CINEMATIC B-ROLL BACKGROUND LAYER */}
             <div className="fixed inset-0 z-[-1] flex items-center justify-center pointer-events-none overflow-hidden">
@@ -342,19 +344,17 @@ export default function TreasuryPage() {
             {/* CRT Persistent Filter Overlay */}
             <div className="absolute inset-0 pointer-events-none z-[40] opacity-[0.05] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(var(--color-primary),0.04),rgba(var(--color-primary),0.01),rgba(var(--color-primary),0.04))] bg-[length:100%_4px,4px_100%] animate-pulse" />
             
-            <div className="w-[95%] max-w-7xl mx-auto z-[60] mt-12 mb-8">
-                <NeuralIdentityTerminal />
+            <div className="absolute top-8 left-0 right-0 z-[100] pointer-events-none px-4 md:px-8">
+                {/* NEURAL IDENTITY GATEWAY DELEGATED TO PERSISTENT LAYOUT ENGINE */}
             </div>
 
-            {/* RETURN NAVIGATION */}
-            <div className="w-[95%] max-w-7xl mx-auto mb-10 relative z-50 animate-in slide-in-from-top-4 duration-700">
+            {/* RETURN NAVIGATION IN FLOW */}
+            <div className="w-full relative z-[100] px-4 md:px-12 flex justify-start mt-8 mb-6">
                 <button 
                     onClick={() => router.push('/')}
-                    className="flex items-center gap-3 px-6 py-3 bg-black/80 border border-white/5 cyber-button-clip hover:bg-yellow-500/20 hover:border-yellow-500/50 text-gray-500 hover:text-white transition-all w-fit group shadow-[0_5px_20px_rgba(0,0,0,0.8)]"
-                    style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%)' }}
+                    className="flex items-center gap-3 text-white/50 hover:text-yellow-500 transition-all font-mono text-[10px] tracking-widest border border-white/10 hover:border-yellow-500/50 hover:bg-yellow-500/10 bg-black/40 px-6 py-3 rounded-none"
                 >
-                    <ChevronLeft size={18} className="group-hover:-translate-x-1 transition-transform text-yellow-500" />
-                    <span className="font-bebas text-xl tracking-[0.2em] pt-1">RETURN TO ARCHITECT CORE</span>
+                    <ChevronLeft size={16} /> RETURN TO ARCHITECT CORE
                 </button>
             </div>
 
@@ -400,7 +400,7 @@ export default function TreasuryPage() {
                 </div>
             )}
 
-            <div className="cyber-panel p-8 md:p-16 w-[95%] max-w-7xl relative z-50 overflow-hidden bg-black/80 border-2 border-yellow-500/20 shadow-[0_30px_100px_rgba(0,0,0,1)] rounded-[40px]" style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 50px), calc(100% - 50px) 100%, 0 100%)' }}>
+            <div className="cyber-panel p-8 md:p-16 w-full flex-1 max-w-[1700px] mx-auto relative z-50 overflow-hidden bg-black/80 border-2 border-yellow-500/20 shadow-[0_30px_100px_rgba(0,0,0,1)] rounded-t-[40px] md:rounded-[40px]" style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 50px), calc(100% - 50px) 100%, 0 100%)' }}>
                 {/* Tactical Ledger Sync Overlay */}
                 <div className="absolute top-6 left-8 flex flex-col gap-1 opacity-20">
                     <span className="font-mono text-[7px] text-yellow-500 tracking-[0.5em] font-black uppercase italic">Ledger_Sync: ACTIVE</span>

@@ -15,6 +15,9 @@ export interface UserProfile {
   enhancements?: string[];
   ownedEnhancements?: string[];
   customBannerUrl?: string; // Cinematic Private Matrix Banner
+  bannerPositionY?: number; // Custom vertical offset
+  bannerZoom?: number; // Custom optical scale
+  customCursor?: string; // Users can select custom cursor
   freeGenerationsRemaining?: number; // Founder Neural Stipend
 }
 

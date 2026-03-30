@@ -2,10 +2,11 @@
 
 import { useState } from 'react';
 import { useUserStore } from '@/store/useUserStore';
-import { Sparkles, Video, UserPlus, Lock, Zap, Coins, Image as ImageIcon, AlertCircle, Loader2, Cpu, Terminal, CheckCircle2, Database } from 'lucide-react';
+import { Sparkles, Video, UserPlus, Lock, Zap, Coins, Image as ImageIcon, AlertCircle, Loader2, Cpu, Terminal, CheckCircle2, Database, Trash2, Save, X } from 'lucide-react';
 import { CyberButton } from '@/components/ui/CyberButton';
 import { NeuralModal } from '@/components/ui/NeuralModal';
-import NeuralIdentityTerminal from '@/components/global/NeuralIdentityTerminal';
+import { motion, AnimatePresence, PanInfo } from 'framer-motion';
+
 import { db, storage } from '@/lib/firebase/config';
 import { collection, addDoc, serverTimestamp, doc, updateDoc, increment } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -22,6 +23,10 @@ export default function NeuralStudio() {
     const [neuralState, setNeuralState] = useState<NeuralState>('IDLE');
     const [statusMsg, setStatusMsg] = useState('');
     const [lastOutput, setLastOutput] = useState<string | null>(null);
+    const [batchSize, setBatchSize] = useState(1);
+    const [batchUrls, setBatchUrls] = useState<string[]>([]);
+    const [currentBatchIndex, setCurrentBatchIndex] = useState(0);
+    const [isBatchMode, setIsBatchMode] = useState(false);
     const [vocalStem, setVocalStem] = useState<File | null>(null);
     const [vocalStemName, setVocalStemName] = useState<string | null>(null);
     const [consentLikeness, setConsentLikeness] = useState(false);
@@ -62,12 +67,12 @@ export default function NeuralStudio() {
             vocal_dna: 10,
             neural_swap: 8
         };
-        const cost = costMap[activeTab];
+        const actualCost = activeTab === 'flixsynth' ? costMap.flixsynth * batchSize : costMap[activeTab];
         const hasFreeGenerations = (currentUser.freeGenerationsRemaining || 0) > 0;
 
-        if (!hasFreeGenerations && (currentUser.coinsBalance || 0) < cost) {
+        if (!hasFreeGenerations && (currentUser.coinsBalance || 0) < actualCost) {
             setNeuralState('ERROR');
-            setStatusMsg(`INSUFFICIENT TREASURY FUNDS. REQUIRE ${cost} COINS FOR NEURAL SYNTHESIS.`);
+            setStatusMsg(`INSUFFICIENT TREASURY FUNDS. REQUIRE ${actualCost} COINS FOR NEURAL SYNTHESIS.`);
             return;
         }
 
@@ -91,6 +96,9 @@ export default function NeuralStudio() {
                 const endpoint = activeTab === 'deforum' ? '/api/ai/deforum' : '/api/studio/generate';
                 let body: any = { prompt };
                 
+                if (activeTab === 'flixsynth') {
+                    body.batchSize = batchSize;
+                }
                 if (activeTab === 'flixsynth' && faceImage) {
                     const faceUrl = await uploadFaceToStorage();
                     body.faceUrl = faceUrl;
@@ -107,45 +115,59 @@ export default function NeuralStudio() {
                     throw new Error(errorData.error || 'Neural Gateway Timeout - Matrix Unresponsive');
                 }
                 const data = await response.json();
-                const outputUrl = data.url;
-
-                if (!outputUrl) {
-                    throw new Error('Neural Foundry returned an empty visual payload.');
-                }
-
-                setStatusMsg('ARCHIVING PAYLOAD TO SECURE CLOUD...');
-                let finalAssetUrl = outputUrl;
-                try {
-                    finalAssetUrl = await archiveToPermanentStorage(outputUrl);
-                } catch (e: any) {
-                    throw new Error(`[STORAGE_ERR] ${e.message}`);
-                }
-
+                
+                // User Cost Deduction (Wait until AFTER fetch so we don't deduct if network fails before getting bits)
                 try {
                     const userDoc = doc(db, 'users', currentUser.uid);
                     if (hasFreeGenerations) {
                         await updateDoc(userDoc, { freeGenerationsRemaining: increment(-1) });
                     } else {
-                        await updateDoc(userDoc, { coinsBalance: increment(-cost) });
+                        await updateDoc(userDoc, { coinsBalance: increment(-actualCost) });
                     }
                 } catch (e: any) {
                     throw new Error(`[USER_UPDATE_ERR] ${e.message}`);
                 }
 
-                try {
-                    await addDoc(collection(db, 'user_assets', currentUser.uid, 'ai_generations'), {
-                        type: activeTab,
-                        prompt,
-                        assetUrl: finalAssetUrl,
-                        createdAt: serverTimestamp()
-                    });
-                } catch (e: any) {
-                    throw new Error(`[ASSET_DB_ERR] ${e.message}`);
-                }
+                if (activeTab === 'flixsynth') {
+                    const receivedUrls = data.urls || [data.url];
+                    if (!receivedUrls || receivedUrls.length === 0 || !receivedUrls[0]) {
+                        throw new Error('Neural Foundry returned an empty visual payload.');
+                    }
+                    
+                    setBatchUrls(receivedUrls);
+                    setCurrentBatchIndex(0);
+                    setIsBatchMode(true);
+                    setNeuralState('SUCCESS');
+                    setStatusMsg('BATCH LOADED. SWIPE REVIEW INITIATED.');
+                } else {
+                    const outputUrl = data.url;
+                    if (!outputUrl) {
+                        throw new Error('Neural Foundry returned an empty payload.');
+                    }
 
-                setLastOutput(finalAssetUrl);
-                setNeuralState('SUCCESS');
-                setStatusMsg('SENSORY PAYLOAD BUFFERED. VIEW IN PRIVATE MATRIX.');
+                    setStatusMsg('ARCHIVING PAYLOAD TO SECURE CLOUD...');
+                    let finalAssetUrl = outputUrl;
+                    try {
+                        finalAssetUrl = await archiveToPermanentStorage(outputUrl);
+                    } catch (e: any) {
+                        throw new Error(`[STORAGE_ERR] ${e.message}`);
+                    }
+
+                    try {
+                        await addDoc(collection(db, 'user_assets', currentUser.uid, 'ai_generations'), {
+                            type: activeTab,
+                            prompt,
+                            assetUrl: finalAssetUrl,
+                            createdAt: serverTimestamp()
+                        });
+                    } catch (e: any) {
+                        throw new Error(`[ASSET_DB_ERR] ${e.message}`);
+                    }
+
+                    setLastOutput(finalAssetUrl);
+                    setNeuralState('SUCCESS');
+                    setStatusMsg('SENSORY PAYLOAD BUFFERED. VIEW IN PRIVATE MATRIX.');
+                }
             }
 
         } catch (error: any) {
@@ -223,6 +245,44 @@ export default function NeuralStudio() {
         }
     };
 
+    const handleSwipe = async (e: any, info: PanInfo) => {
+        const threshold = 100;
+        if (info.offset.x > threshold) {
+            // Swipe Right to Keep
+            setStatusMsg('ARCHIVING CHOSEN ASSET...');
+            try {
+                const finalUrl = await archiveToPermanentStorage(batchUrls[currentBatchIndex]);
+                if (currentUser) {
+                    await addDoc(collection(db, 'user_assets', currentUser.uid, 'ai_generations'), {
+                        type: 'flixsynth',
+                        prompt,
+                        assetUrl: finalUrl,
+                        createdAt: serverTimestamp()
+                    });
+                }
+                setStatusMsg(`ASSET SAVED [${currentBatchIndex + 1}/${batchUrls.length}].`);
+            } catch (err) {
+                console.error(err);
+                setStatusMsg('ERROR ARCHIVING ASSET.');
+            }
+            advanceBatch();
+        } else if (info.offset.x < -threshold) {
+            // Swipe Left to Discard
+            setStatusMsg(`ASSET DISCARDED [${currentBatchIndex + 1}/${batchUrls.length}].`);
+            advanceBatch();
+        }
+    };
+
+    const advanceBatch = () => {
+        if (currentBatchIndex < batchUrls.length - 1) {
+            setCurrentBatchIndex(prev => prev + 1);
+        } else {
+            setIsBatchMode(false);
+            setBatchUrls([]);
+            setStatusMsg('BATCH REVIEW COMPLETE.');
+        }
+    };
+
     if (!isFounder) {
         return (
             <div className="min-h-[70vh] flex flex-col items-center justify-center p-6 sm:p-12 text-center bg-black/40 backdrop-blur-sm border border-red-500/20 rounded-3xl m-4 lg:m-20">
@@ -251,54 +311,52 @@ export default function NeuralStudio() {
                 <div className="absolute inset-0 bg-gradient-to-b from-black via-black/60 to-black z-10" />
             </div>
 
-            <div className="relative z-50 w-full">
-                <NeuralIdentityTerminal className="mb-0" />
-            </div>
+            
 
-            <div className="relative z-40 w-full max-w-[1400px] mx-auto px-4 md:px-8 pt-20 flex flex-col items-center">
+            <div className="relative z-40 w-full max-w-[1400px] mx-auto px-4 md:px-8 pt-6 md:pt-20 flex flex-col items-center">
 
-                <div className="w-full mb-12 flex flex-col md:flex-row justify-between items-end border-b border-solid border-primary/20 pb-8 gap-6 animate-in fade-in slide-in-from-top-4 duration-700">
-                    <div className="flex items-start gap-4">
-                        <div className="p-4 bg-primary/10 border border-primary/20 rounded-full shadow-[0_0_20px_rgba(var(--color-primary),0.2)]">
-                            <Sparkles className="w-8 h-8 text-primary cyber-flicker-slow" />
+                <div className="w-full mb-8 md:mb-12 flex flex-col md:flex-row justify-between items-start md:items-end border-b border-solid border-primary/20 pb-4 md:pb-8 gap-4 md:gap-6 animate-in fade-in slide-in-from-top-4 duration-700">
+                    <div className="flex items-start gap-3 md:gap-4">
+                        <div className="p-3 md:p-4 bg-primary/10 border border-primary/20 rounded-full shadow-[0_0_20px_rgba(var(--color-primary),0.2)]">
+                            <Sparkles className="w-5 h-5 md:w-8 md:h-8 text-primary cyber-flicker-slow" />
                         </div>
                         <div>
-                            <h1 className="text-4xl md:text-7xl font-black font-bebas text-white tracking-widest uppercase mb-1 drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">NEURAL FOUNDRY</h1>
-                            <p className="font-mono text-[10px] sm:text-[11px] text-primary/70 uppercase tracking-[0.5em] font-bold italic">[ SYNTHESIZING ORIGINAL MISSION ASSETS ]</p>
+                            <h1 className="text-3xl md:text-7xl font-black font-bebas text-white tracking-widest uppercase mb-0 md:mb-1 drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">NEURAL FOUNDRY</h1>
+                            <p className="font-mono text-[8px] sm:text-[11px] text-primary/70 uppercase tracking-[0.3em] md:tracking-[0.5em] font-bold italic">[ SYNTHESIZING ORIGINAL MISSION ASSETS ]</p>
                         </div>
                     </div>
-                    <div className="flex flex-col items-end gap-2 bg-black/60 backdrop-blur-xl border border-primary/20 rounded-2xl p-6 shadow-[0_0_40px_rgba(0,0,0,0.5)]">
-                        <div className="flex items-center gap-3 text-white mb-0">
-                            <Coins size={16} className="text-yellow-500" />
-                            <span className="font-bebas text-4xl tracking-widest">{currentUser?.coinsBalance?.toLocaleString() || '0'} C</span>
+                    <div className="w-full md:w-auto flex flex-col items-center justify-center bg-black/60 backdrop-blur-xl border-2 sm:border-4 border-primary/30 rounded-xl md:rounded-2xl py-3 px-6 md:p-6 shadow-[0_0_40px_rgba(0,0,0,0.5)] text-center">
+                        <div className="flex items-center justify-center gap-2 md:gap-3 text-white">
+                            <Coins size={14} className="text-yellow-500 md:w-5 md:h-5 shrink-0" />
+                            <span className="font-bebas text-2xl md:text-4xl tracking-widest leading-none">{currentUser?.coinsBalance?.toLocaleString() || '0'} C</span>
                         </div>
-                        <span className="text-[8px] font-mono text-primary/40 tracking-widest uppercase font-black">Treasury Liquid Balance</span>
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full mb-20">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 w-full mb-10 md:mb-20">
                     {(['flixsynth', 'deforum', 'vocal_dna', 'neural_swap'] as const).map(tab => (
                         <div 
                             key={tab}
-                            className="group relative bg-black/60 backdrop-blur-3xl border border-primary/20 rounded-2xl hover:border-primary/60 hover:shadow-[0_0_50px_rgba(var(--color-primary),0.15)] transition-all duration-700 overflow-hidden"
-                            style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%)' }}
+                            className="group relative bg-black/60 backdrop-blur-3xl border border-primary/20 rounded-xl md:rounded-2xl hover:border-primary/60 hover:shadow-[0_0_50px_rgba(var(--color-primary),0.15)] transition-all duration-700 overflow-hidden"
+                            style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%)' }}
                         >
                             {/* Diagnostic Background Element */}
-                            <div className="absolute inset-0 bg-gradient-to-t from-primary/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-                            <div className="absolute -right-4 -top-4 w-24 h-24 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/20 transition-all duration-1000" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-primary/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+
+                            <div className="absolute -right-4 -top-4 w-12 h-12 md:w-24 md:h-24 bg-primary/5 rounded-full blur-2xl group-hover:bg-primary/20 transition-all duration-1000" />
                             
-                            <div className="p-8 flex flex-col items-center text-center gap-6 relative z-10">
-                                <div className={`p-5 bg-black/80 border-2 border-primary/10 rounded-2xl group-hover:border-primary/60 group-hover:scale-110 transition-all duration-500 shadow-[inset_0_0_20px_rgba(var(--color-primary),0.1)]`}>
-                                    {tab === 'flixsynth' && <ImageIcon size={32} className="text-primary" />}
-                                    {tab === 'deforum' && <Video size={32} className="text-primary" />}
-                                    {tab === 'vocal_dna' && <Terminal size={32} className="text-primary" />}
-                                    {tab === 'neural_swap' && <Database size={32} className="text-primary" />}
+                            <div className="p-3 md:p-8 flex flex-col items-center text-center gap-2 md:gap-6 relative z-10 w-full h-full justify-between">
+                                <div className={`p-2 bg-black/80 border border-primary/10 rounded-xl group-hover:border-primary/60 group-hover:scale-110 transition-all duration-500 shadow-[inset_0_0_20px_rgba(var(--color-primary),0.1)]`}>
+                                    {tab === 'flixsynth' && <ImageIcon size={20} className="text-primary md:w-8 md:h-8" />}
+                                    {tab === 'deforum' && <Video size={20} className="text-primary md:w-8 md:h-8" />}
+                                    {tab === 'vocal_dna' && <Terminal size={20} className="text-primary md:w-8 md:h-8" />}
+                                    {tab === 'neural_swap' && <Database size={20} className="text-primary md:w-8 md:h-8" />}
                                 </div>
-                                <div className="min-h-[100px] flex flex-col justify-center">
-                                    <h3 className="text-2xl font-black font-bebas text-white tracking-[0.2em] mb-2 uppercase drop-shadow-[0_0_10px_rgba(255,255,255,0.1)] group-hover:text-primary transition-colors">
+                                <div className="flex flex-col justify-center items-center">
+                                    <h3 className="text-sm md:text-2xl font-black font-bebas text-white tracking-[0.2em] mb-0 md:mb-2 uppercase drop-shadow-[0_0_10px_rgba(255,255,255,0.1)] group-hover:text-primary transition-colors leading-tight">
                                         {tab === 'flixsynth' ? 'FLIXSYNTH' : tab === 'deforum' ? 'DEFORUM' : tab === 'vocal_dna' ? 'VOCAL DNA' : 'NEURAL SWAP'}
                                     </h3>
-                                    <p className="text-[10px] font-mono text-gray-500 uppercase tracking-[0.2em] font-bold leading-relaxed group-hover:text-gray-300 transition-colors px-2">
+                                    <p className="hidden md:block text-[10px] font-mono text-gray-500 uppercase tracking-[0.2em] font-bold leading-relaxed group-hover:text-gray-300 transition-colors px-2">
                                         {tab === 'flixsynth' ? 'Forge original album covers and visual identities' : 
                                          tab === 'deforum' ? 'Cinematic music video sequencing for original works' :
                                          tab === 'vocal_dna' ? 'Clone and Practice your identity for Original Works' :
@@ -306,46 +364,14 @@ export default function NeuralStudio() {
                                     </p>
                                 </div>
                                 <button 
-                                    onClick={() => { setActiveTab(tab); setIsModalOpen(true); setNeuralState('IDLE'); setLastOutput(null); }}
-                                    className="mt-4 w-full px-8 py-4 bg-black/40 text-primary border border-primary/30 rounded-xl font-mono text-[10px] font-black uppercase tracking-[0.4em] hover:bg-primary hover:text-black transition-all shadow-xl group-hover:border-primary/80"
+                                    onClick={() => { setActiveTab(tab); setIsModalOpen(true); setNeuralState('IDLE'); setLastOutput(null); setIsBatchMode(false); }}
+                                    className="w-full px-1 py-3 md:px-8 md:py-4 bg-black/40 text-primary border border-primary/30 rounded-lg md:rounded-xl font-mono text-[7px] md:text-[10px] font-black uppercase tracking-widest md:tracking-[0.4em] hover:bg-primary hover:text-black transition-all shadow-xl group-hover:border-primary/80 mt-1 md:mt-4 whitespace-nowrap"
                                 >
-                                    [ TERMINAL_BOOT ]
+                                    [ BOOT ]
                                 </button>
                             </div>
                         </div>
                     ))}
-                </div>
-
-                {/* RECENT ARCHIVES (Matching core landing grid) */}
-                <div className="w-full flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-8 duration-1000">
-                    <div className="flex items-center justify-between border-b border-primary/20 pb-4">
-                        <h2 className="text-3xl font-black font-bebas text-white tracking-[0.3em] uppercase italic">NEURAL_HISTORY_FETCH</h2>
-                        <button 
-                            onClick={() => window.location.href='/pod'}
-                            className="font-mono text-[9px] text-primary/60 hover:text-primary tracking-widest uppercase transition-colors"
-                        >
-                            [ VIEW_ALL_ARCHIVES ]
-                        </button>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 w-full">
-                        {[...Array(6)].map((_, i) => (
-                            <div 
-                                key={i}
-                                className="aspect-[4/5] bg-black/60 backdrop-blur-md border border-primary/10 rounded-2xl p-4 flex flex-col justify-end items-center opacity-40 hover:opacity-100 hover:border-primary/40 transition-all cursor-pointer group/node"
-                                style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%)' }}
-                            >
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                    <ImageIcon size={32} className="text-primary/10 group-hover/node:scale-125 transition-transform duration-700" />
-                                </div>
-                                <div className="relative z-10 w-full">
-                                    <div className="w-4 h-[1px] bg-primary/20 group-hover/node:w-full transition-all duration-700 mb-2" />
-                                    <span className="font-mono text-[7px] text-primary/40 group-hover/node:text-primary tracking-widest uppercase block mb-1">NODE_S_{i}</span>
-                                    <span className="font-bebas text-lg text-white/40 group-hover/node:text-white tracking-widest uppercase block truncate">EMPTY_SLOT</span>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
                 </div>
             </div>
 
@@ -354,10 +380,10 @@ export default function NeuralStudio() {
                 onClose={() => setIsModalOpen(false)} 
                 title={activeTab === 'flixsynth' ? 'FLIXSYNTH ART STUDIO' : activeTab === 'deforum' ? 'VIDEO ENGINE' : activeTab === 'vocal_dna' ? 'NEURAL BLUEPRINT' : 'NEURAL SWAP CONVERSION'}
             >
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 lg:gap-16">
                     
-                    {/* LEFT CONTROLS PORT - MOBILE ORDER 2 / DESKTOP ORDER 1 */}
-                    <div className="lg:col-span-5 flex flex-col gap-8 order-2 lg:order-1">
+                    {/* LEFT CONTROLS PORT - ALWAYS VISIBLE AT OP */}
+                    <div className="lg:col-span-6 2xl:col-span-5 flex flex-col gap-6 sm:gap-8 order-1 lg:order-1">
                         <div className="flex flex-col gap-5">
                             <label className="text-[11px] font-mono text-primary uppercase tracking-[0.2em] flex justify-between font-black items-center">
                                 <span className="flex items-center gap-2">
@@ -373,23 +399,39 @@ export default function NeuralStudio() {
                                 onChange={(e) => setPrompt(e.target.value)}
                                 placeholder={activeTab === 'deforum' ? "Describe the music video sequence..." : 
                                              activeTab === 'neural_swap' ? "Paste Suno link or Archive Path..." : "Describe the visual vision..."}
-                                className="w-full min-h-[180px] bg-black/80 border-2 border-primary/20 p-8 font-mono text-white text-sm focus:outline-none focus:border-primary/60 transition-all custom-scrollbar placeholder:text-primary/10 shadow-[inset_0_0_30px_rgba(var(--color-primary),0.02)]"
+                                className="w-full min-h-[140px] sm:min-h-[180px] bg-black/80 border-2 border-primary/20 p-5 sm:p-8 font-mono text-white text-[12px] sm:text-sm focus:outline-none focus:border-primary/60 transition-all custom-scrollbar placeholder:text-primary/10 shadow-[inset_0_0_30px_rgba(var(--color-primary),0.02)]"
                                 style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%)' }}
                             />
                             {(activeTab === 'flixsynth' || activeTab === 'deforum') && (
-                                <div className="flex w-full justify-end">
+                                <div className="flex w-full justify-between items-center gap-4">
+                                    {activeTab === 'flixsynth' && (
+                                        <div className="flex items-center gap-3">
+                                            <span className="font-mono text-[9px] text-primary/60 uppercase tracking-[0.2em] font-black whitespace-nowrap">Batch Size: </span>
+                                            <div className="flex border border-primary/20 rounded-lg overflow-hidden shrink-0">
+                                                {[1, 2, 4].map(num => (
+                                                    <button
+                                                        key={num}
+                                                        onClick={() => setBatchSize(num)}
+                                                        className={`px-3 py-1.5 font-mono text-[10px] sm:text-xs font-black transition-all ${batchSize === num ? 'bg-primary text-black' : 'bg-black text-primary/60 hover:text-primary hover:bg-primary/10'}`}
+                                                    >
+                                                        {num}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                     <button 
                                         onClick={generateRAPG}
-                                        className="flex items-center gap-3 bg-black/60 hover:bg-primary/10 border border-primary/30 px-6 py-4 rounded-xl font-mono text-[10px] font-black text-primary uppercase tracking-[0.3em] transition-all hover:border-primary/60 shadow-xl"
+                                        className="flex items-center gap-2 sm:gap-3 bg-black/60 hover:bg-primary/10 border border-primary/30 px-3 sm:px-6 py-2 sm:py-4 rounded-xl font-mono text-[9px] sm:text-[10px] font-black text-primary uppercase tracking-[0.2em] sm:tracking-[0.3em] transition-all hover:border-primary/60 shadow-xl ml-auto"
                                     >
-                                        <Sparkles size={16} className="animate-pulse" /> [ RANDOMIZE_CORE ]
+                                        <Sparkles size={16} className="animate-pulse" /> [ RANDOMIZE ]
                                     </button>
                                 </div>
                             )}
                         </div>
 
                         {activeTab === 'flixsynth' && (
-                            <div className="flex flex-col gap-6 bg-primary/5 p-8 border border-primary/10 relative overflow-hidden group/opt">
+                            <div className="flex flex-col gap-4 sm:gap-6 bg-primary/5 p-5 sm:p-8 border border-primary/10 relative overflow-hidden group/opt">
                                 <div className="absolute top-0 right-0 w-2 h-full bg-primary/5 group-hover/opt:bg-primary/20 transition-all" />
                                 <label className="text-[10px] font-mono text-primary/80 uppercase tracking-widest font-black border-b border-primary/20 pb-3 w-fit">OPTIONAL: SOURCE_IMAGE_OVERRIDE</label>
                                 <div className="flex items-center gap-8">
@@ -412,7 +454,7 @@ export default function NeuralStudio() {
                         )}
 
                         {activeTab === 'vocal_dna' && (
-                            <div className="flex flex-col gap-8 p-10 bg-primary/5 border border-primary/20 rounded-2xl">
+                            <div className="flex flex-col gap-6 sm:gap-8 p-6 sm:p-10 bg-primary/5 border border-primary/20 rounded-2xl">
                                 <div className="flex flex-col gap-3">
                                     <h5 className="text-2xl font-black font-bebas text-white tracking-widest uppercase italic">Neural Enrollment</h5>
                                     <p className="text-[10px] font-mono text-primary/60 uppercase tracking-widest leading-relaxed">
@@ -436,7 +478,7 @@ export default function NeuralStudio() {
                                     </label>
                                 </div>
 
-                                <div className="w-full flex flex-col gap-8 p-12 bg-black/60 border-2 border-dashed border-primary/20 rounded-3xl text-center group cursor-pointer hover:border-primary/60 hover:bg-primary/5 transition-all relative overflow-hidden">
+                                <div className="w-full flex flex-col gap-6 sm:gap-8 p-6 sm:p-12 bg-black/60 border-2 border-dashed border-primary/20 rounded-2xl sm:rounded-3xl text-center group cursor-pointer hover:border-primary/60 hover:bg-primary/5 transition-all relative overflow-hidden">
                                     <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                                     <input 
                                         type="file" 
@@ -499,8 +541,8 @@ export default function NeuralStudio() {
                         </div>
                     </div>
 
-                    {/* RIGHT PREVIEW PORT - MOBILE ORDER 1 / DESKTOP ORDER 2 */}
-                    <div className="lg:col-span-7 order-1 lg:order-2">
+                    {/* RIGHT PREVIEW PORT - UNDER CONTROLS ON MOBILE NOW */}
+                    <div className="lg:col-span-7 order-2 lg:order-2">
                         <div className="lg:sticky lg:top-0 flex flex-col gap-8">
                             
                             {/* Mission Status HUD */}
@@ -616,6 +658,67 @@ export default function NeuralStudio() {
                 </div>
             </div>
             </NeuralModal>
+
+            {/* FULL SCREEN BATCH REVIEW */}
+            <AnimatePresence>
+                {isBatchMode && batchUrls.length > 0 && (
+                    <motion.div 
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ duration: 0.5 }}
+                        className="fixed inset-0 z-[300000] bg-black/95 backdrop-blur-xl flex flex-col items-center justify-center p-4 sm:p-8"
+                    >
+                        <button 
+                            onClick={() => {
+                                setIsBatchMode(false);
+                                setBatchUrls([]);
+                                setStatusMsg('BATCH ABORTED.');
+                            }}
+                            className="absolute top-6 right-6 p-4 bg-black border border-primary/40 text-primary hover:bg-primary hover:text-black transition-all z-50 rounded-full"
+                        >
+                            <X size={24} />
+                        </button>
+                        
+                        <div className="absolute top-8 pb-4 text-center z-10">
+                            <h2 className="text-3xl font-bebas tracking-widest text-white mb-2 uppercase">Neural Synthesis Complete</h2>
+                            <p className="font-mono text-[10px] text-primary/60 uppercase tracking-[0.3em] font-bold">
+                                Swipe Right to Archive <span className="text-white mx-2">|</span> Swipe Left to Discard
+                            </p>
+                            <div className="mt-4 font-mono text-[11px] text-primary/80 font-black tracking-widest">
+                                [{currentBatchIndex + 1} / {batchUrls.length}]
+                            </div>
+                        </div>
+
+                        <div className="relative w-full max-w-lg aspect-square flex items-center justify-center mt-12 bg-[#050505] rounded-3xl border border-primary/20 shadow-[0_0_120px_rgba(var(--color-primary),0.15)] overflow-hidden">
+                            <motion.img 
+                                key={currentBatchIndex}
+                                src={batchUrls[currentBatchIndex]}
+                                drag="x"
+                                dragConstraints={{ left: 0, right: 0 }}
+                                dragElastic={0.8}
+                                onDragEnd={handleSwipe}
+                                initial={{ x: 100, opacity: 0, scale: 0.9 }}
+                                animate={{ x: 0, opacity: 1, scale: 1 }}
+                                exit={{ x: -100, opacity: 0, scale: 0.9 }}
+                                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                                className="w-full h-full object-cover cursor-grab active:cursor-grabbing"
+                            />
+                        </div>
+                        
+                        <div className="mt-8 flex items-center gap-12 sm:gap-24 relative z-10 w-full max-w-lg justify-center">
+                            <button onClick={() => handleSwipe(null, { offset: { x: -200 } } as any)} className="flex flex-col items-center gap-3 text-red-500/60 hover:text-red-500 transition-all hover:scale-110 active:scale-95">
+                                <div className="p-5 rounded-full border border-red-500/30 bg-red-500/10 shadow-[0_0_30px_rgba(239,68,68,0.2)]"><Trash2 size={24} /></div>
+                                <span className="font-mono text-[10px] uppercase font-black tracking-widest drop-shadow-[0_0_10px_rgba(239,68,68,0.5)]">Discard</span>
+                            </button>
+                            <button onClick={() => handleSwipe(null, { offset: { x: 200 } } as any)} className="flex flex-col items-center gap-3 text-green-500/60 hover:text-green-500 transition-all hover:scale-110 active:scale-95">
+                                <div className="p-5 rounded-full border border-green-500/30 bg-green-500/10 shadow-[0_0_30px_rgba(34,197,94,0.2)]"><Save size={24} /></div>
+                                <span className="font-mono text-[10px] uppercase font-black tracking-widest drop-shadow-[0_0_10px_rgba(34,197,94,0.5)]">Archive</span>
+                            </button>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             <div className="fixed inset-0 pointer-events-none z-[100] opacity-10 mix-blend-overlay scanlines" />
         </div>

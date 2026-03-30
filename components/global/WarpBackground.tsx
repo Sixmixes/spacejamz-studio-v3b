@@ -21,12 +21,16 @@ const WarpBackground = memo(() => {
     const customBg = isProfile ? themeItem : null;
 
     const getThemeColors = (theme: string) => {
-        if (theme === 'battle') return { bass: '180, 0, 0', mid: '239, 68, 68', high: '255, 100, 100', white: '255, 255, 255' };
-        if (theme === 'arena') return { bass: '150, 40, 0', mid: '249, 115, 22', high: '255, 180, 0', white: '255, 255, 255' };
-        if (theme === 'toxic') return { bass: '132, 204, 22', mid: '132, 204, 22', high: '190, 242, 18', white: '255, 255, 255' };
-        if (theme === 'royal') return { bass: '200, 150, 0', mid: '234, 179, 8', high: '250, 204, 21', white: '255, 255, 255' };
-        if (theme === 'ghastly') return { bass: '60, 0, 100', mid: '168, 85, 247', high: '216, 180, 254', white: '255, 255, 255' };
-        return { bass: '168, 85, 247', mid: '6, 182, 212', high: '249, 115, 22', white: '255, 255, 255' };
+        if (theme === 'ABYSSAL_SINGULARITY') return { bass: '75, 0, 130', mid: '90, 20, 160', high: '120, 50, 200', white: '255, 255, 255' };
+        if (theme === 'SOLAR_SUPERNOVA') return { bass: '255, 69, 0', mid: '255, 100, 0', high: '255, 150, 0', white: '255, 255, 255' };
+        if (theme === 'SILICON_GRAVE') return { bass: '183, 65, 14', mid: '200, 100, 50', high: '220, 150, 80', white: '255, 255, 255' };
+        if (theme === 'SECTOR_7_SYNDICATE') return { bass: '0, 255, 255', mid: '50, 200, 255', high: '100, 255, 255', white: '255, 255, 255' };
+        if (theme === 'QUANTUM_MATRIX') return { bass: '0, 255, 0', mid: '50, 255, 50', high: '100, 255, 100', white: '255, 255, 255' };
+        if (theme === 'ZERO_G_ANOMALY') return { bass: '112, 128, 144', mid: '150, 160, 170', high: '200, 210, 220', white: '255, 255, 255' };
+        if (theme === 'ASTRAL_PROJECTION') return { bass: '255, 255, 255', mid: '220, 220, 220', high: '255, 255, 255', white: '255, 255, 255' };
+        if (theme === 'LIQUID_CHROME') return { bass: '192, 192, 192', mid: '220, 220, 220', high: '255, 255, 255', white: '255, 255, 255' };
+        if (theme === 'NEON_DOJO') return { bass: '220, 20, 60', mid: '255, 50, 80', high: '255, 100, 120', white: '255, 255, 255' };
+        return { bass: '255, 0, 255', mid: '200, 0, 255', high: '255, 100, 255', white: '255, 255, 255' }; // CYBERDECK_PRIME default
     };
 
     const activeTheme = useThemeStore(state => state.activeTheme);
@@ -34,6 +38,10 @@ const WarpBackground = memo(() => {
 
     useEffect(() => {
         themeColorsRef.current = getThemeColors(activeTheme);
+        // DOM Injection globally applying the active theme matrix
+        if (typeof document !== 'undefined') {
+            document.documentElement.setAttribute('data-theme', activeTheme);
+        }
     }, [activeTheme]);
 
     useEffect(() => {
@@ -335,17 +343,9 @@ const WarpBackground = memo(() => {
                         }}
                     />
 
-                    <div className="relative">
-                        <img
-                            src="/images/logo_cosmos.webp"
-                            alt="SpaceJamz Background"
-                            className="w-[52vw] md:w-[37vw] xl:w-[26vw] max-w-xl max-h-[22vh] md:max-h-[30vh] object-contain"
-                            style={{
-                                filter: "brightness(calc(0.35 + var(--audio-intensity, 0) * 0.15)) drop-shadow(0 0 calc(10px + var(--bass-kick, 0) * 5px) rgba(0,0,0,0.9)) sepia(calc(var(--audio-intensity, 0) * 0.3)) hue-rotate(180deg)",
-                                transform: "scale(calc(1 + var(--bass-kick, 0) * 0.02)) translateY(calc(var(--bass-kick, 0) * 3px))",
-                                transition: "transform 0.08s ease-out, filter 0.08s ease-out"
-                            }}
-                        />
+                    <div className="relative w-[300px] md:w-[400px] h-[100px] bg-transparent flex items-center justify-center">
+                        {/* THE COSMOS LOGO HAS BEEN PURGED. 
+                            This empty block maintains the collision bounds for the AUDIO OVERRIDE trigger matrix. */}
                     </div>
                     {isHome && (
                         <div className="absolute -bottom-10 text-[10px] md:text-xs font-mono tracking-widest text-cyan-500 uppercase opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-[0_0_10px_rgba(6,182,212,0.8)] whitespace-nowrap bg-black/50 px-4 py-2 rounded-full border border-cyan-500/30">
