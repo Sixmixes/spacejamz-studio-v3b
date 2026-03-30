@@ -25,12 +25,12 @@ export const NeuralModal = ({ isOpen, onClose, title, children }: NeuralModalPro
     if (!mounted || !isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[200000] flex items-start sm:items-center justify-center p-0 sm:p-4 lg:p-8 animate-in fade-in duration-500 backdrop-blur-sm bg-black/80">
+        <div className="fixed inset-0 pb-[88px] sm:pb-20 z-[200000] flex items-start sm:items-center justify-center p-0 sm:p-4 lg:p-8 animate-in fade-in duration-500 backdrop-blur-sm bg-black/80">
             {/* Backdrop */}
             <div className="absolute inset-0 bg-black/95 transition-opacity" onClick={onClose} />
             
             {/* Modal Container */}
-            <div className="relative w-full min-h-[100vh] sm:min-h-0 sm:h-auto max-w-[100vw] sm:max-w-[96vw] 2xl:max-w-[1800px] flex flex-col bg-[#050505] border-0 sm:border-2 border-primary/20 sm:shadow-[0_0_120px_rgba(0,0,0,1)] group animate-in slide-in-from-bottom-8 sm:zoom-in-95 duration-700 sm:duration-1000" 
+            <div className="relative w-full h-full sm:h-auto max-h-full sm:max-h-[85vh] sm:min-h-0 max-w-[100vw] sm:max-w-[96vw] 2xl:max-w-[1800px] flex flex-col bg-[#050505] border-0 sm:border-2 border-primary/20 sm:shadow-[0_0_120px_rgba(0,0,0,1)] group animate-in slide-in-from-bottom-8 sm:zoom-in-95 duration-700 sm:duration-1000" 
                  style={{ 
                     clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 30px), calc(100% - 30px) 100%, 0 100%)',
                     filter: 'drop-shadow(0 0-40px rgba(var(--color-primary), 0.15))'
