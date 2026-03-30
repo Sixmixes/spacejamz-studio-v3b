@@ -57,6 +57,13 @@ service cloud.firestore {
       allow update, create, write: if isArchitect() || (documentId == 'traffic' && request.auth != null);
     }
 
+    // 6. Global Arena Feed (Human Track Battles)
+    match /arena_tracks/{trackId} {
+      allow read: if true;
+      allow create, update: if request.auth != null;
+      allow delete: if request.auth != null && (request.resource.data.artistId == request.auth.uid || isArchitect());
+    }
+
     // Absolute Zero Trust Fallback for unauthorized shards
     match /{document=**} {
       allow read, write: if isArchitect();

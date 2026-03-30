@@ -99,8 +99,6 @@ export default function RootLayout({
                 </div>
             </div>
             
-            <WrldChanger />
-            
             {/* DOCKED AUDIO CONTROLLER OVERLAY */}
             <StickyPlayer />
             

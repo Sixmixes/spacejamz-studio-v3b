@@ -46,7 +46,7 @@ const SortableTrackItem = memo(function SortableTrackItem({ track, index, isThis
         <div
             ref={setNodeRef}
             style={style}
-            className={`flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-4 md:p-6 transition-all duration-300 reactive-interface-node cyber-card ${desyncClass} ${isThisPlaying ? 'active-playback' : ''} ${isDragging ? 'opacity-80 scale-[1.02] shadow-[0_0_30px_rgba(var(--color-primary),0.3)]' : ''}`}
+            className={`flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-4 md:p-6 transition-all duration-300 bg-black/40 backdrop-blur-md border border-solid border-[#00ffff]/20 rounded-2xl shadow-[inset_0_0_20px_rgba(0,255,255,0.05)] ${desyncClass} ${isThisPlaying ? 'active-playback' : ''} ${isDragging ? 'opacity-80 scale-[1.02] shadow-[0_0_30px_rgba(0,255,255,0.3)]' : ''}`}
         >
             <div className="flex items-center gap-2 sm:gap-6 cursor-pointer flex-1 min-w-0" onClick={() => !isEditing && playTestTrack(track)}>
                 
@@ -56,7 +56,7 @@ const SortableTrackItem = memo(function SortableTrackItem({ track, index, isThis
                     <GripVertical size={24} className="hidden sm:block" />
                 </div>
                 
-                <div className={`w-10 h-10 sm:w-14 sm:h-14 flex shrink-0 items-center justify-center transition-all duration-300 ${isThisPlaying ? 'bg-primary text-black shadow-[0_0_20px_rgba(var(--color-primary),0.5)]' : 'bg-white/5 text-white'}`} style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%)' }}>
+                <div className={`w-10 h-10 sm:w-14 sm:h-14 flex shrink-0 items-center justify-center transition-all duration-300 rounded-xl ${isThisPlaying ? 'bg-[#00ffff] text-black shadow-[0_0_20px_rgba(0,255,255,0.5)]' : 'bg-[#00ffff]/5 text-[#00ffff] border border-[#00ffff]/30'}`}>
                     {isThisPlaying ? <Pause size={16} className="fill-current sm:w-5 sm:h-5" /> : <Play size={16} className="fill-current ml-1 sm:w-5 sm:h-5" />}
                 </div>
                 
@@ -115,7 +115,7 @@ const SortableTrackItem = memo(function SortableTrackItem({ track, index, isThis
                             <Activity size={14} className={isAnalyzing ? 'animate-spin' : ''} />
                         </button>
 
-                        <button onClick={(e) => { e.stopPropagation(); removeTrack(track.id); }} className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-red-500/5 hover:bg-red-500 text-red-500 hover:text-white transition-all duration-300 border border-red-500/20" style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%)' }} title="Purge Track">
+                        <button onClick={(e) => { e.stopPropagation(); removeTrack(track.id); }} className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-red-500/10 hover:bg-red-500 rounded-lg text-red-500 hover:text-white transition-all duration-300 border border-solid border-red-500/30" title="Purge Track">
                             <Trash2 size={14} />
                         </button>
                     </>
@@ -431,16 +431,16 @@ export default function V3BHome() {
                 <NeuralIdentityTerminal />
             </div>
 
-            {/* Massive Outer Cyber Panel */}
-            <div className="cyber-panel p-6 md:p-12 w-[95%] max-w-7xl mb-24 z-50 overflow-hidden desync-1">
+            {/* Massive Outer Cyber Panel -> Glassmorphism */}
+            <div className="bg-black/40 backdrop-blur-xl border border-solid border-[#00ffff]/20 rounded-3xl p-6 md:p-12 w-[95%] max-w-7xl mb-24 z-50 overflow-hidden desync-1 shadow-[0_0_50px_rgba(0,255,255,0.05)]">
                 
                 {/* UP NEXT QUEUE LOGIC & TELEMETRY VAULT (MOVED TO TOP) */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-2 mb-4">
                     <div className="flex flex-col">
-                         <h2 className="text-2xl font-black text-white uppercase tracking-[0.2em] font-mono">AUDIO VAULT</h2>
+                         <h2 className="text-2xl font-black text-white uppercase tracking-[0.2em] font-mono drop-shadow-[0_0_5px_rgba(255,255,255,0.4)]">AUDIO VAULT</h2>
                          <div className="flex items-center gap-2 mt-1">
-                             <p className="text-[10px] text-gray-500 font-mono tracking-widest uppercase">Target Payload Status</p>
-                             {isShuffleToggle && <span className="text-primary text-[8px] font-mono border border-primary/40 bg-primary/10 px-1 py-0.5 rounded tracking-widest">SMART SHUFFLE ACTIVE</span>}
+                             <p className="text-[10px] text-gray-400 font-mono tracking-widest uppercase">Target Payload Status</p>
+                             {isShuffleToggle && <span className="text-[#00ffff] text-[8px] font-mono border border-solid border-[#00ffff]/40 bg-[#00ffff]/10 px-1 py-0.5 rounded tracking-widest">SMART SHUFFLE ACTIVE</span>}
                          </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -457,10 +457,10 @@ export default function V3BHome() {
                 </div>
 
                 {upNextTrack && (
-                    <div className="mb-6 cyber-card p-3 sm:p-4 flex items-center gap-4 desync-4 border border-primary/20 bg-primary/5">
-                        <div className="w-10 h-10 bg-black/60 border border-primary/40 flex items-center justify-center flex-shrink-0 relative overflow-hidden" style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%)' }}>
-                            <div className="absolute inset-0 bg-primary/20 animate-pulse" />
-                            <Radio className="w-5 h-5 text-primary drop-shadow-[0_0_8px_rgba(var(--color-primary),0.8)]" />
+                    <div className="mb-6 rounded-2xl p-3 sm:p-4 flex items-center gap-4 desync-4 border border-solid border-[#00ffff]/30 bg-[#00ffff]/5 backdrop-blur-sm">
+                        <div className="w-10 h-10 bg-black/60 border border-[#00ffff]/40 rounded-xl flex items-center justify-center flex-shrink-0 relative overflow-hidden group">
+                            <div className="absolute inset-0 bg-[#00ffff]/20 animate-pulse group-hover:bg-[#00ffff]/40 transition-colors" />
+                            <Radio className="w-5 h-5 text-[#00ffff] drop-shadow-[0_0_8px_rgba(0,255,255,0.8)]" />
                         </div>
                         <div className="flex flex-col min-w-0 pr-2">
                              <span className="text-[9px] font-mono text-primary/70 tracking-[0.3em] uppercase mb-0.5 cyber-flicker-slow">Queue Output / Next Protocol</span>
@@ -470,13 +470,13 @@ export default function V3BHome() {
                 )}
                 
                 {/* CONSTRAINED DND TRACK LIST ARRAY */}
-                <div className="h-[360px] overflow-y-auto pr-2 sm:pr-4 -mr-2 sm:-mr-4 mb-10 relative z-10 custom-scrollbar scanlines pt-1 pb-4 border-b border-primary/20" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(var(--color-primary), 0.5) transparent' }}>
+                <div className="h-[360px] overflow-y-auto pr-2 sm:pr-4 -mr-2 sm:-mr-4 mb-10 relative z-10 custom-scrollbar scanlines pt-1 pb-4 border-b border-[#00ffff]/20" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(0,255,255, 0.5) transparent' }}>
                     <DndContext sensors={sensors} modifiers={[restrictToVerticalAxis]} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                         <SortableContext items={dynamicTracks.map(t => t.id)} strategy={verticalListSortingStrategy}>
                             <div className="flex flex-col gap-3">
                                 {dynamicTracks.length === 0 ? (
-                                    <div className="flex flex-col items-center justify-center py-20 text-gray-500 font-mono text-xs uppercase tracking-widest border border-white/5 border-dashed rounded-xl bg-white/5">
-                                        <Radio className="mb-4 opacity-50" size={32} />
+                                    <div className="flex flex-col items-center justify-center py-20 text-gray-400 font-mono text-xs uppercase tracking-widest border border-solid border-[#00ffff]/20 rounded-2xl bg-black/20 backdrop-blur-sm shadow-[inset_0_0_20px_rgba(0,255,255,0.05)]">
+                                        <Radio className="mb-4 opacity-70 text-[#00ffff]" size={32} />
                                         Audio Vault Empty
                                         <span className="text-[9px] mt-2 opacity-60 text-center px-4">Intercept a target signal to populate the neural matrix.</span>
                                     </div>

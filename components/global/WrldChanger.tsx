@@ -127,7 +127,7 @@ export default function WrldChanger() {
     <>
       {/* TRIGGER GATEWAY */}
       <div
-        className={`fixed top-0 right-0 z-[10005] h-[52px] lg:h-[62px] flex items-center justify-center px-4 lg:px-6 cursor-pointer pointer-events-auto transition-all duration-250 bg-black border-b border-l border-primary/20 hover:bg-primary/5 group border-r-0 ${isOpen && !isSpinning && !isClosing ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+        className={`relative w-full h-full min-h-[52px] lg:min-h-[62px] flex flex-1 items-center justify-center px-4 lg:px-6 cursor-pointer pointer-events-auto transition-all duration-250 bg-black/40 backdrop-blur-md border-l border-solid border-[#00ffff]/20 hover:bg-[#00ffff]/10 hover:border-[#00ffff]/50 group ${isOpen && !isSpinning && !isClosing ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
         onClick={handleOpen}
       >
         <div className="flex items-center gap-3">

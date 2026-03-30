@@ -31,6 +31,20 @@ export default function NeuralStudio() {
     // Check for Founder status (or Architect override)
     const isFounder = currentUser?.role === 'FOUNDER' || isArchitect;
 
+    const generateRAPG = () => {
+        const subjects = ["A lone cyber-monk", "A shattered porcelain android", "A neon-drenched samurai", "A massive orbital dreadnought", "A bioluminescent deep-sea leviathan", "A rogue AI mainframe", "A phantom data-courier", "A chrome-plated gargoyle", "A squad of tactical hackers"];
+        const actions = ["meditating in the rain", "breaching the atmosphere", "dissolving into data streams", "standing over a defeated mech", "floating in zero gravity", "hacking a neural port", "summoning a digital storm", "awakening from cryosleep"];
+        const environments = ["in a brutalist concrete megacity", "inside a shattered quantum reactor", "on the edge of a black hole accretion disk", "in a forgotten subterranean temple", "atop a floating glass pyramid", "within an infinite server farm", "in a neon-lit cyberpunk alleyway"];
+        const lighting = ["volumetric god rays", "harsh neon underglow", "strobe lighting", "thick radioactive fog", "bioluminescent spores floating in the air", "diffused cinematic lighting", "lens flares"];
+        const styles = ["shot on 35mm film", "8k resolution octane render", "unreal engine 5 cinematic", "macro photography, shallow depth of field", "vintage anime aesthetic, 1990s cel shading", "hyper-realistic matte painting"];
+        const aesthetics = ["style of H.R. Giger", "cyberpunk aesthetic", "synthwave retrowave", "dark fantasy", "directed by Denis Villeneuve", "by Syd Mead", "Yoji Shinkawa line art"];
+
+        const r = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
+        const generated = `${r(subjects)} ${r(actions)} ${r(environments)}, ${r(lighting)}, ${r(styles)}, ${r(aesthetics)}. Masterpiece, highly detailed, trending on ArtStation.`;
+        
+        setPrompt(generated);
+    };
+
     const handleFaceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files?.[0]) {
             const file = e.target.files[0];
@@ -88,26 +102,42 @@ export default function NeuralStudio() {
                     body: JSON.stringify(body),
                 });
 
-                if (!response.ok) throw new Error('Neural Gateway Timeout');
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || 'Neural Gateway Timeout - Matrix Unresponsive');
+                }
                 const data = await response.json();
                 const outputUrl = data.imageUrl || data.videoUrl;
 
                 setStatusMsg('ARCHIVING PAYLOAD TO SECURE CLOUD...');
-                const finalAssetUrl = await archiveToPermanentStorage(outputUrl);
-
-                const userDoc = doc(db, 'users', currentUser.uid);
-                if (hasFreeGenerations) {
-                    await updateDoc(userDoc, { freeGenerationsRemaining: increment(-1) });
-                } else {
-                    await updateDoc(userDoc, { coinsBalance: increment(-cost) });
+                let finalAssetUrl = outputUrl;
+                try {
+                    finalAssetUrl = await archiveToPermanentStorage(outputUrl);
+                } catch (e: any) {
+                    throw new Error(`[STORAGE_ERR] ${e.message}`);
                 }
 
-                await addDoc(collection(db, 'user_assets', currentUser.uid, 'ai_generations'), {
-                    type: activeTab,
-                    prompt,
-                    assetUrl: finalAssetUrl,
-                    createdAt: serverTimestamp()
-                });
+                try {
+                    const userDoc = doc(db, 'users', currentUser.uid);
+                    if (hasFreeGenerations) {
+                        await updateDoc(userDoc, { freeGenerationsRemaining: increment(-1) });
+                    } else {
+                        await updateDoc(userDoc, { coinsBalance: increment(-cost) });
+                    }
+                } catch (e: any) {
+                    throw new Error(`[USER_UPDATE_ERR] ${e.message}`);
+                }
+
+                try {
+                    await addDoc(collection(db, 'user_assets', currentUser.uid, 'ai_generations'), {
+                        type: activeTab,
+                        prompt,
+                        assetUrl: finalAssetUrl,
+                        createdAt: serverTimestamp()
+                    });
+                } catch (e: any) {
+                    throw new Error(`[ASSET_DB_ERR] ${e.message}`);
+                }
 
                 setLastOutput(finalAssetUrl);
                 setNeuralState('SUCCESS');
@@ -121,21 +151,43 @@ export default function NeuralStudio() {
         }
     };
 
+    const uploadToDrive = async (blob: Blob, fileName: string, mimeType: string) => {
+        const formData = new FormData();
+        formData.append('file', blob);
+        formData.append('fileName', fileName);
+        formData.append('mimeType', mimeType);
+
+        const res = await fetch('/api/storage/drive', {
+            method: 'POST',
+            body: formData,
+        });
+
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.error || 'Failed to sync to 30TB Google Drive Matrix');
+        }
+
+        const data = await res.json();
+        return data.url;
+    };
+
     const uploadFaceToStorage = async () => {
         if (!faceImage || !currentUser) return null;
-        const faceRef = ref(storage, `tmp-faces/${currentUser.uid}/${Date.now()}_face.jpg`);
-        await uploadBytes(faceRef, faceImage);
-        return await getDownloadURL(faceRef);
+        return await uploadToDrive(faceImage, `tmp-faces/${currentUser.uid}/${Date.now()}_face.jpg`, 'image/jpeg');
     };
 
     const archiveToPermanentStorage = async (url: string) => {
         if (!currentUser) return url;
         const res = await fetch(url);
         const blob = await res.blob();
-        const extMap = { flixsynth: 'jpg', deforum: 'mp4', vocal_dna: 'wav', neural_swap: 'wav' };
-        const archiveRef = ref(storage, `user_assets/${currentUser.uid}/ai/${Date.now()}_gen.${extMap[activeTab]}`);
-        await uploadBytes(archiveRef, blob);
-        return await getDownloadURL(archiveRef);
+        
+        // Ensure proper mime mapping
+        const isVideo = activeTab === 'deforum';
+        const isAudio = activeTab === 'vocal_dna' || activeTab === 'neural_swap';
+        const mimeType = isAudio ? 'audio/wav' : isVideo ? 'video/mp4' : 'image/jpeg';
+        const ext = isAudio ? 'wav' : isVideo ? 'mp4' : 'jpg';
+
+        return await uploadToDrive(blob, `user_assets/${currentUser.uid}/ai/${Date.now()}_gen.${ext}`, mimeType);
     };
 
     const handleStemUpload = async () => {
@@ -144,9 +196,7 @@ export default function NeuralStudio() {
         setStatusMsg('INITIATING BIOMETRIC ACOUSTIC INGESTION...');
         
         try {
-            const stemRef = ref(storage, `user_assets/${currentUser.uid}/dna/${Date.now()}_${vocalStem.name}`);
-            await uploadBytes(stemRef, vocalStem);
-            const downloadUrl = await getDownloadURL(stemRef);
+            const downloadUrl = await uploadToDrive(vocalStem, `user_assets/${currentUser.uid}/dna/${Date.now()}_${vocalStem.name}`, vocalStem.type || 'audio/wav');
             
             await addDoc(collection(db, 'user_assets', currentUser.uid, 'vocal_dna'), {
                 type: 'dry_stem',
@@ -185,20 +235,20 @@ export default function NeuralStudio() {
             
             <NeuralIdentityTerminal className="mb-0" />
 
-            <div className="w-full mb-0 flex flex-col md:flex-row justify-between items-end border-b border-dashed border-[#00ffff] pb-2 gap-0 animate-in fade-in duration-700">
+            <div className="w-full mb-0 flex flex-col md:flex-row justify-between items-end border-b border-solid border-[#00ffff]/20 pb-4 gap-4 animate-in fade-in duration-700">
                 <div className="flex items-start gap-2">
-                    <Sparkles className="w-8 h-8 text-[#ff00ff] cyber-flicker-slow drop-shadow-[0_0_10px_#ff00ff]" />
+                    <Sparkles className="w-8 h-8 text-[#00ffff] cyber-flicker-slow drop-shadow-[0_0_10px_#00ffff]" />
                     <div>
-                        <h1 className="text-4xl md:text-6xl font-black font-bebas text-[#00ffff] tracking-widest uppercase mb-0 drop-shadow-[0_0_5px_#00ffff]">NEURAL STUDIO</h1>
-                        <p className="font-mono text-[10px] text-[#ff00ff] uppercase tracking-[0.5em] font-bold drop-shadow-md">[ SUNO-GRADE PRODUCTION FOR ORIGINAL WORKS ]</p>
+                        <h1 className="text-4xl md:text-6xl font-black font-bebas text-white tracking-widest uppercase mb-0 drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">NEURAL STUDIO</h1>
+                        <p className="font-mono text-[10px] text-[#00ffff]/70 uppercase tracking-[0.5em] font-bold drop-shadow-md">[ SUNO-GRADE PRODUCTION FOR ORIGINAL WORKS ]</p>
                     </div>
                 </div>
-                <div className="flex flex-col items-end gap-1 bg-black border border-dashed border-[#ff00ff] p-2" style={{ clipPath: 'none' }}>
-                    <div className="flex items-center gap-2 text-yellow-500 mb-0">
+                <div className="flex flex-col items-end gap-1 bg-black/40 backdrop-blur-xl border border-[#00ffff]/20 rounded-2xl p-4 shadow-[0_0_30px_rgba(0,255,255,0.05)]">
+                    <div className="flex items-center gap-2 text-[#00ffff] mb-0">
                         <Coins size={12} />
-                        <span className="font-bebas text-xl tracking-widest">{currentUser?.coinsBalance?.toLocaleString() || '0'} C</span>
+                        <span className="font-bebas text-2xl tracking-widest text-white">{currentUser?.coinsBalance?.toLocaleString() || '0'} C</span>
                     </div>
-                    <span className="text-[6px] font-mono text-gray-500 tracking-widest uppercase">Treasury Credits Remaining</span>
+                    <span className="text-[7px] font-mono text-gray-400 tracking-widest uppercase">Treasury Credits Remaining</span>
                 </div>
             </div>
 
@@ -206,21 +256,21 @@ export default function NeuralStudio() {
                 {(['flixsynth', 'deforum', 'vocal_dna', 'neural_swap'] as const).map(tab => (
                     <div 
                         key={tab}
-                        className="group relative bg-black border border-dashed border-[#ff00ff]/30 hover:border-[#00ffff] transition-all duration-500 overflow-hidden p-0"
+                        className="group relative bg-black/40 backdrop-blur-xl border border-[#00ffff]/20 rounded-2xl hover:border-[#00ffff]/60 hover:shadow-[0_0_40px_rgba(0,255,255,0.15)] transition-all duration-500 overflow-hidden p-0 m-2"
                         style={{ clipPath: 'none' }}
                     >
-                        <div className="p-4 flex flex-col items-center text-center gap-2 relative z-10">
-                            <div className={`p-4 bg-transparent border border-dashed border-[#00ffff] rounded-none group-hover:border-[#ff00ff] transition-all duration-500`}>
+                        <div className="p-6 flex flex-col items-center text-center gap-4 relative z-10">
+                            <div className={`p-4 bg-transparent border border-solid border-[#00ffff]/30 rounded-2xl group-hover:border-[#00ffff]/80 group-hover:bg-[#00ffff]/5 transition-all duration-500 shadow-[inset_0_0_20px_rgba(0,255,255,0.05)]`}>
                                 {tab === 'flixsynth' && <ImageIcon size={32} className="text-[#00ffff]" />}
                                 {tab === 'deforum' && <Video size={32} className="text-[#00ffff]" />}
                                 {tab === 'vocal_dna' && <Terminal size={32} className="text-[#00ffff]" />}
                                 {tab === 'neural_swap' && <Database size={32} className="text-[#00ffff]" />}
                             </div>
                             <div className="min-h-[80px] flex flex-col justify-center">
-                                <h3 className="text-xl font-black font-bebas text-[#00ffff] tracking-[0.2em] mb-1 italic uppercase drop-shadow-[0_0_5px_#00ffff]">
+                                <h3 className="text-xl font-black font-bebas text-white tracking-[0.2em] mb-1 italic uppercase drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">
                                     {tab === 'flixsynth' ? 'FLIXSYNTH ART' : tab === 'deforum' ? 'VIDEO ENGINE' : tab === 'vocal_dna' ? 'NEURAL BLUEPRINT' : 'NEURAL SWAP'}
                                 </h3>
-                                <p className="text-[9px] font-mono text-[#ff00ff] opacity-80 uppercase tracking-[0.3em] font-bold leading-relaxed">
+                                <p className="text-[9px] font-mono text-gray-400 uppercase tracking-[0.3em] font-bold leading-relaxed group-hover:text-[#00ffff]/80 transition-colors">
                                     {tab === 'flixsynth' ? 'Forge original album covers and visual identities' : 
                                      tab === 'deforum' ? 'Cinematic music video sequencing for original works' :
                                      tab === 'vocal_dna' ? 'Clone and Practice your identity for Original Works' :
@@ -229,12 +279,12 @@ export default function NeuralStudio() {
                             </div>
                             <button 
                                 onClick={() => { setActiveTab(tab); setIsModalOpen(true); setNeuralState('IDLE'); setLastOutput(null); }}
-                                className="mt-2 px-6 py-2 bg-transparent text-[#ff00ff] border border-dashed border-[#ff00ff] font-mono text-[9px] font-black uppercase tracking-[0.3em] hover:text-[#00ffff] hover:border-[#00ffff] transition-colors"
+                                className="mt-4 px-8 py-3 bg-transparent text-[#00ffff] border border-solid border-[#00ffff]/30 rounded-xl font-mono text-[9px] font-black uppercase tracking-[0.3em] hover:bg-[#00ffff]/10 hover:border-[#00ffff]/60 transition-all shadow-lg"
                             >
                                 [ LAUNCH TERMINAL ]
                             </button>
                         </div>
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#00ffff]/5 to-transparent group-hover:opacity-100 opacity-20 transition-opacity" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#00ffff]/10 to-transparent group-hover:opacity-100 opacity-0 transition-opacity" />
                     </div>
                 ))}
             </div>
@@ -259,24 +309,34 @@ export default function NeuralStudio() {
                                          activeTab === 'neural_swap' ? "Paste Suno link or Archive Path..." : "Describe the visual vision..."}
                             className="w-full min-h-[160px] bg-black border-2 border-primary/20 p-8 font-mono text-white text-sm focus:outline-none focus:border-primary/60 transition-colors custom-scrollbar placeholder:text-primary/20"
                         />
+                        {(activeTab === 'flixsynth' || activeTab === 'deforum') && (
+                            <div className="flex w-full justify-end mt-1">
+                                <button 
+                                    onClick={generateRAPG}
+                                    className="flex items-center gap-2 bg-black hover:bg-[#00ffff]/10 border border-[#00ffff]/40 px-4 py-3 rounded-lg font-mono text-[10px] font-black text-[#00ffff] uppercase tracking-[0.2em] transition-all shadow-[0_0_15px_rgba(0,255,255,0.1)]"
+                                >
+                                    <Sparkles size={14} className="animate-pulse" /> [ SYSTEM OVERRIDE: R.A.P.G. ]
+                                </button>
+                            </div>
+                        )}
                     </div>
 
                     {activeTab === 'flixsynth' && (
                         <div className="flex flex-col gap-6 bg-primary/5 p-8 border border-primary/10">
-                            <label className="text-[10px] font-mono text-primary/60 uppercase tracking-widest font-black border-b border-primary/20 pb-2 w-fit">OPTIONAL: BIOMETRIC IDENTITY MAPPING</label>
+                            <label className="text-[10px] font-mono text-primary/60 uppercase tracking-widest font-black border-b border-primary/20 pb-2 w-fit">OPTIONAL: SOURCE IMAGE OVERRIDE</label>
                             <div className="flex items-center gap-10">
-                                <div className="w-32 h-32 bg-black border-2 border-dashed border-primary/40 flex items-center justify-center relative overflow-hidden group hover:border-primary transition-all">
+                                <div className="w-32 h-32 bg-black/40 backdrop-blur-md border border-solid border-primary/30 rounded-2xl flex items-center justify-center relative overflow-hidden group hover:border-primary/60 hover:shadow-[0_0_30px_rgba(var(--color-primary),0.2)] transition-all">
                                     {facePreview ? (
                                         <img src={facePreview} className="w-full h-full object-cover" />
                                     ) : (
-                                        <UserPlus className="text-primary/10 group-hover:text-primary transition-colors" size={32} />
+                                        <ImageIcon className="text-primary/10 group-hover:text-primary transition-colors" size={32} />
                                     )}
-                                    <input type="file" onChange={handleFaceChange} className="absolute inset-0 opacity-0 cursor-pointer" />
+                                    <input type="file" onChange={handleFaceChange} accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" />
                                 </div>
                                 <div className="flex flex-col gap-2">
-                                    <span className="text-[11px] font-mono text-primary uppercase tracking-[0.2em] font-black italic">Identity Injector</span>
+                                    <span className="text-[11px] font-mono text-primary uppercase tracking-[0.2em] font-black italic">Visual Reference Layer</span>
                                     <p className="text-[9px] font-mono text-gray-500 uppercase tracking-widest max-w-xs leading-relaxed">
-                                        Inject your face into the FlixSynth engine. Combine with your prompt to weave your identity into the neural canvas.
+                                        Upload an existing drawing, photo, or abstract shape. The Neural Engine will derive structure from this asset while synthesizing the new prompt.
                                     </p>
                                 </div>
                             </div>
@@ -308,7 +368,7 @@ export default function NeuralStudio() {
                                 </label>
                             </div>
 
-                            <div className="w-full flex flex-col gap-6 p-10 bg-black border-2 border-dashed border-primary/40 text-center group cursor-pointer hover:border-primary transition-all relative">
+                            <div className="w-full flex flex-col gap-6 p-10 bg-black/40 backdrop-blur-md border border-solid border-primary/20 rounded-2xl text-center group cursor-pointer hover:border-primary/60 hover:bg-primary/5 transition-all relative">
                                 <input 
                                     type="file" 
                                     accept="audio/*"
@@ -345,7 +405,7 @@ export default function NeuralStudio() {
                     )}
 
                     {activeTab === 'neural_swap' && (
-                        <div className="flex flex-col gap-6 bg-primary/10 p-8 border-2 border-primary/20 border-dashed">
+                        <div className="flex flex-col gap-6 bg-primary/5 rounded-2xl p-8 border border-solid border-primary/20 backdrop-blur-sm">
                              <div className="flex items-center gap-4">
                                 <Database className="text-primary animate-pulse" size={32} />
                                 <div>

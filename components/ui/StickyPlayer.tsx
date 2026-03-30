@@ -32,21 +32,37 @@ const ProgressBar = memo(() => {
     };
 
     return (
-        <input 
-            type="range" 
-            min={0} 
-            max={duration || 100} 
-            step="0.1"
-            value={progress || 0} 
-            onChange={handleSeek}
-            className="absolute top-0 left-0 w-full h-[3px] hover:h-4 opacity-80 hover:opacity-100 appearance-none cursor-pointer z-50 focus:outline-none transition-all duration-200 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-0 hover:[&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
-            style={{
-              background: `linear-gradient(to right, rgb(6,182,212) ${((progress || 0) / (duration || 1)) * 100}%, rgba(255,255,255,0.1) ${((progress || 0) / (duration || 1)) * 100}%)`
-            }}
-            title="Seek Track"
-        />
+        <div className="flex items-center justify-center w-full gap-2">
+            <span className="text-[11px] font-medium text-gray-400 font-mono w-8 text-right">
+                {formatTime(progress)}
+            </span>
+            <input 
+                type="range" 
+                min={0} 
+                max={duration || 100} 
+                step="0.1"
+                value={progress || 0} 
+                onChange={handleSeek}
+                className="w-full h-1 hover:h-1.5 opacity-80 hover:opacity-100 appearance-none cursor-pointer focus:outline-none transition-all duration-200 rounded-full [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-0 hover:[&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
+                style={{
+                  background: `linear-gradient(to right, white ${((progress || 0) / (duration || 1)) * 100}%, rgba(255,255,255,0.2) ${((progress || 0) / (duration || 1)) * 100}%)`
+                }}
+                title="Seek Track"
+            />
+            <span className="text-[11px] font-medium text-gray-400 font-mono w-8 text-left">
+                {formatTime(duration)}
+            </span>
+        </div>
     );
 });
+
+// Helper for MM:SS
+const formatTime = (seconds: number) => {
+    if (!seconds || isNaN(seconds)) return "0:00";
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
+};
 
 const VolumeControl = memo(() => {
     const volume = useAudioStore(state => state.volume);
@@ -326,101 +342,69 @@ const StickyPlayer = memo(function StickyPlayer() {
     };
 
     return (
-        <div className="fixed bottom-0 left-0 w-full z-[200000] pointer-events-auto bg-black/90 backdrop-blur-3xl border-t border-white/5 h-[88px] sm:h-20 flex items-center justify-between px-4 md:px-12 pb-[env(safe-area-inset-bottom)] shadow-[0_-10px_40px_rgba(0,0,0,0.8)] crevice-pulse">
+        <div className="fixed bottom-0 left-0 w-full z-[200000] pointer-events-auto bg-[#121212] border-t border-white/5 h-[90px] flex items-center justify-between px-4 pb-[env(safe-area-inset-bottom)]">
             
-            <div className="absolute inset-0 z-0 pointer-events-none">
-                <FrequencyLine isPlaying={isPlaying} />
-                <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(var(--color-primary),0.02),rgba(var(--color-primary),0.01),rgba(var(--color-primary),0.02))] z-10 bg-[length:100%_2px,3px_100%] opacity-20" />
-            </div>
-
-            <ProgressBar />
-
-            {/* Left: Track Info & Tactical Visualizer */}
-            <div className="flex items-center gap-4 md:gap-8 flex-1 min-w-0 pr-4 relative z-10">
-                <div className="relative group shrink-0">
-                    <div className="w-14 h-14 md:w-16 md:h-16 bg-black border-2 border-primary/20 flex items-center justify-center relative overflow-hidden shadow-[0_0_20px_rgba(var(--color-primary),0.1)] group-hover:border-primary/60 transition-all duration-500"
-                         style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%)' }}>
-                        <div 
-                            className="absolute bottom-0 left-0 w-full transition-all duration-150 opacity-30"
-                            style={{ height: `calc(var(--audio-intensity, 0) * 100%)`, backgroundColor: 'rgb(var(--color-primary))' }}
-                        ></div>
-                        <Database size={24} className={`z-10 transition-all duration-500 ${isPlaying ? 'text-primary scale-110' : 'text-primary/40'}`} />
-                        <div className="absolute inset-x-0 top-0 h-[1px] bg-primary/40 animate-scan-slow opacity-50" />
-                    </div>
-                    {/* Floating HUD Bit */}
-                    <div className="absolute -top-1 -right-1 w-3 h-3 border-t-2 border-r-2 border-primary/60" />
+            {/* Left: Track Info & Album Art */}
+            <div className="flex items-center gap-3 w-1/3 min-w-0 pr-4 relative z-10">
+                <div className="relative group shrink-0 w-14 h-14 bg-black/40 rounded-md overflow-hidden flex items-center justify-center">
+                   {/* Fallback Audio Visual or Album Art */}
+                   <img 
+                       src="/api/neural-assets?node=FINANCE&pilot=system" 
+                       alt="cover" 
+                       className="absolute inset-0 w-full h-full object-cover opacity-60" 
+                       onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                   />
                 </div>
                 
                 <div className="flex flex-col min-w-0 justify-center">
-                    <div className="flex items-center gap-3">
-                        <span className="font-bebas text-2xl md:text-4xl text-white tracking-[0.05em] truncate leading-none drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
-                            {currentTrack?.title || 'BOOT_SEQUENCE'}
-                        </span>
-                        {isPlaying && <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(var(--color-primary),0.8)]" />}
-                    </div>
-                    
-                    <div className="flex items-center gap-4 mt-1.5">
-                        <span className="font-mono text-[9px] md:text-[10px] text-primary/60 tracking-[0.4em] uppercase font-black truncate">
-                            {currentTrack?.producer || 'THE_ARCHITECT'}
-                        </span>
-                        <div className="hidden sm:flex items-center gap-2">
-                            <span className="w-1 h-1 rounded-full bg-white/10" />
-                            <span className="font-mono text-[8px] text-gray-500 tracking-widest uppercase italic">Neural_Link_OK</span>
-                        </div>
-                    </div>
+                    <span className="text-sm font-semibold text-white tracking-wide truncate hover:underline cursor-pointer">
+                        {currentTrack?.title || 'System Standby'}
+                    </span>
+                    <span className="text-xs text-gray-400 hover:text-white hover:underline cursor-pointer truncate mt-0.5">
+                        {currentTrack?.producer || 'SpaceJamz Node'}
+                    </span>
                 </div>
             </div>
 
-            {/* Center: Triple-A Gaming Controls */}
-            <div className="flex items-center gap-4 sm:gap-10 lg:gap-14 justify-center shrink-0 relative z-10">
-                <div className="hidden lg:block">
-                    <AudioTimer />
-                </div>
-
-                <div className="flex items-center gap-3 sm:gap-6">
+            {/* Center: Triple-A Gaming Controls -> Spotify Core Layout */}
+            <div className="flex flex-col items-center justify-center w-1/3 max-w-[700px] shrink-0 relative z-10 gap-2">
+                
+                <div className="flex items-center gap-6">
                     <button 
                         onClick={toggleShuffle} 
-                        className={`transition-all duration-500 hidden md:flex items-center justify-center w-11 h-11 rounded-lg border-2 ${isShuffleToggle ? 'bg-primary/10 text-primary border-primary shadow-[0_0_15px_rgba(var(--color-primary),0.3)]' : 'bg-transparent text-white/30 border-white/5 hover:text-white hover:border-white/20'}`}
-                        title="RNG Shuffle"
+                        className={`transition-colors text-sm ${isShuffleToggle ? 'text-green-500' : 'text-gray-400 hover:text-white'}`}
+                        title="Enable shuffle"
                     >
-                        <Shuffle size={18} />
+                        <Shuffle size={16} />
                     </button>
                     
-                    <button onClick={prevTrack} className="text-white/40 hover:text-primary transition-all duration-300 hover:scale-110 px-2" title="Previous Node">
-                        <SkipBack size={24} className="fill-current" />
+                    <button onClick={prevTrack} className="text-gray-400 hover:text-white transition-colors" title="Previous">
+                        <SkipBack size={20} className="fill-current" />
                     </button>
                     
-                    <div className="relative group">
-                        <div className={`absolute -inset-4 bg-primary/20 blur-2xl rounded-full transition-opacity duration-700 ${isPlaying ? 'opacity-100' : 'opacity-0'}`} />
-                        <button 
-                            onClick={handlePlayPause} 
-                            className="w-14 h-14 md:w-16 md:h-16 bg-primary text-black rounded-full flex items-center justify-center transition-all duration-500 hover:scale-110 active:scale-90 shadow-[0_0_25px_rgba(var(--color-primary),0.4)] relative z-10 overflow-hidden"
-                        >
-                            <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.2)_50%,transparent_75%)] bg-[length:250%_250%] animate-shimmer" />
-                            {isPlaying ? <Pause size={28} className="fill-current" /> : <Play size={28} className="fill-current ml-1" />}
-                        </button>
-                    </div>
+                    <button 
+                        onClick={handlePlayPause} 
+                        className="w-8 h-8 bg-white text-black rounded-full flex items-center justify-center transition-transform hover:scale-105 active:scale-95 shadow-lg"
+                    >
+                        {isPlaying ? <Pause size={16} className="fill-current" /> : <Play size={16} className="fill-current ml-1" />}
+                    </button>
 
-                    <button onClick={nextTrack} className="text-white/40 hover:text-primary transition-all duration-300 hover:scale-110 px-2" title="Next Node">
-                        <SkipForward size={24} className="fill-current" />
+                    <button onClick={nextTrack} className="text-gray-400 hover:text-white transition-colors" title="Next">
+                        <SkipForward size={20} className="fill-current" />
                     </button>
                     
-                    <button onClick={handleStop} className="text-white/20 hover:text-red-500 transition-all duration-300 hidden md:block" title="Kill System">
+                    <button onClick={handleStop} className="text-gray-400 hover:text-red-500 transition-colors" title="Stop System">
                         <Square size={16} />
                     </button>
                 </div>
+
+                <div className="w-full mt-[-2px] flex items-center">
+                    <ProgressBar />
+                </div>
             </div>
 
-            {/* Right: Tactical Metrics */}
-            <div className="hidden md:flex flex-1 justify-end items-center gap-8 relative z-10">
-                <div className="flex flex-col items-end gap-1.5">
-                    <div className="flex gap-1">
-                        {[...Array(4)].map((_, i) => (
-                            <div key={i} className={`w-3 h-1 ${i < 3 ? 'bg-primary/40' : 'bg-white/5'}`} />
-                        ))}
-                    </div>
-                    <span className="font-mono text-[8px] text-primary/40 tracking-[0.2em] font-black uppercase italic">D_Stream: Active</span>
-                </div>
+            {/* Right: Tactical Metrics / Options */}
+            <div className="flex w-1/3 justify-end items-center relative z-10 gap-4 right-0">
                 <VolumeControl />
             </div>
             

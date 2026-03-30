@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Database, Coins, Cpu, ShieldCheck, Globe, Sparkles, User, Terminal, Menu, X, ChevronRight } from 'lucide-react';
+import WrldChanger from '@/components/global/WrldChanger';
 
 export default function NavigationHUD() {
     const pathname = usePathname();
@@ -21,7 +22,7 @@ export default function NavigationHUD() {
     return (
         <>
             <nav className="fixed top-0 left-0 right-0 z-[10000] flex w-full animate-in fade-in duration-1000">
-                 <div className="flex w-full items-center justify-between bg-black border-b border-dashed border-[#ff00ff]/60 shadow-none relative overflow-hidden group">
+                 <div className="flex w-full items-center justify-between bg-black/40 backdrop-blur-xl border-b border-solid border-[#00ffff]/20 shadow-[0_4px_30px_rgba(0,255,255,0.05)] relative overflow-hidden group">
                     
                     {/* Tactical Scanline Effects */}
                     <div className="absolute inset-0 pointer-events-none opacity-[0.05] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(var(--color-primary),0.06),rgba(var(--color-primary),0.02),rgba(var(--color-primary),0.06))] z-10 bg-[length:100%_2px,3px_100%] animate-pulse" />
@@ -29,13 +30,13 @@ export default function NavigationHUD() {
                     {/* MOBILE HAMBURGER */}
                     <button 
                         onClick={() => setIsOpen(!isOpen)}
-                        className="lg:hidden flex items-center justify-center p-4 border-r border-dashed border-[#00ffff]/30 text-[#00ffff] hover:bg-[#00ffff]/10 transition-colors z-20"
+                        className="lg:hidden flex items-center justify-center p-4 border-r border-solid border-[#00ffff]/20 text-[#00ffff] hover:bg-[#00ffff]/10 transition-colors z-20"
                     >
                         {isOpen ? <X size={20} /> : <Menu size={20} />}
                     </button>
 
                     {/* Sector Identifier (Left) */}
-                    <div className="hidden lg:flex items-center gap-3 px-5 py-2.5 border-r border-dashed border-[#00ffff]/30 bg-[#00ffff]/5">
+                    <div className="hidden lg:flex items-center gap-3 px-5 py-2.5 border-r border-solid border-[#00ffff]/20 bg-[#00ffff]/5">
                         <Terminal size={12} className="text-[#00ffff] animate-pulse" />
                         <span className="font-mono text-[8px] uppercase tracking-[0.4em] text-[#00ffff]/80 font-black italic shadow-none">Sys_SCTR: 001</span>
                     </div>
@@ -69,15 +70,8 @@ export default function NavigationHUD() {
                     </div>
 
                     {/* WRLD CHANGER TRIGGER (Modular Aesthetic Engine) */}
-                    <div className="hidden lg:flex items-center gap-5 px-4 py-2 border-l border-primary/20 bg-primary/5 hover:bg-primary/10 transition-all cursor-crosshair group/wrld relative overflow-hidden h-full">
-                        <div className="absolute inset-y-0 left-0 w-[1px] bg-primary animate-pulse" />
-                        <div className="flex flex-col items-end">
-                            <span className="font-mono text-[6px] uppercase tracking-widest text-primary/30 leading-none mb-1 font-black underline group-hover/wrld:text-primary transition-colors">WRLD_ENG</span>
-                            <div className="flex items-center gap-2">
-                                <div className="w-1.5 h-1.5 rounded-full bg-primary animate-ping shadow-[0_0_8px_rgba(var(--color-primary),0.6)]" />
-                                <span className="font-mono text-[8px] uppercase tracking-widest text-primary font-bold leading-none">V3B</span>
-                            </div>
-                        </div>
+                    <div className="hidden lg:flex h-full items-center justify-center">
+                        <WrldChanger />
                     </div>
 
                     {/* Status Readout (Right) */}

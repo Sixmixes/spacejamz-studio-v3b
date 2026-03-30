@@ -17,6 +17,7 @@
     "@types/three": "^0.183.1",
     "clsx": "^2.1.1",
     "firebase": "^12.11.0",
+    "googleapis": "^171.4.0",
     "lucide-react": "^1.7.0",
     "music-tempo": "^1.0.3",
     "next": "16.2.1",
