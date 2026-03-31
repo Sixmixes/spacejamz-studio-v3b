@@ -103,6 +103,13 @@ export default function NeuralStudioApp({ embeddedFlixSynthOnly = false, onEmbed
                 setNeuralState('SUCCESS');
                 setStatusMsg('SWAP COMPLETE. YOUR ACAPELLA REPLICA IS READY.');
                 setLastOutput('https://storage.googleapis.com/suno-generated/acapella-swapped.wav');
+
+                // XP Bonus for Neural Swap
+                try {
+                    const userDoc = doc(db, 'users', currentUser.uid);
+                    await updateDoc(userDoc, { xp: increment(100) });
+                    setUser({ xp: (currentUser.xp || 0) + 100 });
+                } catch (e) { console.error("XP Sync Failure", e); }
             } else {
                 const endpoint = activeTab === 'deforum' ? '/api/ai/deforum' : '/api/studio/generate';
                 let body: any = { prompt };
@@ -127,13 +134,29 @@ export default function NeuralStudioApp({ embeddedFlixSynthOnly = false, onEmbed
                 }
                 const data = await response.json();
                 
-                // User Cost Deduction (Wait until AFTER fetch so we don't deduct if network fails before getting bits)
+                // User Cost Deduction & XP Bonus
                 try {
                     const userDoc = doc(db, 'users', currentUser.uid);
+                    const xpReward = activeTab === 'flixsynth' ? 50 : 100;
+
                     if (hasFreeGenerations) {
-                        await updateDoc(userDoc, { freeGenerationsRemaining: increment(-1) });
+                        await updateDoc(userDoc, { 
+                            freeGenerationsRemaining: increment(-1),
+                            xp: increment(xpReward)
+                        });
+                        setUser({ 
+                            freeGenerationsRemaining: (currentUser.freeGenerationsRemaining || 1) - 1,
+                            xp: (currentUser.xp || 0) + xpReward
+                        });
                     } else {
-                        await updateDoc(userDoc, { coinsBalance: increment(-actualCost) });
+                        await updateDoc(userDoc, { 
+                            coinsBalance: increment(-actualCost),
+                            xp: increment(xpReward)
+                        });
+                        setUser({ 
+                            coinsBalance: (currentUser.coinsBalance || actualCost) - actualCost,
+                            xp: (currentUser.xp || 0) + xpReward
+                        });
                     }
                 } catch (e: any) {
                     throw new Error(`[USER_UPDATE_ERR] ${e.message}`);
@@ -245,7 +268,14 @@ export default function NeuralStudioApp({ embeddedFlixSynthOnly = false, onEmbed
             });
 
             const userDoc = doc(db, 'users', currentUser.uid);
-            await updateDoc(userDoc, { coinsBalance: increment(-10) });
+            await updateDoc(userDoc, { 
+                coinsBalance: increment(-10),
+                xp: increment(100)
+            });
+            setUser({ 
+                coinsBalance: (currentUser.coinsBalance || 0) - 10,
+                xp: (currentUser.xp || 0) + 100
+            });
 
             setNeuralState('SUCCESS');
             setStatusMsg('VOCAL DNA SEQUENCED. ASSET SECURED IN PRIVATE MATRIX.');

@@ -60,12 +60,17 @@ export function CyberAvatarModal() {
             
             // Search provider data for original discord payload
             const discordProfile = auth.currentUser?.providerData.find(p => p.providerId.includes('discord'));
-            const avatarUrl = discordProfile?.photoURL || `https://api.dicebear.com/7.x/identicon/svg?seed=${currentUser.uid}`;
             
-            await updateDoc(doc(db, 'users', currentUser.uid), {
-                photoURL: avatarUrl
-            });
-            setUser({ photoURL: avatarUrl });
+            const avatarUrl = discordProfile?.photoURL || currentUser.photoURL || `https://api.dicebear.com/7.x/identicon/svg?seed=${currentUser.uid}`;
+            const discordName = discordProfile?.displayName || currentUser.displayName;
+
+            const updateData: any = {
+                photoURL: avatarUrl,
+                displayName: discordName
+            };
+            
+            await updateDoc(doc(db, 'users', currentUser.uid), updateData);
+            setUser(updateData);
             
             // Close modal natively
             const modal = document.getElementById('avatar-editor-modal') as HTMLElement | null;
