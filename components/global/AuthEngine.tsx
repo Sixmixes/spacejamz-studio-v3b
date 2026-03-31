@@ -134,26 +134,39 @@ export default function AuthEngine() {
                             assignedCoins = 5000; 
                         }
 
+                        const assignedRole = assignedCoins >= 5000 ? 'FOUNDER' : 'PILOT';
+
                         const newUserData = {
-                            displayName: user.displayName,
+                            uid: user.uid,
+                            displayName: user.displayName || `PILOT-${user.uid.slice(0, 4)}`,
                             photoURL: user.photoURL,
                             joinedAt: serverTimestamp(),
                             coinsBalance: assignedCoins,
                             xp: 0,
-                            enrollmentComplete: false
+                            enrollmentComplete: false,
+                            role: assignedRole
                         };
                         
+                        // PERSIST NEW NEURAL INSTANCE TO FIRESTORE
+                        try {
+                            await setDoc(userRef, newUserData);
+                            console.warn(`[ECONOMY] Profile established for ${newUserData.displayName} with role ${assignedRole}`);
+                        } catch (writeErr) {
+                            console.error("Critical Profile Persistence Failure:", writeErr);
+                        }
+
                         setCurrentUser({
                             uid: user.uid,
-                            displayName: user.displayName,
+                            displayName: newUserData.displayName,
                             photoURL: user.photoURL,
                             email: user.email,
-                            role: undefined,
+                            role: assignedRole,
                             coinsBalance: assignedCoins,
                             xp: 0,
                             joinedAt: new Date(),
                             enhancements: [],
-                            ownedEnhancements: []
+                            ownedEnhancements: [],
+                            enrollmentComplete: false
                         });
                         
                         if (assignedCoins > 0) {

@@ -19,6 +19,7 @@ export interface UserProfile {
   bannerZoom?: number; // Custom optical scale
   customCursor?: string; // Users can select custom cursor
   freeGenerationsRemaining?: number; // Founder Neural Stipend
+  enrollmentComplete?: boolean; // Identity Calibration Status
 }
 
 export type UserLoadState = 'IDLE' | 'LOADING' | 'AUTHENTICATED' | 'UNAUTHENTICATED';

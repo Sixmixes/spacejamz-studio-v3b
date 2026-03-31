@@ -15,6 +15,7 @@ import CursorEngine from "@/components/global/CursorEngine";
 import GlobalIdentityHeader from "@/components/global/GlobalIdentityHeader";
 import GlobalActionFab from "@/components/global/GlobalActionFab";
 import ArchitectEditor from "@/components/global/ArchitectEditor";
+import PilotOnboarding from "@/components/global/PilotOnboarding";
 
 const raj = Rajdhani({
   variable: "--font-rajdhani",
@@ -119,6 +120,9 @@ export default function RootLayout({
 
             {/* LIVE CSS ARCHITECT ENGINE */}
             <ArchitectEditor />
+
+            {/* IDENTITY CALIBRATION & ONBOARDING GATEWAY */}
+            <PilotOnboarding />
           </div>
 
       </body>
