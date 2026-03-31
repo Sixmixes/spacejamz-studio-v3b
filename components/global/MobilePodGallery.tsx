@@ -28,16 +28,18 @@ export default function MobilePodGallery({ generations, equipBanner, deleteGener
 
     if (stack.length === 0) {
         return (
-            <div className="w-full h-[60vh] flex flex-col items-center justify-center p-8 text-center text-primary/40 font-mono text-xs animate-in fade-in">
-                NO MORE IMAGES IN STACK.
-                <button onClick={() => setStack(generations)} className="mt-4 border border-primary bg-primary/20 px-6 py-3 text-white font-bold tracking-widest uppercase hover:bg-primary transition-all">RESET DECK</button>
+            <div className="w-full h-[60vh] flex flex-col items-center justify-center p-8 text-center text-primary/40 font-mono text-xs animate-in fade-in z-50">
+                <span className="mb-4 text-sm font-black tracking-widest uppercase">STACK EMPTY</span>
+                <div className="flex flex-col gap-4 w-full max-w-xs">
+                    <button onClick={() => setStack(generations)} className="w-full border border-primary bg-primary/20 px-6 py-3 text-white font-bold tracking-widest uppercase hover:bg-primary transition-all">POST-PROCESS (RESET)</button>
+                    <button onClick={toggleGridView} className="w-full border border-[#00ffff]/40 bg-transparent px-6 py-3 text-[#00ffff] font-bold tracking-widest uppercase hover:bg-[#00ffff]/10 transition-all">VIEW FULL GALLERY</button>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="relative w-full h-full min-h-[400px] flex 1 items-center justify-center overflow-visible touch-pan-y">
-            
+        <div className="relative w-full h-full min-h-[400px] flex-1 flex flex-col items-center justify-center overflow-visible touch-pan-y">
             <button 
                 onClick={toggleGridView}
                 className="absolute top-2 right-4 z-50 p-2.5 bg-[#00ffff]/10 border border-[#00ffff]/40 rounded-full text-[#00ffff] shadow-[0_0_15px_rgba(0,255,255,0.2)] backdrop-blur-md active:scale-95 transition-transform"
@@ -74,7 +76,6 @@ function Card({ gen, isTop, index, stackLength, handleDragEnd, equipBanner, hand
     const x = useMotionValue(0);
     // Twirl physics when dragged horizontally
     const rotate = useTransform(x, [-200, 200], [-15, 15]);
-    const opacity = useTransform(x, [-200, 0, 200], [0, 1, 0]);
 
     // Tinder visual stamps
     const likeOpacity = useTransform(x, [50, 150], [0, 1]);
@@ -102,9 +103,9 @@ function Card({ gen, isTop, index, stackLength, handleDragEnd, equipBanner, hand
     return (
         <motion.div
             className={`absolute w-[82vw] max-w-[380px] h-full rounded-2xl overflow-hidden border border-[#00ffff]/30 shadow-[0_20px_50px_rgba(0,0,0,0.8)] bg-black ${isTop ? 'z-40' : 'z-10'}`}
-            style={{ x, rotate, opacity: isTop ? opacity : 1 }}
+            style={{ x, rotate }}
             animate={{ scale, y: yOffset }}
-            exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.2 } }}
+            exit={{ opacity: 0, scale: 0.9, y: yOffset + 50, transition: { duration: 0.15, ease: 'easeOut' } }}
             transition={{ type: 'spring', stiffness: 300, damping: 20 }}
             drag={isTop ? "x" : false}
             dragConstraints={{ left: 0, right: 0 }}

@@ -10,6 +10,7 @@ const WarpBackground = memo(() => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const logoRef = useRef<HTMLDivElement>(null);
     const idleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const xOffsetRef = useRef(0);
 
     const isPlaying = useAudioStore(state => state.isPlaying);
     const isPlayingRef = useRef(isPlaying);
@@ -19,6 +20,16 @@ const WarpBackground = memo(() => {
     const currentUser = useUserStore(state => state.currentUser);
     const themeItem = currentUser?.enhancements?.find((e: string) => e.startsWith('theme_'));
     const customBg = isProfile ? themeItem : null;
+    
+    // Dynamic vanishing point tracking for soft layout centering
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        if (window.innerWidth >= 768 && (pathname.startsWith('/pod') || pathname.startsWith('/vault') || pathname.startsWith('/treasury') || pathname.startsWith('/arena'))) {
+            xOffsetRef.current = 135 * Math.min(window.devicePixelRatio || 1, 1);
+        } else {
+            xOffsetRef.current = 0;
+        }
+    }, [pathname]);
 
     const getThemeColors = (theme: string) => {
         if (theme === 'ABYSSAL_SINGULARITY') return { bass: '75, 0, 130', mid: '90, 20, 160', high: '120, 50, 200', white: '255, 255, 255' };
@@ -140,9 +151,6 @@ const WarpBackground = memo(() => {
             canvas.style.width = viewportWidth + "px";
             canvas.style.height = viewportHeight + "px";
 
-            cx = width / 2;
-            cy = height / 2;
-
             canvas.width = width;
             canvas.height = height;
         };
@@ -205,6 +213,10 @@ const WarpBackground = memo(() => {
                 return;
             }
             lastAnimFrame = time;
+            
+            // Dynamic vanishing point
+            cx = width / 2 + xOffsetRef.current;
+            cy = height / 2;
 
             let { intensity, low, mid, high } = coreAudioData?.current || { intensity: 0, low: 0, mid: 0, high: 0 };
             
