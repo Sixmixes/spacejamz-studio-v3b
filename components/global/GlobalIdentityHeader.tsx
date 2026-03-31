@@ -24,7 +24,7 @@ export default function GlobalIdentityHeader() {
 
     if (!currentUser) {
         return (
-            <div className="relative w-full pb-0 pt-[64px] bg-zinc-900 overflow-hidden border-b border-white/10 group flex items-end shrink-0 animate-in fade-in duration-1000">
+            <div className="relative w-full pb-0 md:pb-16 pt-[56px] md:pt-24 bg-zinc-900 overflow-hidden border-b border-white/10 group flex items-end shrink-0 animate-in fade-in duration-1000">
                 <div className="absolute inset-0 z-0 bg-black">
                     <div className="w-full h-full bg-[radial-gradient(circle_at_center,rgba(var(--color-primary),0.05)_0,transparent_100%)] flex items-center justify-center">
                         <span className="font-mono text-[8px] md:text-[10px] text-gray-700 uppercase tracking-[1em]">NO PILOT DETECTED</span>
@@ -36,7 +36,7 @@ export default function GlobalIdentityHeader() {
                         <span className="font-mono text-[8px] sm:text-[10px] text-gray-600 uppercase tracking-widest leading-none mt-2">GUEST</span>
                     </div>
                     
-                    <div className="flex flex-col items-start justify-end h-14 md:h-32 mb-0 mt-0 py-0 md:pb-2 md:pt-4 w-full">
+                    <div className="flex flex-col items-start justify-end h-auto md:h-32 mb-0 mt-0 py-0 md:pb-2 md:pt-4 w-full">
                         <div className="flex items-center justify-between w-full max-w-full pr-4 md:pr-0 mb-1.5 md:mb-3">
                             <h1 className="text-xl md:text-5xl font-black font-bebas tracking-widest uppercase drop-shadow-[0_5px_15px_rgba(0,0,0,0.8)] leading-none text-gray-500 mt-0 truncate">
                                 UNAUTHORIZED USER
@@ -58,7 +58,7 @@ export default function GlobalIdentityHeader() {
     return (
         <>
             {/* MASSIVE PILOT BANNER (Dynamic GPU Art) */}
-            <div className="relative w-full pb-0 pt-[64px] bg-zinc-900 overflow-hidden border-b border-white/10 group flex items-end shrink-0 animate-in fade-in duration-1000">
+            <div className="relative w-full pb-0 md:pb-16 pt-[56px] md:pt-24 bg-zinc-900 overflow-hidden border-b border-white/10 group flex items-end shrink-0 animate-in fade-in duration-1000">
                 <div className="absolute inset-0 z-0">
                     {(previewBannerUrl || currentUser.customBannerUrl) ? (
                         <div className="absolute inset-0 z-0 origin-center transition-transform duration-[10s] ease-linear group-hover:scale-105">
@@ -80,7 +80,7 @@ export default function GlobalIdentityHeader() {
                 </div>
                 
                 {/* Profile Stats Floating Container */}
-                <div className="relative z-10 w-full px-4 md:px-12 flex flex-row items-end text-left gap-3 md:gap-6 pb-2 md:pb-0">
+                <div className="relative z-10 w-full px-4 md:px-12 flex flex-row items-end text-left gap-3 md:gap-6 pb-0 md:pb-0">
                     <button 
                         popoverTarget="avatar-editor-modal"
                         className="relative group/avatar shrink-0 outline-none cursor-pointer hover:shadow-[0_0_80px_rgba(var(--color-primary),0.4)] transition-all duration-500 rounded-none focus:outline-none"
@@ -96,7 +96,7 @@ export default function GlobalIdentityHeader() {
                         </div>
                     </button>
                     
-                    <div className="flex flex-col items-start justify-between h-14 md:h-32 mb-0 mt-0 py-0 md:py-2 w-full overflow-hidden">
+                    <div className="flex flex-col items-start justify-between h-auto md:h-32 mb-0 mt-0 py-0 md:py-2 w-full overflow-hidden">
                         <div className="flex items-center justify-between w-full max-w-full pr-4 md:pr-0">
                             <div className="flex items-center justify-start gap-2 md:gap-3">
                                 <h1 className="text-xl md:text-5xl font-black font-bebas tracking-widest uppercase drop-shadow-[0_5px_15px_rgba(0,0,0,0.8)] leading-none text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-400 mt-0 truncate">

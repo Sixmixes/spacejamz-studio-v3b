@@ -56,7 +56,7 @@ export default function AssetMatrix({ children, className = '', style }: AssetMa
     container.addEventListener('mousemove', onMouseMove);
     container.addEventListener('mouseleave', onMouseLeave);
 
-    let scrollTimeout: NodeJS.Timeout;
+    let scrollTimeout: any = null;
     let lastScrollY = typeof window !== 'undefined' ? window.scrollY : 0;
     let lastTapTime = 0; // Tracks when you tapped to stop the inertia scroll
 
@@ -95,7 +95,10 @@ export default function AssetMatrix({ children, className = '', style }: AssetMa
             overwrite: 'auto'
         });
 
-        clearTimeout(scrollTimeout);
+        if (scrollTimeout) {
+            clearTimeout(scrollTimeout);
+        }
+        
         scrollTimeout = setTimeout(() => {
             // Long, ultra-smooth release back to static
             gsap.to(card, {

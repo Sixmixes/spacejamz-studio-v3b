@@ -335,9 +335,9 @@ export default function NeuralStudioApp({ embeddedFlixSynthOnly = false, onEmbed
 
             
 
-            <div className="relative z-40 w-full max-w-[1400px] mx-auto px-4 md:px-8 pt-6 md:pt-20 flex flex-col items-center">
+            <div className="relative z-40 w-full max-w-[1400px] mx-auto px-4 md:px-8 pt-3 md:pt-6 flex flex-col items-center">
 
-                <div className="w-full mb-8 md:mb-12 flex flex-col md:flex-row justify-between items-start md:items-end border-b border-solid border-primary/20 pb-4 md:pb-8 gap-4 md:gap-6 animate-in fade-in slide-in-from-top-4 duration-700">
+                <div className="w-full mb-4 md:mb-8 flex flex-col md:flex-row justify-between items-start md:items-end border-b border-solid border-primary/20 pb-2 md:pb-4 gap-4 md:gap-6 animate-in fade-in slide-in-from-top-4 duration-700">
                     <div className="flex items-start gap-3 md:gap-4">
                         <div className="p-3 md:p-4 bg-primary/10 border border-primary/20 rounded-full shadow-[0_0_20px_rgba(var(--color-primary),0.2)]">
                             <Sparkles className="w-5 h-5 md:w-8 md:h-8 text-primary cyber-flicker-slow" />

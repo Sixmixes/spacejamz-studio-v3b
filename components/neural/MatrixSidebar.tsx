@@ -15,9 +15,9 @@ export default function MatrixSidebar({
     activeTab, setActiveTab, generationsCount, isSwipeDeckView, setIsSwipeDeckView, setIsStudioOpen
 }: MatrixSidebarProps) {
     return (
-        <div className="w-full md:w-64 lg:w-72 shrink-0 flex flex-col gap-2 md:gap-4 md:sticky md:top-24 z-40">
+        <div className="w-full md:w-64 lg:w-72 shrink-0 flex flex-col justify-start gap-0 md:gap-4 md:sticky md:top-24 z-40">
             {/* TACTICAL NAVIGATION (POD CATEGORIES) */}
-            <div className="flex sm:grid sm:grid-cols-5 md:flex md:flex-col gap-2 md:gap-3 overflow-x-auto md:overflow-visible pb-2 pt-2 md:pt-0 px-2 md:px-0 scrollbar-none snap-x snap-mandatory mask-fade-edges-x md:mask-none sticky top-16 md:static z-50 bg-black/90 md:bg-transparent backdrop-blur-md md:backdrop-blur-none -mx-2 md:mx-0">
+            <div className="flex sm:grid sm:grid-cols-5 md:flex md:flex-col gap-2 md:gap-3 overflow-x-auto md:overflow-visible pb-2 pt-0 md:pt-0 px-2 md:px-0 scrollbar-none snap-x snap-mandatory mask-fade-edges-x md:mask-none sticky top-[56px] md:static z-50 bg-black/90 md:bg-transparent backdrop-blur-md md:backdrop-blur-none -mx-2 md:mx-0">
                 {(['neural', 'acoustic', 'script', 'dna', 'arsenal'] as const).map((tab) => (
                     <button 
                         key={tab} 

@@ -27,8 +27,8 @@ export default function LeaderboardPage() {
     }, []);
 
     return (
-        <div className="flex flex-col min-h-screen bg-black pt-32 pb-24 px-4 sm:px-8">
-            <div className="max-w-4xl mx-auto w-full flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-8 duration-700">
+        <div className="flex flex-col min-h-screen bg-black pt-12 md:pt-20 pb-24 px-4 sm:px-8">
+            <div className="max-w-4xl mx-auto w-full flex flex-col gap-6 md:gap-10 animate-in fade-in slide-in-from-top-4 duration-700">
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-yellow-500/20 pb-6 relative">
                     <div className="absolute top-0 left-0 w-32 h-32 bg-yellow-500/10 blur-[50px] rounded-full" />
                     <div className="relative z-10 flex items-center gap-4">

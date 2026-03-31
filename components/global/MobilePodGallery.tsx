@@ -39,7 +39,7 @@ export default function MobilePodGallery({ generations, equipBanner, deleteGener
     }
 
     return (
-        <div className="relative w-full h-full min-h-[400px] flex-1 flex items-center justify-center overflow-visible touch-pan-y">
+        <div className="relative w-full h-full min-h-[400px] flex-1 flex items-start justify-center overflow-visible touch-pan-y pt-0">
             <button 
                 onClick={toggleGridView}
                 className="absolute top-2 right-4 z-50 p-2.5 bg-[#00ffff]/10 border border-[#00ffff]/40 rounded-full text-[#00ffff] shadow-[0_0_15px_rgba(0,255,255,0.2)] backdrop-blur-md active:scale-95 transition-transform"
@@ -102,7 +102,7 @@ function Card({ gen, isTop, index, stackLength, handleDragEnd, equipBanner, hand
 
     return (
         <motion.div
-            className={`absolute inset-0 m-auto w-[82vw] max-w-[380px] h-full rounded-2xl overflow-hidden border border-[#00ffff]/30 shadow-[0_20px_50px_rgba(0,0,0,0.8)] bg-black ${isTop ? 'z-40' : 'z-10'}`}
+            className={`absolute inset-x-0 mx-auto w-[82vw] max-w-[380px] aspect-[3/4] h-auto rounded-2xl overflow-hidden border border-[#00ffff]/30 shadow-[0_20px_50px_rgba(0,0,0,0.8)] bg-black ${isTop ? 'z-40' : 'z-10'}`}
             style={{ x, rotate }}
             animate={{ scale, y: yOffset }}
             exit={{ opacity: 0, scale: 0.85, y: yOffset + 100, transition: { duration: 0.5, ease: 'easeOut' } }}

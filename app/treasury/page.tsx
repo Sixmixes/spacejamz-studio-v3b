@@ -326,7 +326,7 @@ export default function TreasuryPage() {
     };
 
     return (
-        <div className="relative flex flex-1 w-full flex-col justify-start overflow-visible bg-transparent group/main shrink-0 min-h-max pt-0 pb-0 selection:bg-yellow-500/20">
+        <div className="relative flex flex-1 w-full flex-col justify-start overflow-visible bg-transparent group/main shrink-0 min-h-max pt-12 md:pt-20 pb-0 selection:bg-yellow-500/20">
             
             {/* CINEMATIC B-ROLL BACKGROUND LAYER */}
             <div className="fixed inset-0 z-[-1] flex items-center justify-center pointer-events-none overflow-hidden">
@@ -348,15 +348,7 @@ export default function TreasuryPage() {
                 {/* NEURAL IDENTITY GATEWAY DELEGATED TO PERSISTENT LAYOUT ENGINE */}
             </div>
 
-            {/* RETURN NAVIGATION IN FLOW */}
-            <div className="w-full relative z-[100] px-4 md:px-12 flex justify-start mt-8 mb-6">
-                <button 
-                    onClick={() => router.push('/')}
-                    className="flex items-center gap-3 text-white/50 hover:text-yellow-500 transition-all font-mono text-[10px] tracking-widest border border-white/10 hover:border-yellow-500/50 hover:bg-yellow-500/10 bg-black/40 px-6 py-3 rounded-none"
-                >
-                    <ChevronLeft size={16} /> RETURN TO ARCHITECT CORE
-                </button>
-            </div>
+
 
             {activeModal && activeModal.type === 'success' && (
                 <div className={`fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-in fade-in zoom-in-95 duration-500`}>
@@ -400,7 +392,7 @@ export default function TreasuryPage() {
                 </div>
             )}
 
-            <div className="cyber-panel p-8 md:p-16 w-full flex-1 max-w-[1700px] mx-auto relative z-50 overflow-hidden bg-black/80 border-2 border-yellow-500/20 shadow-[0_30px_100px_rgba(0,0,0,1)] rounded-t-[40px] md:rounded-[40px]" style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 50px), calc(100% - 50px) 100%, 0 100%)' }}>
+            <div className="cyber-panel p-8 md:p-14 w-full flex-1 max-w-[1700px] mx-auto relative z-50 overflow-hidden bg-black/80 border-2 border-yellow-500/20 shadow-[0_40px_100px_rgba(0,0,0,1)] rounded-t-[40px] md:rounded-[40px]" style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 50px), calc(100% - 50px) 100%, 0 100%)' }}>
                 {/* Tactical Ledger Sync Overlay */}
                 <div className="absolute top-6 left-8 flex flex-col gap-1 opacity-20">
                     <span className="font-mono text-[7px] text-yellow-500 tracking-[0.5em] font-black uppercase italic">Ledger_Sync: ACTIVE</span>
@@ -408,7 +400,7 @@ export default function TreasuryPage() {
                 </div>
                 
                 {/* Treasury Header */}
-                <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 pb-4 shrink-0 mt-8">
+                <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 pb-4 shrink-0 mt-4 md:mt-8">
                 <div className="flex flex-col">
                     <h1 className="font-bebas text-4xl md:text-5xl tracking-widest uppercase text-white leading-none flex items-center gap-3">
                         <CircleDollarSign className="text-yellow-500" size={36} />

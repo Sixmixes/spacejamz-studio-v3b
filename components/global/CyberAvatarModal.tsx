@@ -39,6 +39,10 @@ export function CyberAvatarModal() {
                 setBannerPreviewUrl(url);
                 setEditBannerY(url === currentUser.customBannerUrl ? (currentUser.bannerPositionY ?? 50) : 50);
                 setEditBannerZoom(url === currentUser.customBannerUrl ? (currentUser.bannerZoom ?? 1) : 1);
+                
+                // Auto-scroll to top so the user can see the live header calibration
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+
                 const modal = document.getElementById('avatar-editor-modal') as HTMLElement | null;
                 if (modal?.showPopover) modal.showPopover();
             }
@@ -187,7 +191,12 @@ export function CyberAvatarModal() {
     };
 
     return (
-        <div id="avatar-editor-modal" popover="auto" className={`cyber-modal !p-0 max-w-lg w-full rounded-none border border-[#00ffff]/30 shadow-[0_0_50px_rgba(0,255,255,0.1)] outline-none overflow-y-auto max-h-[90vh] scrollbar-none fixed m-auto z-[99999] open:animate-in open:zoom-in-95 open:fade-in duration-300 ${bannerPreviewUrl ? 'bottom-8 top-auto bg-black/60 backdrop-blur-md' : 'inset-0 bg-transparent'}`} data-calibrating={!!bannerPreviewUrl}>
+        <div 
+            id="avatar-editor-modal" 
+            popover="auto" 
+            className={`cyber-modal !p-0 max-w-lg w-full rounded-none border border-[#00ffff]/30 shadow-[0_0_50px_rgba(0,255,255,0.1)] outline-none overflow-y-auto max-h-[90vh] scrollbar-none fixed inset-0 m-auto z-[100001] open:animate-in open:zoom-in-95 open:fade-in duration-300 ${bannerPreviewUrl ? 'bg-black/60 backdrop-blur-md' : 'bg-transparent'}`} 
+            data-calibrating={!!bannerPreviewUrl}
+        >
             {/* Modal Header */}
             <div className="flex justify-between items-center p-4 md:p-6 bg-black/90 border-b border-[#00ffff]/20">
                 <div className="flex items-center gap-3">

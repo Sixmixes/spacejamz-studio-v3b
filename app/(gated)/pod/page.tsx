@@ -134,7 +134,7 @@ export default function PrivateMatrix() {
             {/* NEURAL IDENTITY GATEWAY DELEGATED TO PERSISTENT LAYOUT ENGINE */}
 
             {/* DESKTOP SPLIT LAYOUT CONTAINER */}
-            <div className="w-full max-w-[1800px] mx-auto flex flex-col md:flex-row md:items-start gap-4 md:gap-8 px-2 md:px-8 mt-2 md:mt-6 z-20">
+            <div className="w-full max-w-[1800px] mx-auto flex flex-col items-start md:flex-row gap-0 md:gap-8 px-2 md:px-8 mt-0 md:mt-6 z-20">
                 
                 {/* LEFT SIDEBAR NAVIGATION */}
                 <MatrixSidebar 
@@ -145,9 +145,9 @@ export default function PrivateMatrix() {
                 />
 
                 {/* RIGHT CONTENT AREA - MAIN PAYLOADS */}
-                <div className="flex-1 min-w-0 w-full pt-2 md:pt-0 pb-20">
+                <div className="flex-1 min-w-0 w-full pt-0 md:pt-0 pb-20">
                     {activeTab === 'neural' && (
-                        <div className="animate-in fade-in zoom-in-95 duration-500">
+                        <div className="animate-in fade-in duration-500">
 
 
                         {isLoading ? (
@@ -166,8 +166,8 @@ export default function PrivateMatrix() {
                             <>
                                 {/* Swipe Gallery */}
                                 {isSwipeDeckView && (
-                                    <div className="flex items-center justify-center w-full min-h-[500px] md:min-h-[600px] mt-4 md:mt-0 pb-16 relative z-10 transition-all">
-                                        <div className="w-full h-full max-w-lg mt-8 md:mt-0">
+                                    <div className="flex items-start justify-center w-full min-h-[500px] md:min-h-[600px] mt-0 pb-16 relative z-10 transition-all">
+                                        <div className="w-full h-full max-w-lg mt-0">
                                             <MobilePodGallery 
                                                 generations={generations}
                                                 equipBanner={equipBanner}
@@ -247,7 +247,7 @@ export default function PrivateMatrix() {
                 )}
 
                 {activeTab === 'acoustic' && (
-                    <div className="animate-in slide-in-from-right-8 duration-500">
+                    <div className="animate-in fade-in duration-500">
 
 
                         {tracks.length === 0 ? (

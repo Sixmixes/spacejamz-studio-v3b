@@ -75,7 +75,15 @@ export default function AuthEngine() {
                             xp: data.xp,
                             joinedAt: data.joinedAt,
                             enhancements: data.enhancements || [],
-                            ownedEnhancements: data.ownedEnhancements || []
+                            ownedEnhancements: data.ownedEnhancements || [],
+                            // Sync critical identity persistence layers
+                            customBannerUrl: data.customBannerUrl,
+                            bannerPositionY: data.bannerPositionY,
+                            bannerZoom: data.bannerZoom,
+                            customCursor: data.customCursor,
+                            prestige_level: data.prestige_level || 0,
+                            lastCoinRefill: data.lastCoinRefill,
+                            freeGenerationsRemaining: data.freeGenerationsRemaining ?? 0
                         });
                         
                         // Daily Operational Refill Logic
