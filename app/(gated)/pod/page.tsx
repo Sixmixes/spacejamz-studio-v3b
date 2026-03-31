@@ -118,52 +118,74 @@ export default function PrivateMatrix() {
 
             {/* NEURAL IDENTITY GATEWAY DELEGATED TO PERSISTENT LAYOUT ENGINE */}
 
-            {/* TACTICAL NAVIGATION (POD CATEGORIES) */}
-            <div className="w-full max-w-[1800px] mx-auto px-2 md:px-8 mt-4 z-20">
-                <div className="flex sm:grid sm:grid-cols-5 gap-2 md:gap-4 overflow-x-auto pb-2 px-2 md:px-0 scrollbar-none snap-x snap-mandatory">
-                    {(['neural', 'acoustic', 'script', 'dna', 'arsenal'] as const).map(tab => (
-                        <button 
-                            key={tab} 
-                            onClick={() => setActiveTab(tab)}
-                            className={`shrink-0 w-[130px] sm:w-auto snap-center flex flex-col items-center justify-center p-3 md:p-4 transition-all duration-300 border relative overflow-hidden group shadow-[0_5px_15px_rgba(0,0,0,0.5)] ${activeTab === tab ? 'bg-[#00ffff]/10 text-[#00ffff] border-[#00ffff]/80 shadow-[0_0_20px_rgba(0,255,255,0.2)]' : 'bg-[#050505] text-white/70 font-bold border-white/10 hover:border-[#00ffff]/50 hover:bg-[#00ffff]/5 hover:text-white'}`}
-                            style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%)' }}
-                        >
-                            {tab === 'neural' && <ImageIcon size={16} className={`mb-1.5 md:w-[18px] md:h-[18px] ${activeTab === tab ? 'animate-pulse' : ''}`} />}
-                            {tab === 'acoustic' && <Music size={16} className={`mb-1.5 md:w-[18px] md:h-[18px] ${activeTab === tab ? 'animate-pulse' : ''}`} />}
-                            {tab === 'script' && <FileText size={16} className={`mb-1.5 md:w-[18px] md:h-[18px] ${activeTab === tab ? 'animate-pulse' : ''}`} />}
-                            {tab === 'dna' && <Microchip size={16} className={`mb-1.5 md:w-[18px] md:h-[18px] ${activeTab === tab ? 'animate-pulse' : ''}`} />}
-                            {tab === 'arsenal' && <ShoppingBag size={16} className={`mb-1.5 md:w-[18px] md:h-[18px] ${activeTab === tab ? 'animate-pulse' : ''}`} />}
-                            <span className="font-mono text-[9px] md:text-[10px] items-center text-center font-black uppercase tracking-[0.1em] px-1">
-                                {tab === 'neural' ? 'Neural Archives' : 
-                                 tab === 'acoustic' ? 'Acoustic Vault' : 
-                                 tab === 'script' ? 'Neural Script' : 
-                                 tab === 'dna' ? 'DNA Sequencer' : 'Cosmetic Arsenal'}
-                            </span>
-                            {/* Status Light */}
-                            <div className={`absolute top-2 right-2 w-1.5 h-1.5 rounded-full ${activeTab === tab ? 'bg-[#00ffff] animate-pulse shadow-[0_0_5px_rgba(0,255,255,0.8)]' : 'bg-primary/20'}`} />
-                        </button>
-                    ))}
-                </div>
-            </div>
+            {/* DESKTOP SPLIT LAYOUT CONTAINER */}
+            <div className="w-full max-w-[1800px] mx-auto flex flex-col md:flex-row md:items-start gap-4 md:gap-8 px-2 md:px-8 mt-4 md:mt-6 z-20">
+                
+                {/* LEFT SIDEBAR NAVIGATION */}
+                <div className="w-full md:w-64 lg:w-72 shrink-0 flex flex-col gap-4 sticky top-24">
+                    {/* TACTICAL NAVIGATION (POD CATEGORIES) */}
+                    <div className="flex sm:grid sm:grid-cols-5 md:flex md:flex-col gap-2 md:gap-3 overflow-x-auto md:overflow-visible pb-2 px-2 md:px-0 scrollbar-none snap-x snap-mandatory mask-fade-edges-x md:mask-none">
+                        {(['neural', 'acoustic', 'script', 'dna', 'arsenal'] as const).map(tab => (
+                            <button 
+                                key={tab} 
+                                onClick={() => setActiveTab(tab)}
+                                className={`shrink-0 w-[130px] sm:w-auto md:w-full snap-center flex flex-col md:flex-row items-center md:items-center justify-center md:justify-start gap-2 md:gap-4 p-3 md:p-4 transition-all duration-300 border relative overflow-hidden group shadow-[0_5px_15px_rgba(0,0,0,0.5)] ${activeTab === tab ? 'bg-[#00ffff]/10 text-[#00ffff] border-[#00ffff]/80 shadow-[0_0_20px_rgba(0,255,255,0.2)] md:translate-x-2' : 'bg-[#050505] text-white/70 font-bold border-white/10 hover:border-[#00ffff]/50 hover:bg-[#00ffff]/5 hover:text-white md:hover:translate-x-1'}`}
+                                style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%)' }}
+                            >
+                                {tab === 'neural' && <ImageIcon size={16} className={`md:w-[18px] md:h-[18px] shrink-0 ${activeTab === tab ? 'animate-pulse text-[#00ffff]' : 'text-primary/60'}`} />}
+                                {tab === 'acoustic' && <Music size={16} className={`md:w-[18px] md:h-[18px] shrink-0 ${activeTab === tab ? 'animate-pulse text-[#00ffff]' : 'text-primary/60'}`} />}
+                                {tab === 'script' && <FileText size={16} className={`md:w-[18px] md:h-[18px] shrink-0 ${activeTab === tab ? 'animate-pulse text-[#00ffff]' : 'text-primary/60'}`} />}
+                                {tab === 'dna' && <Microchip size={16} className={`md:w-[18px] md:h-[18px] shrink-0 ${activeTab === tab ? 'animate-pulse text-[#00ffff]' : 'text-primary/60'}`} />}
+                                {tab === 'arsenal' && <ShoppingBag size={16} className={`md:w-[18px] md:h-[18px] shrink-0 ${activeTab === tab ? 'animate-pulse text-[#00ffff]' : 'text-primary/60'}`} />}
+                                <span className="font-mono text-[9px] md:text-[11px] md:text-left text-center font-black uppercase tracking-[0.1em] px-1 md:px-0">
+                                    {tab === 'neural' ? 'Neural Archives' : 
+                                     tab === 'acoustic' ? 'Acoustic Vault' : 
+                                     tab === 'script' ? 'Neural Script' : 
+                                     tab === 'dna' ? 'DNA Sequencer' : 'Cosmetic Arsenal'}
+                                </span>
+                                {/* Status Light */}
+                                <div className={`absolute top-2 right-2 md:top-1/2 md:-translate-y-1/2 md:right-4 w-1.5 h-1.5 rounded-full ${activeTab === tab ? 'bg-[#00ffff] animate-pulse shadow-[0_0_5px_rgba(0,255,255,0.8)]' : 'bg-primary/20'}`} />
+                            </button>
+                        ))}
+                    </div>
 
-            {/* NEURAL ARCHIVE DECK (AI Generations) */}
-            <div className="w-full max-w-[1800px] mx-auto px-4 md:px-8 pt-2 md:pt-6">
-                {activeTab === 'neural' && (
-                    <div className="animate-in fade-in zoom-in-95 duration-500">
-                        <div className="flex flex-row items-center justify-between mb-2 md:mb-4 border-b-2 border-primary/20 pb-2 md:pb-3">
-                            <div className="flex items-center gap-3 md:gap-4">
-                                <div className="p-2 md:p-3 bg-primary/10 border border-primary/30 rounded-full shadow-[0_0_15px_rgba(var(--color-primary),0.2)] shrink-0">
-                                    <Layout className="w-5 h-5 md:w-6 md:h-6 text-primary" />
+                    {/* CONTEXTUAL SUB-ACTIONS (Desktop Only) */}
+                    <div className="hidden md:flex flex-col gap-3 mt-4">
+                        {activeTab === 'neural' && (
+                            <>
+                                <CyberButton text="OPEN STUDIO" onClick={() => setIsStudioOpen(true)} className="w-full text-xs h-12" />
+                                {generations.length > 0 && !isSwipeDeckView && (
+                                    <button 
+                                        onClick={() => setIsSwipeDeckView(true)}
+                                        className="font-mono text-[9px] uppercase tracking-widest text-[#00ffff]/60 hover:text-[#00ffff] transition-colors border border-[#00ffff]/20 hover:border-[#00ffff]/50 bg-black/40 py-3 inset-0 w-full"
+                                        style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%)' }}
+                                    >
+                                        [ REACTIVATE SWIPE DECK ]
+                                    </button>
+                                )}
+                            </>
+                        )}
+                    </div>
+                </div>
+
+                {/* RIGHT CONTENT AREA - MAIN PAYLOADS */}
+                <div className="flex-1 min-w-0 w-full pt-2 md:pt-0 pb-20">
+                    {activeTab === 'neural' && (
+                        <div className="animate-in fade-in zoom-in-95 duration-500">
+                            <div className="flex flex-row items-center justify-between mb-2 md:mb-6 border-b-2 border-primary/20 pb-2 md:pb-4">
+                                <div className="flex items-center gap-3 md:gap-5">
+                                    <div className="p-2 md:p-4 bg-primary/10 border border-primary/30 rounded-full shadow-[0_0_15px_rgba(var(--color-primary),0.2)] shrink-0">
+                                        <Layout className="w-5 h-5 md:w-8 md:h-8 text-primary" />
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <h2 className="text-2xl md:text-5xl font-black font-bebas tracking-widest uppercase text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)] leading-none">Neural Archives</h2>
+                                        <p className="font-mono text-[8px] sm:text-[10px] md:text-[11px] text-primary/60 uppercase tracking-[0.1em] md:tracking-[0.5em] font-bold mt-1 leading-tight pr-4">GPU-Accelerated Visual Identity Payloads</p>
+                                    </div>
                                 </div>
-                                <div className="flex flex-col">
-                                    <h2 className="text-2xl md:text-3xl font-black font-bebas tracking-widest uppercase text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)] leading-none">Neural Archives</h2>
-                                    <p className="font-mono text-[8px] sm:text-[10px] text-primary/60 uppercase tracking-[0.1em] md:tracking-[0.3em] font-bold italic mt-1 leading-tight pr-4">GPU-Accelerated Visual Identity Payloads</p>
+                                <div className="flex gap-4 md:hidden">
+                                    <CyberButton text="OPEN STUDIO" onClick={() => setIsStudioOpen(true)} className="h-8 md:h-10 px-3 md:px-6 text-[10px] md:text-xs scale-90" />
                                 </div>
                             </div>
-                            <div className="flex gap-4">
-                                <CyberButton text="OPEN STUDIO" onClick={() => setIsStudioOpen(true)} className="h-8 md:h-10 px-3 md:px-6 text-[10px] md:text-xs scale-90" />
-                            </div>
-                        </div>
 
                         {isLoading ? (
                             <div className="h-64 flex flex-col items-center justify-center gap-4">
@@ -194,9 +216,9 @@ export default function PrivateMatrix() {
                                 )}
 
                                 {/* Standard Desktop / Active Grid View */}
-                                <div className={`${isSwipeDeckView ? 'hidden' : 'grid'} grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 md:gap-8`}>
+                                <div className={`${isSwipeDeckView ? 'hidden' : 'grid'} grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 md:gap-8`}>
                                     {!isSwipeDeckView && (
-                                        <div className="col-span-full flex justify-center w-full mb-6 mt-4">
+                                        <div className="col-span-full flex justify-center w-full mb-6 mt-4 md:hidden">
                                             <CyberButton 
                                                 text="REACTIVATE SWIPE DECK VIEW" 
                                                 onClick={() => setIsSwipeDeckView(true)} 
@@ -457,6 +479,7 @@ export default function PrivateMatrix() {
                         </div>
                     </div>
                 )}
+                </div>
             </div>
             
             {/* Pip-Boy Filter Layer (Subtle) */}
