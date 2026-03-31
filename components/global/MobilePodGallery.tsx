@@ -105,7 +105,7 @@ function Card({ gen, isTop, index, stackLength, handleDragEnd, equipBanner, hand
             className={`absolute inset-0 m-auto w-[82vw] max-w-[380px] h-full rounded-2xl overflow-hidden border border-[#00ffff]/30 shadow-[0_20px_50px_rgba(0,0,0,0.8)] bg-black ${isTop ? 'z-40' : 'z-10'}`}
             style={{ x, rotate }}
             animate={{ scale, y: yOffset }}
-            exit={{ opacity: 0, scale: 0.9, y: yOffset + 50, transition: { duration: 0.15, ease: 'easeOut' } }}
+            exit={{ opacity: 0, scale: 0.85, y: yOffset + 100, transition: { duration: 0.5, ease: 'easeOut' } }}
             transition={{ type: 'spring', stiffness: 300, damping: 20 }}
             drag={isTop ? "x" : false}
             dragConstraints={{ left: 0, right: 0 }}

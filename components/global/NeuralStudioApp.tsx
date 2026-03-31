@@ -5,7 +5,7 @@ import { useUserStore } from '@/store/useUserStore';
 import { Sparkles, Video, UserPlus, Lock, Zap, Coins, Image as ImageIcon, AlertCircle, Loader2, Cpu, Terminal, CheckCircle2, Database, Trash2, Save, X } from 'lucide-react';
 import { CyberButton } from '@/components/ui/CyberButton';
 import { NeuralModal } from '@/components/ui/NeuralModal';
-import { motion, AnimatePresence, PanInfo } from 'framer-motion';
+import { motion, AnimatePresence, PanInfo, useMotionValue, useTransform } from 'framer-motion';
 
 import { db, storage } from '@/lib/firebase/config';
 import { collection, addDoc, serverTimestamp, doc, updateDoc, increment } from 'firebase/firestore';
@@ -252,26 +252,29 @@ export default function NeuralStudioApp({ embeddedFlixSynthOnly = false, onEmbed
         }
     };
 
-    const handleSwipe = async (e: any, info: PanInfo) => {
+    const handleSwipe = (e: any, info: PanInfo) => {
         const threshold = 100;
         if (info.offset.x > threshold) {
-            // Swipe Right to Keep
-            setStatusMsg('ARCHIVING CHOSEN ASSET...');
-            try {
-                const finalUrl = await archiveToPermanentStorage(batchUrls[currentBatchIndex]);
-                if (currentUser) {
-                    await addDoc(collection(db, 'user_assets', currentUser.uid, 'ai_generations'), {
+            // Swipe Right to Keep (Async fire and forget)
+            const urlToArchive = batchUrls[currentBatchIndex];
+            const uidStr = currentUser?.uid;
+            const currentPrompt = prompt;
+
+            // Don't block the UI thread waiting for 30TB cloud upload
+            archiveToPermanentStorage(urlToArchive).then(async (finalUrl) => {
+                if (uidStr) {
+                    await addDoc(collection(db, 'user_assets', uidStr, 'ai_generations'), {
                         type: 'flixsynth',
-                        prompt,
+                        prompt: currentPrompt,
                         assetUrl: finalUrl,
                         createdAt: serverTimestamp()
                     });
                 }
-                setStatusMsg(`ASSET SAVED [${currentBatchIndex + 1}/${batchUrls.length}].`);
-            } catch (err) {
-                console.error(err);
-                setStatusMsg('ERROR ARCHIVING ASSET.');
-            }
+            }).catch(err => {
+                console.error("Background archive failed:", err);
+            });
+            
+            setStatusMsg(`ASSET SAVED [${currentBatchIndex + 1}/${batchUrls.length}].`);
             advanceBatch();
         } else if (info.offset.x < -threshold) {
             // Swipe Left to Discard
@@ -289,6 +292,10 @@ export default function NeuralStudioApp({ embeddedFlixSynthOnly = false, onEmbed
             setStatusMsg('BATCH REVIEW COMPLETE.');
         }
     };
+    
+    // Reverse the slice so the current index is visually on top of the DOM stack
+    const remainingUrls = batchUrls.slice(currentBatchIndex);
+    const stackUrls = [...remainingUrls].reverse();
 
     if (!isFounder) {
         return (
@@ -707,20 +714,29 @@ export default function NeuralStudioApp({ embeddedFlixSynthOnly = false, onEmbed
                         </div>
 
                         <div className="relative w-full max-w-lg aspect-square flex items-center justify-center mt-12 bg-[#050505] rounded-3xl border border-primary/20 shadow-[0_0_120px_rgba(var(--color-primary),0.15)] overflow-hidden">
-                            <motion.img 
-                                key={currentBatchIndex}
-                                src={batchUrls[currentBatchIndex]}
-                                drag="x"
-                                dragConstraints={{ left: 0, right: 0 }}
-                                dragElastic={0.8}
-                                onDragEnd={handleSwipe}
-                                initial={{ x: 100, opacity: 0, scale: 0.9 }}
-                                animate={{ x: 0, opacity: 1, scale: 1 }}
-                                exit={{ x: -100, opacity: 0, scale: 0.9 }}
-                                transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                                className="w-full h-full object-cover cursor-grab active:cursor-grabbing"
-                            />
+                            <AnimatePresence>
+                                {stackUrls.map((url, stackIndex) => {
+                                    const isTop = stackIndex === stackUrls.length - 1;
+                                    // True index in the remaining active subset
+                                    const virtualIndex = stackUrls.length - 1 - stackIndex;
+                                    return (
+                                        <BatchCard 
+                                            key={`${currentBatchIndex + virtualIndex}-${url}`} 
+                                            url={url} 
+                                            isTop={isTop} 
+                                            index={virtualIndex}
+                                            handleSwipe={handleSwipe}
+                                        />
+                                    );
+                                })}
+                            </AnimatePresence>
                         </div>
+                        
+                        {batchUrls.length > 0 && currentBatchIndex >= batchUrls.length && (
+                            <div className="mt-8">
+                                <CyberButton text="VIEW MATRIX ARCHIVES" onClick={() => window.location.href = '/pod'} />
+                            </div>
+                        )}
                         
                         <div className="mt-8 flex items-center gap-12 sm:gap-24 relative z-10 w-full max-w-lg justify-center">
                             <button onClick={() => handleSwipe(null, { offset: { x: -200 } } as any)} className="flex flex-col items-center gap-3 text-red-500/60 hover:text-red-500 transition-all hover:scale-110 active:scale-95">
@@ -738,5 +754,62 @@ export default function NeuralStudioApp({ embeddedFlixSynthOnly = false, onEmbed
 
             <div className="fixed inset-0 pointer-events-none z-[100] opacity-10 mix-blend-overlay scanlines" />
         </div>
+    );
+}
+
+function BatchCard({ url, isTop, index, handleSwipe }: { url: string, isTop: boolean, index: number, handleSwipe: any }) {
+    const x = useMotionValue(0);
+    const rotate = useTransform(x, [-200, 200], [-15, 15]);
+
+    const likeOpacity = useTransform(x, [50, 150], [0, 1]);
+    const dislikeOpacity = useTransform(x, [-50, -150], [0, 1]);
+
+    let scale = 1.0;
+    let yOffset = 0;
+    if (!isTop) {
+        if (index === 1) {
+            scale = 0.95;
+            yOffset = -15;
+        } else if (index === 2) {
+            scale = 0.9;
+            yOffset = -30;
+        } else {
+            scale = 0.85;
+            yOffset = -45;
+        }
+    }
+
+    return (
+        <motion.div
+            className={`absolute inset-0 m-auto w-[82vw] max-w-[380px] aspect-square rounded-3xl overflow-hidden border border-[#00ffff]/30 shadow-[0_20px_50px_rgba(0,0,0,0.8)] bg-black ${isTop ? 'z-40' : 'z-10'}`}
+            style={{ x, rotate }}
+            animate={{ scale, y: yOffset }}
+            exit={{ opacity: 0, scale: 0.85, y: yOffset + 100, transition: { duration: 0.5, ease: 'easeOut' } }}
+            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+            drag={isTop ? "x" : false}
+            dragConstraints={{ left: 0, right: 0 }}
+            dragElastic={0.8}
+            onDragEnd={(e, info) => handleSwipe(e, info)}
+            whileDrag={{ scale: 1.05, cursor: "grabbing" }}
+        >
+            <img src={url} className="w-full h-full object-cover pointer-events-none" />
+
+            {isTop && (
+                <>
+                    <motion.div 
+                        className="absolute top-12 left-6 z-50 border-[4px] border-green-500 rounded-lg px-4 py-1 text-green-500 font-bebas text-4xl tracking-widest uppercase rotate-[-15deg] bg-black/40 backdrop-blur-sm pointer-events-none"
+                        style={{ opacity: likeOpacity }}
+                    >
+                        ARCHIVE
+                    </motion.div>
+                    <motion.div 
+                        className="absolute top-12 right-6 z-50 border-[4px] border-red-500 rounded-lg px-4 py-1 text-red-500 font-bebas text-4xl tracking-widest uppercase rotate-[15deg] bg-black/40 backdrop-blur-sm pointer-events-none"
+                        style={{ opacity: dislikeOpacity }}
+                    >
+                        DISCARD
+                    </motion.div>
+                </>
+            )}
+        </motion.div>
     );
 }
