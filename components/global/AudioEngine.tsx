@@ -44,6 +44,36 @@ export default function AudioEngine() {
     }
   }, []);
 
+  // 0.5 NETWORK SYNC: Attach to the Neural Audio Gateway Database configurations
+  useEffect(() => {
+    if (!db) return;
+    const unsub = onSnapshot(doc(db, 'config', 'global_audio'), (docSnap) => {
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            const state = useAudioStore.getState();
+            
+            // Sync Master Playlist
+            if (data.playlist && Array.isArray(data.playlist)) {
+                setPlaylist(data.playlist);
+                // If player is idle or holding dummy boot track, inject the true head of the queue
+                if (!state.currentTrack || state.currentTrack.id === 'sys-boot') {
+                    if (data.playlist.length > 0) {
+                        state.setCurrentTrack(data.playlist[0]);
+                    }
+                }
+            }
+            
+            // Sync DSP Analysis Tunings
+            if (data.reactivitySensitivity !== undefined) state.setReactivitySensitivity(data.reactivitySensitivity);
+            if (data.reactivityThreshold !== undefined) state.setReactivityThreshold(data.reactivityThreshold);
+            if (data.targetFrequency) state.setTargetFrequency(data.targetFrequency);
+            if (data.analyzerMode) state.setAnalyzerMode(data.analyzerMode);
+        }
+    });
+
+    return () => unsub();
+  }, [setPlaylist]);
+
   // 1. Initialize Web Audio API once on first interaction to unlock DSP
   useEffect(() => {
     if (!audioRef) return;

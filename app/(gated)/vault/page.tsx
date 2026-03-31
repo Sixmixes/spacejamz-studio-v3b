@@ -162,6 +162,7 @@ export default function ArchitectSuite() {
     }, []);
 
     // Subscribe to track configurations dynamicallyhe master visual array
+    const [vaultMode, setVaultMode] = useState<'personal' | 'global'>('personal');
     const [dynamicTracks, setDynamicTracks] = useState<any[]>(ARCHITECT_SUITE_TRACKS);
     const [analyzingTrackId, setAnalyzingTrackId] = useState<string | null>(null);
     const [extractingTrackId, setExtractingTrackId] = useState<string | null>(null);
@@ -169,40 +170,55 @@ export default function ArchitectSuite() {
     const [isSavingCalibration, setIsSavingCalibration] = useState(false);
 
     const commitToFirebase = useCallback(async (newTracks: any[]) => {
-        if (!db) return;
+        if (!db || !currentUser) return;
         try {
             const savable = newTracks.filter(t => !t.src?.startsWith('blob:'));
-            await setDoc(doc(db, 'config', 'global_audio'), { 
-                playlist: savable
-            }, { merge: true });
-        } catch (e: any) {
-            if (e?.code === 'permission-denied') {
-                console.warn("[AUTH] Matrix sync bypassed: Read-only terminal access active. Operating via local memory.");
+            if (vaultMode === 'global') {
+                await setDoc(doc(db, 'config', 'global_audio'), { 
+                    playlist: savable
+                }, { merge: true });
             } else {
-                console.warn("Failed to sync to Matrix:", e);
+                await setDoc(doc(db, 'user_assets', currentUser.uid, 'config', 'personal_audio'), { 
+                    playlist: savable
+                }, { merge: true });
             }
+        } catch (e: any) {
+            console.warn("Failed to sync to Matrix:", e);
         }
-    }, []);
+    }, [currentUser, vaultMode]);
 
     useEffect(() => {
-        if (!db) return;
-        const unsub = onSnapshot(doc(db, 'config', 'global_audio'), (docSnap) => {
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                if (data.playlist && Array.isArray(data.playlist)) {
-                    setDynamicTracks(data.playlist);
+        if (!db || !currentUser) return;
+
+        let unsub: any;
+        if (vaultMode === 'global') {
+            unsub = onSnapshot(doc(db, 'config', 'global_audio'), (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    if (data.playlist && Array.isArray(data.playlist)) {
+                        setDynamicTracks(data.playlist);
+                    }
+                    
+                    if (data.reactivitySensitivity !== undefined) setReactivitySensitivity(data.reactivitySensitivity);
+                    if (data.reactivityThreshold !== undefined) setReactivityThreshold(data.reactivityThreshold);
+                    if (data.targetFrequency) setTargetFrequency(data.targetFrequency);
+                    if (data.analyzerMode) setAnalyzerMode(data.analyzerMode);
                 }
-                
-                // GLOBAL SYNC OVERRIDE PROTOCOL
-                // Inject external config updates directly into live memory
-                if (data.reactivitySensitivity !== undefined) setReactivitySensitivity(data.reactivitySensitivity);
-                if (data.reactivityThreshold !== undefined) setReactivityThreshold(data.reactivityThreshold);
-                if (data.targetFrequency) setTargetFrequency(data.targetFrequency);
-                if (data.analyzerMode) setAnalyzerMode(data.analyzerMode);
-            }
-        });
-        return () => unsub();
-    }, []);
+            });
+        } else {
+            unsub = onSnapshot(doc(db, 'user_assets', currentUser.uid, 'config', 'personal_audio'), (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    if (data.playlist && Array.isArray(data.playlist)) {
+                        setDynamicTracks(data.playlist);
+                    }
+                } else {
+                    setDynamicTracks([]);
+                }
+            });
+        }
+        return () => { if (unsub) unsub(); };
+    }, [vaultMode, currentUser]);
 
     const updateTrackMetadata = useCallback((id: string, title: string, producer: string) => {
         setDynamicTracks(prev => {
@@ -438,29 +454,6 @@ export default function ArchitectSuite() {
 
     if (!isMounted) return null;
 
-    if (!isFounder) {
-        return (
-            <div className="relative flex flex-1 w-full flex-col justify-start overflow-visible bg-transparent group/main shrink-0 min-h-max pt-0 pb-0 shadow-[0_0_80px_rgba(239,68,68,0.1)]">
-                                <div className="flex-1 w-full max-w-[1400px] mx-auto p-4 md:p-8 flex flex-col items-center justify-center animate-in zoom-in-95 duration-1000">
-                    <div className="w-full max-w-2xl bg-[#050505] relative p-8 md:p-16 border border-red-500/30 font-mono shadow-[inset_0_0_100px_rgba(239,68,68,0.1)] flex flex-col items-center justify-center aspect-video" style={{ clipPath: 'polygon(30px 0, 100% 0, 100% calc(100% - 30px), calc(100% - 30px) 100%, 0 100%, 0 30px)' }}>
-                        <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-red-500/50 to-transparent shadow-[0_0_10px_rgba(239,68,68,1)]"></div>
-                        <Lock size={56} className="text-red-500 mb-4 animate-[pulse_2s_infinite] drop-shadow-[0_0_15px_rgba(239,68,68,0.8)]" />
-                        <h2 className="text-3xl md:text-5xl font-black tracking-[0.2em] uppercase text-white mb-4 text-center">
-                            PRIORITY CLEARANCE
-                        </h2>
-                        <div className="w-full max-w-sm h-[1px] bg-gradient-to-r from-transparent via-red-500/40 to-transparent mb-6"></div>
-                        <p className="text-[10px] md:text-xs text-red-400 text-center tracking-[0.2em] leading-relaxed uppercase max-w-lg mb-8 opacity-80 backdrop-blur-md">
-                            VAULT INFRASTRUCTURE DETECTED AN UNAUTHORIZED BIOSIGNATURE.<br/>
-                            GLOBAL STATE PERMISSIONS ARE LOCKED TO [ THE ARCHITECT ].
-                        </p>
-                        
-                        <CyberButton onClick={() => window.location.href = '/pod'} text="RETURN TO PERSONAL POD" className="scale-90 opacity-80 hover:opacity-100 hover:scale-95 transition-all" />
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
     return (
         <div className="relative flex flex-1 w-full flex-col justify-start overflow-visible bg-transparent group/main shrink-0 min-h-max pt-0 pb-0">
             
@@ -486,10 +479,19 @@ export default function ArchitectSuite() {
                 
                 {/* UP NEXT QUEUE LOGIC & TELEMETRY VAULT (MOVED TO TOP) */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 mb-10 pb-8 border-b-2 border-primary/20">
-                    <div className="flex flex-col gap-2">
-                         <h2 className="text-4xl md:text-6xl font-black text-white uppercase tracking-widest font-bebas drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)] italic">Neural Audio Gateway</h2>
+                    <div className="flex flex-col gap-2 relative">
+                         <div className="flex gap-2 mb-4">
+                             <CyberButton onClick={() => setVaultMode('personal')} text="MY VAULT" className={`px-4 py-1.5 text-[10px] ${vaultMode === 'personal' ? 'bg-primary text-black' : 'bg-transparent text-gray-500 hover:text-white'}`} style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%)' }} />
+                             {isFounder && <CyberButton onClick={() => setVaultMode('global')} text="GLOBAL GATEWAY" className={`px-4 py-1.5 text-[10px] ${vaultMode === 'global' ? 'bg-red-500 text-white shadow-[0_0_15px_rgba(239,68,68,0.5)] border-red-500' : 'bg-transparent text-gray-500 border-white/20 hover:text-red-500 border'}`} style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%)' }} />}
+                         </div>
+
+                         <h2 className={`text-4xl md:text-6xl font-black uppercase tracking-widest font-bebas drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)] italic ${vaultMode === 'global' ? 'text-red-500' : 'text-white'}`}>
+                             {vaultMode === 'global' ? 'Neural Audio Gateway' : 'Personal Acoustic Vault'}
+                         </h2>
                          <div className="flex items-center gap-4 mt-1">
-                             <p className="text-[10px] md:text-[11px] text-primary/60 font-mono tracking-[0.4em] uppercase font-black">Target Payload Processing Node</p>
+                             <p className={`text-[10px] md:text-[11px] font-mono tracking-[0.4em] uppercase font-black ${vaultMode === 'global' ? 'text-red-500/60' : 'text-primary/60'}`}>
+                                 {vaultMode === 'global' ? 'Global Matrix Node Active' : 'Target Payload Processing Node'}
+                             </p>
                              {isShuffleToggle && <span className="text-black font-black text-[9px] font-mono bg-primary px-3 py-1 tracking-widest shadow-[0_0_15px_rgba(var(--color-primary),0.5)]">SMART SHUFFLE ACTIVE</span>}
                          </div>
                     </div>
@@ -570,16 +572,21 @@ export default function ArchitectSuite() {
                         <button 
                             onClick={async () => {
                                 setIsSavingCalibration(true);
-                                if (db) {
+                                if (db && currentUser) {
                                     try {
-                                        await setDoc(doc(db, 'config', 'global_audio'), {
+                                        const lockData = {
                                             reactivitySensitivity,
                                             reactivityThreshold,
                                             targetFrequency,
                                             analyzerMode
-                                        }, { merge: true });
+                                        };
+                                        if (vaultMode === 'global') {
+                                            await setDoc(doc(db, 'config', 'global_audio'), lockData, { merge: true });
+                                        } else {
+                                            await setDoc(doc(db, 'user_assets', currentUser.uid, 'config', 'personal_audio'), lockData, { merge: true });
+                                        }
                                     } catch(e: any) {
-                                        if (e?.code === 'permission-denied') console.warn("Firebase Auth blocked global sitewide deployment. Running locally.");
+                                        if (e?.code === 'permission-denied') console.warn("Firebase Auth blocked deployment. Running locally.");
                                     }
                                 }
                                 setTimeout(() => setIsSavingCalibration(false), 800);
