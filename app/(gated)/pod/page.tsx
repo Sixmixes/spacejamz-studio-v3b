@@ -149,18 +149,18 @@ export default function PrivateMatrix() {
                         ))}
                     </div>
 
-                    {/* CONTEXTUAL SUB-ACTIONS (Desktop Only) */}
-                    <div className="hidden md:flex flex-col gap-3 mt-4">
+                    {/* CONTEXTUAL SUB-ACTIONS (Universal) */}
+                    <div className="flex flex-col gap-2 md:gap-3 mt-2 md:mt-4">
                         {activeTab === 'neural' && (
                             <>
-                                <CyberButton text="OPEN STUDIO" onClick={() => setIsStudioOpen(true)} className="w-full text-xs h-12" />
+                                <CyberButton text="OPEN STUDIO" onClick={() => setIsStudioOpen(true)} className="w-full text-xs h-10 md:h-12" />
                                 {generations.length > 0 && !isSwipeDeckView && (
                                     <button 
                                         onClick={() => setIsSwipeDeckView(true)}
-                                        className="font-mono text-[9px] uppercase tracking-widest text-[#00ffff]/60 hover:text-[#00ffff] transition-colors border border-[#00ffff]/20 hover:border-[#00ffff]/50 bg-black/40 py-3 inset-0 w-full"
+                                        className="font-mono text-[9px] uppercase tracking-widest text-[#00ffff]/60 hover:text-[#00ffff] transition-colors border border-[#00ffff]/20 hover:border-[#00ffff]/50 bg-black/40 py-2 md:py-3 w-full"
                                         style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%)' }}
                                     >
-                                        [ REACTIVATE SWIPE DECK ]
+                                        [ SWIPE DECK ]
                                     </button>
                                 )}
                             </>
@@ -172,20 +172,7 @@ export default function PrivateMatrix() {
                 <div className="flex-1 min-w-0 w-full pt-2 md:pt-0 pb-20">
                     {activeTab === 'neural' && (
                         <div className="animate-in fade-in zoom-in-95 duration-500">
-                            <div className="flex flex-row items-center justify-between mb-2 md:mb-6 border-b-2 border-primary/20 pb-2 md:pb-4">
-                                <div className="flex items-center gap-3 md:gap-5">
-                                    <div className="p-2 md:p-4 bg-primary/10 border border-primary/30 rounded-full shadow-[0_0_15px_rgba(var(--color-primary),0.2)] shrink-0">
-                                        <Layout className="w-5 h-5 md:w-8 md:h-8 text-primary" />
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <h2 className="text-2xl md:text-5xl font-black font-bebas tracking-widest uppercase text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)] leading-none">Neural Archives</h2>
-                                        <p className="font-mono text-[8px] sm:text-[10px] md:text-[11px] text-primary/60 uppercase tracking-[0.1em] md:tracking-[0.5em] font-bold mt-1 leading-tight pr-4">GPU-Accelerated Visual Identity Payloads</p>
-                                    </div>
-                                </div>
-                                <div className="flex gap-4 md:hidden">
-                                    <CyberButton text="OPEN STUDIO" onClick={() => setIsStudioOpen(true)} className="h-8 md:h-10 px-3 md:px-6 text-[10px] md:text-xs scale-90" />
-                                </div>
-                            </div>
+
 
                         {isLoading ? (
                             <div className="h-64 flex flex-col items-center justify-center gap-4">
@@ -285,17 +272,7 @@ export default function PrivateMatrix() {
 
                 {activeTab === 'acoustic' && (
                     <div className="animate-in slide-in-from-right-8 duration-500">
-                        <div className="flex items-center justify-between mb-12 border-b-2 border-primary/20 pb-8">
-                            <div className="flex items-center gap-6">
-                                <div className="p-4 bg-primary/10 border border-primary/30 rounded-full">
-                                    <Music className="w-8 h-8 text-primary" />
-                                </div>
-                                <div>
-                                    <h2 className="text-3xl md:text-5xl font-black font-bebas tracking-widest uppercase text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">Acoustic Vault</h2>
-                                    <p className="font-mono text-[10px] md:text-[11px] text-primary/60 uppercase tracking-[0.5em] font-bold">Authenticated Audio Ingestions</p>
-                                </div>
-                            </div>
-                        </div>
+
 
                         {tracks.length === 0 ? (
                             <div className="h-64 flex flex-col items-center justify-center border-2 border-dashed border-primary/10 opacity-40">
@@ -342,17 +319,7 @@ export default function PrivateMatrix() {
 
                 {activeTab === 'script' && (
                     <div className="animate-in slide-in-from-right-8 duration-500">
-                        <div className="flex items-center justify-between mb-12 border-b-2 border-primary/20 pb-8">
-                            <div className="flex items-center gap-6">
-                                <div className="p-4 bg-primary/10 border border-primary/30 rounded-full">
-                                    <FileText className="w-8 h-8 text-primary" />
-                                </div>
-                                <div>
-                                    <h2 className="text-3xl md:text-5xl font-black font-bebas tracking-widest uppercase text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">Neural Script</h2>
-                                    <p className="font-mono text-[10px] md:text-[11px] text-primary/60 uppercase tracking-[0.5em] font-bold">Lyric Archetypes & Verse Blocks</p>
-                                </div>
-                            </div>
-                        </div>
+
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                             {lyrics.length === 0 ? (
                                 <div className="col-span-full h-32 flex items-center justify-center border-2 border-dashed border-primary/10 opacity-30 font-mono text-xs uppercase tracking-[1em]">Awaiting Scripts...</div>
@@ -371,17 +338,7 @@ export default function PrivateMatrix() {
 
                 {activeTab === 'dna' && (
                     <div className="animate-in slide-in-from-right-8 duration-500">
-                        <div className="flex items-center justify-between mb-12 border-b-2 border-primary/20 pb-8">
-                            <div className="flex items-center gap-6">
-                                <div className="p-4 bg-primary/10 border border-primary/30 rounded-full">
-                                    <Microchip className="w-8 h-8 text-primary" />
-                                </div>
-                                <div>
-                                    <h2 className="text-3xl md:text-5xl font-black font-bebas tracking-widest uppercase text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">DNA Sequencer</h2>
-                                    <p className="font-mono text-[10px] md:text-[11px] text-primary/60 uppercase tracking-[0.5em] font-bold">Vocal Stem Ingestions & AI Samples</p>
-                                </div>
-                            </div>
-                        </div>
+
                         
                         {dna.length === 0 ? (
                             <div className="bg-black/90 border-2 border-primary/20 p-12 text-center opacity-40 rounded-3xl" style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 30px), calc(100% - 30px) 100%, 0 100%)' }}>
@@ -419,17 +376,7 @@ export default function PrivateMatrix() {
 
                 {activeTab === 'arsenal' && (
                     <div className="animate-in slide-in-from-right-8 duration-500">
-                        <div className="flex items-center justify-between mb-12 border-b-2 border-primary/20 pb-8">
-                            <div className="flex items-center gap-6">
-                                <div className="p-4 bg-primary/10 border border-primary/30 rounded-full">
-                                    <ShoppingBag className="w-8 h-8 text-primary" />
-                                </div>
-                                <div>
-                                    <h2 className="text-3xl md:text-5xl font-black font-bebas tracking-widest uppercase text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">Cosmetic Arsenal</h2>
-                                    <p className="font-mono text-[10px] md:text-[11px] text-primary/60 uppercase tracking-[0.5em] font-bold">Treasury-Locked Identity Upgrades</p>
-                                </div>
-                            </div>
-                        </div>
+
                         <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
                             {(currentUser.ownedEnhancements || []).length === 0 ? (
                                 <div className="col-span-full h-48 flex flex-col items-center justify-center gap-6 bg-primary/5 border border-primary/10 italic rounded-2xl">
