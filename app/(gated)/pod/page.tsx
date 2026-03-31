@@ -204,7 +204,7 @@ export default function PrivateMatrix() {
                             <>
                                 {/* Swipe Gallery */}
                                 {isSwipeDeckView && (
-                                    <div className="flex items-center justify-center -mx-4 md:mx-0 w-full min-h-[500px] md:min-h-[600px] mt-4 md:mt-0 pb-16 relative z-10 transition-all">
+                                    <div className="flex items-center justify-center w-full min-h-[500px] md:min-h-[600px] mt-4 md:mt-0 pb-16 relative z-10 transition-all">
                                         <div className="w-full h-full max-w-lg mt-8 md:mt-0">
                                             <MobilePodGallery 
                                                 generations={generations}
@@ -234,7 +234,7 @@ export default function PrivateMatrix() {
                                                 className="group relative bg-[#050505] border border-primary/20 transition-all duration-500 hover:border-primary/60 shadow-[0_10px_30px_rgba(0,0,0,0.5)] h-full w-full cursor-zoom-in aspect-[3/4] overflow-hidden rounded-2xl md:rounded-3xl"
                                                 style={{ animationDelay: `${i * 50}ms` }}
                                             >
-                                                <div className="absolute inset-x-2 top-2 md:inset-x-4 md:top-4 flex justify-between gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-50">
+                                                <div className="absolute inset-x-2 top-2 md:inset-x-4 md:top-4 flex justify-between gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300 z-50">
                                                     <button 
                                                         onClick={(e) => { e.stopPropagation(); equipBanner(gen.assetUrl); }}
                                                         className="bg-black/90 text-[8px] font-mono border border-[#00ffff]/40 text-[#00ffff] px-3 py-2 rounded uppercase tracking-widest hover:bg-[#00ffff] hover:text-black transition-colors shadow-[0_0_15px_rgba(0,255,255,0.3)] backdrop-blur-md"

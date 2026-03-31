@@ -50,9 +50,52 @@ export default function AssetMatrix({ children, className = '', style }: AssetMa
     container.addEventListener('mousemove', onMouseMove);
     container.addEventListener('mouseleave', onMouseLeave);
 
+    // Mobile Kinetic Scroll Wobble via Velocity
+    let scrollTimeout: NodeJS.Timeout;
+    
+    // Check if touch device
+    const isTouch = typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+    
+    const onScroll = () => {
+        if (!isTouch || !container) return;
+        
+        const rect = container.getBoundingClientRect();
+        // Check if card is currently on screen
+        if (rect.top > window.innerHeight || rect.bottom < 0) return;
+
+        // Apply a random, punchy wobble based on being scrolled past
+        const rX = (Math.random() - 0.5) * 30; 
+        const rY = (Math.random() - 0.5) * 30;
+
+        gsap.to(card, {
+            rotateX: rX,
+            rotateY: rY,
+            transformPerspective: 1000,
+            duration: 0.4,
+            ease: 'power1.out'
+        });
+
+        clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(() => {
+            gsap.to(card, {
+                rotateX: 0,
+                rotateY: 0,
+                duration: 0.8,
+                ease: 'elastic.out(1, 0.4)'
+            });
+        }, 150);
+    };
+
+    if (isTouch) {
+        window.addEventListener('scroll', onScroll, { passive: true });
+    }
+
     return () => {
       container.removeEventListener('mousemove', onMouseMove);
       container.removeEventListener('mouseleave', onMouseLeave);
+      if (isTouch) {
+          window.removeEventListener('scroll', onScroll);
+      }
     };
   }, []);
 
