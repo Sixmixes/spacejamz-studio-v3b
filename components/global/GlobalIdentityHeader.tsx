@@ -7,7 +7,7 @@ import { Award, Zap, Coins, LogOut } from 'lucide-react';
 import { CyberAvatarModal } from '@/components/global/CyberAvatarModal';
 
 export default function GlobalIdentityHeader() {
-    const { currentUser } = useUserStore();
+    const { currentUser, previewBannerUrl, previewBannerY, previewBannerZoom } = useUserStore();
 
     const handleLogin = async () => {
         try {
@@ -60,14 +60,14 @@ export default function GlobalIdentityHeader() {
             {/* MASSIVE PILOT BANNER (Dynamic GPU Art) */}
             <div className="relative w-full pb-0 pt-[64px] bg-zinc-900 overflow-hidden border-b border-white/10 group flex items-end shrink-0 animate-in fade-in duration-1000">
                 <div className="absolute inset-0 z-0">
-                    {currentUser.customBannerUrl ? (
+                    {(previewBannerUrl || currentUser.customBannerUrl) ? (
                         <div className="absolute inset-0 z-0 origin-center transition-transform duration-[10s] ease-linear group-hover:scale-105">
                             <img 
-                                src={currentUser.customBannerUrl} 
+                                src={previewBannerUrl || currentUser.customBannerUrl} 
                                 className="w-full h-full object-cover opacity-60" 
                                 style={{
-                                    objectPosition: `center ${currentUser.bannerPositionY ?? 50}%`,
-                                    transform: `scale(${currentUser.bannerZoom ?? 1})`
+                                    objectPosition: `center ${previewBannerY ?? currentUser.bannerPositionY ?? 50}%`,
+                                    transform: `scale(${previewBannerZoom ?? currentUser.bannerZoom ?? 1})`
                                 }}
                             />
                         </div>

@@ -11,7 +11,7 @@ import { CyberButton } from '@/components/ui/CyberButton';
 import CyberGlitchButton  from '@/components/ui/CyberGlitchButton';
 
 export function CyberAvatarModal() {
-    const { currentUser, setUser } = useUserStore();
+    const { currentUser, setUser, setPreviewBanner } = useUserStore();
     const router = useRouter();
     const [uploading, setUploading] = useState(false);
     const [errorMsg, setErrorMsg] = useState("");
@@ -22,10 +22,14 @@ export function CyberAvatarModal() {
     const [editBannerY, setEditBannerY] = useState<number>(50);
     const [editBannerZoom, setEditBannerZoom] = useState<number>(1);
     
-    // Drag state
-    const [isDragging, setIsDragging] = useState(false);
-    const [dragStartY, setDragStartY] = useState(0);
-    const [dragStartBannerY, setDragStartBannerY] = useState(50);
+    // Broadcast live preview to global header
+    useEffect(() => {
+        if (bannerPreviewUrl) {
+            setPreviewBanner(bannerPreviewUrl, editBannerY, editBannerZoom);
+        } else {
+            setPreviewBanner(null, null, null);
+        }
+    }, [bannerPreviewUrl, editBannerY, editBannerZoom, setPreviewBanner]);
 
     useEffect(() => {
         const handleOpenCalib = (e: any) => {
@@ -182,30 +186,8 @@ export function CyberAvatarModal() {
         setBannerPreviewUrl('');
     };
 
-    const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-        setIsDragging(true);
-        setDragStartY(e.clientY);
-        setDragStartBannerY(editBannerY);
-        e.currentTarget.setPointerCapture(e.pointerId);
-    };
-
-    const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-        if (!isDragging) return;
-        const deltaY = e.clientY - dragStartY;
-        // Sensitivity calibration: drag down (positive delta) = surface higher part of image (decrease Y%)
-        const sensitivity = 0.35; 
-        let newY = dragStartBannerY - (deltaY * sensitivity);
-        newY = Math.max(0, Math.min(100, newY));
-        setEditBannerY(newY);
-    };
-
-    const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
-        setIsDragging(false);
-        e.currentTarget.releasePointerCapture(e.pointerId);
-    };
-
     return (
-        <div id="avatar-editor-modal" popover="auto" className="cyber-modal backdrop:bg-black/80 backdrop:backdrop-blur-sm bg-transparent !p-0 max-w-lg w-full rounded-none border border-[#00ffff]/30 shadow-[0_0_50px_rgba(0,255,255,0.1)] outline-none overflow-y-auto max-h-[90vh] scrollbar-none fixed inset-0 m-auto z-[99999] open:animate-in open:zoom-in-95 open:fade-in duration-300">
+        <div id="avatar-editor-modal" popover="auto" className={`cyber-modal !p-0 max-w-lg w-full rounded-none border border-[#00ffff]/30 shadow-[0_0_50px_rgba(0,255,255,0.1)] outline-none overflow-y-auto max-h-[90vh] scrollbar-none fixed m-auto z-[99999] open:animate-in open:zoom-in-95 open:fade-in duration-300 ${bannerPreviewUrl ? 'bottom-8 top-auto bg-black/60 backdrop-blur-md' : 'inset-0 bg-transparent'}`} data-calibrating={!!bannerPreviewUrl}>
             {/* Modal Header */}
             <div className="flex justify-between items-center p-4 md:p-6 bg-black/90 border-b border-[#00ffff]/20">
                 <div className="flex items-center gap-3">
@@ -229,48 +211,16 @@ export function CyberAvatarModal() {
                 {bannerPreviewUrl ? (
                     // BANNER CALIBRATION UI
                     <div className="w-full flex flex-col items-center w-full animate-in fade-in zoom-in-95 duration-500">
-                        <h3 className="text-[#00ffff] font-bebas text-2xl mb-6 tracking-widest uppercase shadow-none text-center drop-shadow-[0_0_10px_rgba(0,255,255,0.4)]">Calibrate Visual Matrix</h3>
-                        
-                        <div 
-                            className={`w-full h-32 md:h-48 overflow-hidden relative border-2 border-[#00ffff]/40 shadow-[0_0_30px_rgba(0,255,255,0.1)] mb-8 bg-black select-none touch-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
-                            onPointerDown={handlePointerDown}
-                            onPointerMove={handlePointerMove}
-                            onPointerUp={handlePointerUp}
-                            onPointerCancel={handlePointerUp}
-                        >
-                            {/* Miniature Navbar Mockup Overlay */}
-                            <div className="absolute top-0 left-0 w-full h-[25%] bg-black/80 backdrop-blur-md border-b border-[#00ffff]/20 flex items-center px-3 z-20 pointer-events-none gap-3 overflow-hidden shadow-[0_5px_15px_rgba(0,0,0,0.5)]">
-                                <div className="flex items-center gap-1 shrink-0">
-                                    <div className="w-2.5 h-2.5 rounded-full bg-[#00ffff]/40 border border-[#00ffff]" />
-                                    <span className="font-bebas text-[9px] text-white tracking-[0.2em] uppercase">SPACEJAMZ</span>
-                                </div>
-                                <div className="w-[1px] h-3 bg-white/20 shrink-0" />
-                                <span className="font-bebas text-[7px] text-white/50 tracking-[0.2em] hidden sm:block shrink-0">ENTER THE ARENA</span>
-                                <div className="w-[1px] h-3 bg-white/20 hidden sm:block shrink-0" />
-                                <span className="font-bebas text-[7px] text-yellow-500/80 tracking-[0.2em] shrink-0">TREASURY</span>
-                                <div className="flex-1" />
-                                <div className="w-4 h-4 rounded-full bg-white/10 border border-white/20 shrink-0" />
-                                <div className="w-4 h-4 rounded-md bg-white/10 border border-white/20 shrink-0" />
-                            </div>
-
-                            <img 
-                                src={bannerPreviewUrl} 
-                                style={{ objectPosition: `center ${editBannerY}%`, transform: `scale(${editBannerZoom})` }} 
-                                className={`w-full h-full object-cover origin-center ${isDragging ? 'transition-none' : 'transition-all duration-300'} ${uploading ? 'opacity-30 blur-sm' : ''} pointer-events-none`}
-                                draggable={false}
-                            />
-                            {uploading && (
-                                <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-30">
-                                    <Loader2 className="animate-spin text-[#00ffff]" size={36} />
-                                </div>
-                            )}
-                            
-                            <div className="absolute bottom-2 right-2 bg-black/80 backdrop-blur-md px-2 py-1 rounded text-[8px] font-mono text-[#00ffff]/60 uppercase tracking-widest z-20 pointer-events-none shadow-[0_0_10px_rgba(0,0,0,0.5)] border border-[#00ffff]/20">
-                                [ Drag Vertical ]
-                            </div>
+                        <div className="flex items-center gap-2 mb-6 bg-black/80 px-4 py-2 border border-[#00ffff]/20">
+                            <Sparkles className="text-[#00ffff] animate-pulse" size={16} />
+                            <h3 className="text-[#00ffff] font-bebas text-2xl tracking-widest uppercase shadow-none text-center m-0 leading-none">Live Calibration Active</h3>
                         </div>
                         
-                        <div className="w-full flex flex-col gap-6 mb-8 px-2 md:px-0">
+                        <p className="font-mono text-[9px] text-gray-400 uppercase tracking-widest text-center mb-8 px-4 leading-relaxed">
+                            The visual matrix above is currently reflecting your changes in real-time. Adjust the parameters below until the physical header meets your clearance parameters.
+                        </p>
+                        
+                        <div className="w-full flex flex-col gap-6 mb-8 px-4 md:px-0">
                             <div className="flex flex-col gap-2">
                                 <div className="flex justify-between items-center">
                                     <label className="font-mono text-xs text-[#00ffff]/80 uppercase tracking-widest font-black flex items-center gap-2"><div className="w-1.5 h-1.5 bg-[#00ffff] rounded-full animate-pulse" /> Y-Axis Offset</label>
@@ -402,6 +352,11 @@ export function CyberAvatarModal() {
                 .cyber-modal[popover]::backdrop {
                     background: rgba(0, 0, 0, 0.85);
                     backdrop-filter: blur(8px);
+                    transition: all 0.5s ease;
+                }
+                .cyber-modal[popover][data-calibrating="true"]::backdrop {
+                    background: rgba(0, 0, 0, 0);
+                    backdrop-filter: none;
                 }
             `}</style>
         </div>

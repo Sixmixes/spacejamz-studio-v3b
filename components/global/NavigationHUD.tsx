@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useRouter } from 'next/navigation';
-import { Database, Coins, Cpu, ShieldCheck, Globe, Sparkles, User, Terminal, Menu, X, ChevronRight } from 'lucide-react';
+import { Database, Coins, Cpu, ShieldCheck, Globe, Sparkles, User, Terminal, Menu, X, ChevronRight, Trophy } from 'lucide-react';
 import WrldChanger from '@/components/global/WrldChanger';
 
 export default function NavigationHUD() {
@@ -24,6 +24,7 @@ export default function NavigationHUD() {
         { name: 'Matrix', href: '/pod', icon: User },
         { name: 'Arena', href: '/studio', icon: Cpu },
         { name: 'Treasury', href: '/treasury', icon: Coins },
+        { name: 'Kings', href: '/leaderboard', icon: Trophy },
     ];
 
     return (
@@ -35,10 +36,10 @@ export default function NavigationHUD() {
                     <div className="absolute inset-0 pointer-events-none opacity-[0.05] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(var(--color-primary),0.06),rgba(var(--color-primary),0.02),rgba(var(--color-primary),0.06))] z-10 bg-[length:100%_2px,3px_100%] animate-pulse" />
                     
                     {/* MOBILE LABEL (LEFT) */}
-                    <div className="lg:hidden px-4 sm:px-6 py-3 flex flex-shrink-0 items-center gap-2 sm:gap-3 bg-primary/5 min-w-[120px] justify-center border-r border-primary/20">
+                    <Link href="/" className="lg:hidden px-4 sm:px-6 py-3 flex flex-shrink-0 items-center gap-2 sm:gap-3 bg-primary/5 min-w-[120px] justify-center border-r border-primary/20 hover:bg-primary/10 hover:shadow-[0_0_15px_rgba(var(--color-primary),0.2)] transition-all active:scale-95">
                         <Globe size={14} className="text-primary animate-spin-[8s]" />
                         <span className="font-bebas text-lg sm:text-xl tracking-widest text-white italic drop-shadow-[0_0_10px_rgba(var(--color-primary),0.8)]">SPACEJAMZ</span>
-                    </div>
+                    </Link>
 
                     {/* MOBILE TICKER NOTIFICATION DECK (CENTER) */}
                     <div className="lg:hidden flex-1 overflow-hidden relative h-full flex items-center bg-black/40" style={{ WebkitMaskImage: 'linear-gradient(90deg, transparent, black 10%, black 90%, transparent)' }}>

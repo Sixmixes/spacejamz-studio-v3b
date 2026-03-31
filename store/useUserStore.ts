@@ -29,11 +29,17 @@ interface UserState {
   userLoadState: UserLoadState;
   passiveXpTrigger: number;
   
+  // Live Preview Calibration
+  previewBannerUrl: string | null;
+  previewBannerY: number | null;
+  previewBannerZoom: number | null;
+  
   // Actions
   setCurrentUser: (user: UserProfile | null) => void;
   setUser: (user: Partial<UserProfile>) => void;
   setIsArchitect: (isArchitect: boolean) => void;
   setUserLoadState: (state: UserLoadState) => void;
+  setPreviewBanner: (url: string | null, y: number | null, zoom: number | null) => void;
   logout: () => void;
 }
 
@@ -44,6 +50,9 @@ export const useUserStore = create<UserState>()(
       isArchitect: false,
       userLoadState: 'IDLE',
       passiveXpTrigger: 0,
+      previewBannerUrl: null,
+      previewBannerY: null,
+      previewBannerZoom: null,
 
       setCurrentUser: (user) => set({ currentUser: user }),
       setUser: (partialUser) => set((state) => ({ 
@@ -51,11 +60,15 @@ export const useUserStore = create<UserState>()(
       })),
       setIsArchitect: (isArchitect) => set({ isArchitect }),
       setUserLoadState: (state) => set({ userLoadState: state }),
+      setPreviewBanner: (url, y, zoom) => set({ previewBannerUrl: url, previewBannerY: y, previewBannerZoom: zoom }),
       
       logout: () => set({ 
           currentUser: null, 
           isArchitect: false, 
-          userLoadState: 'UNAUTHENTICATED' 
+          userLoadState: 'UNAUTHENTICATED',
+          previewBannerUrl: null,
+          previewBannerY: null,
+          previewBannerZoom: null
       }),
     }),
     {
