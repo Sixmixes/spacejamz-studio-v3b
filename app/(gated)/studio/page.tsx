@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Play, Pause, TrendingUp, Sparkles, UploadCloud, Clock, Music, Loader2 } from 'lucide-react';
+import { Play, Pause, TrendingUp, Sparkles, UploadCloud, Clock, Music, Loader2, Lock } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { CyberButton } from '@/components/ui/CyberButton';
 import { useAudioStore } from '@/store/useAudioStore';
@@ -20,8 +20,23 @@ interface ArenaTrack {
 }
 
 export default function SpaceJamzArena() {
-    const { currentUser } = useUserStore();
+    const { currentUser, isArchitect } = useUserStore();
     const { setCurrentTrack, setPlaylist, isPlaying, setIsPlaying, currentTrack } = useAudioStore();
+    
+    const isFounder = currentUser?.role === 'FOUNDER' || isArchitect;
+
+    if (!isFounder) {
+        return (
+            <div className="min-h-[70vh] flex flex-col items-center justify-center p-6 sm:p-12 text-center bg-black/40 backdrop-blur-sm border border-red-500/20 rounded-3xl m-4 lg:m-20 mt-20 z-50 relative">
+                <Lock className="w-16 h-16 text-red-500 mb-6 animate-pulse" />
+                <h1 className="text-4xl sm:text-6xl font-black font-bebas text-white tracking-widest mb-4">ARENA BLACKOUT</h1>
+                <p className="font-mono text-[10px] sm:text-xs text-red-500/80 uppercase tracking-[0.4em] max-w-xl leading-relaxed">
+                    THIS DOMAIN IS CURRENTLY RESTRICTED TO FOUNDER AUTHORIZATION.
+                </p>
+                <CyberButton text="RETURN TO CORE" onClick={() => (window.location.href = '/')} className="mt-12" />
+            </div>
+        );
+    }
     
     const [tracks, setTracks] = useState<ArenaTrack[]>([]);
     const [activeTab, setActiveTab] = useState<'trending' | 'new' | 'cypher'>('cypher');

@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 import { Database, Coins, Cpu, ShieldCheck, Globe, Sparkles, User, Terminal, Menu, X, ChevronRight, Trophy } from 'lucide-react';
-import WrldChanger from '@/components/global/WrldChanger';
 
 export default function NavigationHUD() {
     const pathname = usePathname();
@@ -92,11 +91,6 @@ export default function NavigationHUD() {
                     >
                         {isOpen ? <X size={20} /> : <Menu size={20} />}
                     </button>
-
-                    {/* WRLD CHANGER TRIGGER (Modular Aesthetic Engine) */}
-                    <div className="hidden lg:flex h-full items-center justify-center">
-                        <WrldChanger />
-                    </div>
 
                     {/* Status Readout (Right) */}
                     <div className="hidden lg:flex items-center gap-5 px-5 py-2 border-l border-primary/20 bg-primary/5 h-full">

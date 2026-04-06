@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useUserStore } from '@/store/useUserStore';
 import { db, storage } from '@/lib/firebase/config';
-import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { User, Zap, Coins, Image as ImageIcon, Video, Trash2, CheckCircle2, Layout, Award, Music, FileText, Microchip, ShoppingBag, Play, Pause, MousePointer2, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAudioStore } from '@/store/useAudioStore';
@@ -30,10 +30,12 @@ export default function PrivateMatrix() {
     const [tracks, setTracks] = useState<any[]>([]);
     const [lyrics, setLyrics] = useState<any[]>([]);
     const [dna, setDna] = useState<any[]>([]);
+    const [trashAssets, setTrashAssets] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<'neural' | 'acoustic' | 'script' | 'dna' | 'arsenal'>('neural');
+    const [activeTab, setActiveTab] = useState<'neural' | 'acoustic' | 'script' | 'dna' | 'arsenal' | 'trash'>('neural');
     const [activeBanner, setActiveBanner] = useState<string | null>(null);
     const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+    const [isPurgeMode, setIsPurgeMode] = useState(false);
 
     useEffect(() => {
         // Sync layout mode on mount
@@ -73,13 +75,24 @@ export default function PrivateMatrix() {
         const dnaQuery = query(collection(db, 'user_assets', currentUser.uid, 'vocal_dna'), orderBy('createdAt', 'desc'));
         const unsubDna = onSnapshot(dnaQuery, snap => setDna(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
 
+        // 5. Fetch Neural Trash Bin
+        const trashQuery = query(collection(db, 'user_assets', currentUser.uid, 'trash_assets'), orderBy('expungedAt', 'desc'));
+        const unsubTrash = onSnapshot(trashQuery, snap => setTrashAssets(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+
         return () => {
             unsubNeural();
             unsubTracks();
             unsubLyrics();
             unsubDna();
+            unsubTrash();
         };
     }, [currentUser]);
+
+    useEffect(() => {
+        if (activeTab === 'trash' && trashAssets.length >= 50) {
+            setIsPurgeMode(true);
+        }
+    }, [activeTab, trashAssets.length]);
 
     const equipBanner = async (url: string) => {
         if (!currentUser) return;
@@ -101,9 +114,40 @@ export default function PrivateMatrix() {
     const deleteGeneration = async (id: string) => {
         if (!currentUser) return;
         try {
+            const gen = generations.find(g => g.id === id);
+            if (gen) {
+                // Move to Trash
+                await setDoc(doc(db, 'user_assets', currentUser.uid, 'trash_assets', id), {
+                    ...gen,
+                    expungedAt: serverTimestamp()
+                });
+            }
             await deleteDoc(doc(db, 'user_assets', currentUser.uid, 'ai_generations', id));
         } catch (error) {
             console.error("Failed to expunge neural asset:", error);
+        }
+    };
+
+    const recoverGeneration = async (id: string) => {
+        if (!currentUser) return;
+        try {
+            const gen = trashAssets.find(trim => trim.id === id);
+            if (gen) {
+                const { expungedAt, ...originalData } = gen;
+                await setDoc(doc(db, 'user_assets', currentUser.uid, 'ai_generations', id), originalData);
+            }
+            await deleteDoc(doc(db, 'user_assets', currentUser.uid, 'trash_assets', id));
+        } catch (error) {
+            console.error("Failed to recover neural asset:", error);
+        }
+    };
+
+    const permanentlyDelete = async (id: string) => {
+        if (!currentUser) return;
+        try {
+            await deleteDoc(doc(db, 'user_assets', currentUser.uid, 'trash_assets', id));
+        } catch (error) {
+            console.error("Failed to permanently destroy asset:", error);
         }
     };
 
@@ -134,12 +178,14 @@ export default function PrivateMatrix() {
             {/* NEURAL IDENTITY GATEWAY DELEGATED TO PERSISTENT LAYOUT ENGINE */}
 
             {/* DESKTOP SPLIT LAYOUT CONTAINER */}
-            <div className="w-full max-w-[1800px] mx-auto flex flex-col items-start md:flex-row gap-0 md:gap-8 px-2 md:px-8 mt-0 md:mt-6 z-20">
+            {/* DESKTOP SPLIT LAYOUT CONTAINER */}
+            <div className="w-full flex flex-col items-start md:flex-row gap-0 md:gap-8 px-2 md:px-8 mt-0 md:mt-2 z-20 flex-1 overflow-hidden">
                 
                 {/* LEFT SIDEBAR NAVIGATION */}
                 <MatrixSidebar 
                     activeTab={activeTab} setActiveTab={setActiveTab}
                     generationsCount={generations.length}
+                    trashCount={trashAssets.length}
                     isSwipeDeckView={isSwipeDeckView} setIsSwipeDeckView={setIsSwipeDeckView}
                     setIsStudioOpen={setIsStudioOpen}
                 />
@@ -189,7 +235,7 @@ export default function PrivateMatrix() {
                                             />
                                         </div>
                                     )}
-                                    {generations.map((gen, i) => (
+                                    {generations.slice(0, 50).map((gen, i) => (
                                         <AssetMatrix key={gen.id}>
                                             <div 
                                                 onClick={() => setLightboxImage(gen.assetUrl)}
@@ -241,6 +287,34 @@ export default function PrivateMatrix() {
                                         </AssetMatrix>
                                     ))}
                                 </div>
+
+                                {generations.length > 50 && !isSwipeDeckView && (
+                                    <div className="col-span-full mt-12 mb-4 w-full">
+                                        <div className="flex items-center justify-center gap-4 mb-8 opacity-60">
+                                            <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent to-primary/50" />
+                                            <div className="px-6 py-3 border border-primary/30 bg-primary/5 rounded-full flex items-center gap-2 shadow-[0_0_20px_rgba(var(--color-primary),0.1)]">
+                                                <Layout size={16} className="text-primary" />
+                                                <span className="font-mono text-[10px] uppercase tracking-widest text-primary font-black">AI Vault Aggregate</span>
+                                            </div>
+                                            <div className="h-[1px] flex-1 bg-gradient-to-l from-transparent to-primary/50" />
+                                        </div>
+                                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4 opacity-80 hover:opacity-100 transition-opacity duration-500 grayscale-[20%]">
+                                            {generations.slice(50).map((gen) => (
+                                                <div key={gen.id} onClick={() => setLightboxImage(gen.assetUrl)} className="group relative bg-[#050505] border border-primary/10 transition-all hover:border-primary/40 cursor-zoom-in aspect-square overflow-hidden rounded-xl">
+                                                    {gen.type === 'deforum' ? (
+                                                        <video src={gen.assetUrl} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" muted loop onMouseEnter={(e) => (e.target as HTMLVideoElement).play()} onMouseLeave={(e) => (e.target as HTMLVideoElement).pause()} />
+                                                    ) : (
+                                                        <img src={gen.assetUrl} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-transform duration-700 group-hover:scale-110" />
+                                                    )}
+                                                    <div className="absolute inset-x-0 bottom-0 p-2 bg-gradient-to-t from-black to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex justify-between">
+                                                        <button onClick={(e) => { e.stopPropagation(); equipBanner(gen.assetUrl); }} className="text-[#00ffff] hover:text-white"><ImageIcon size={12} /></button>
+                                                        <button onClick={(e) => { e.stopPropagation(); deleteGeneration(gen.id); }} className="text-red-500 hover:text-white"><Trash2 size={12} /></button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </>
                         )}
                     </div>
@@ -400,6 +474,117 @@ export default function PrivateMatrix() {
                                 </button>
                             ))}
                         </div>
+                    </div>
+                )}
+
+                {activeTab === 'trash' && (
+                    <div className="animate-in slide-in-from-bottom-8 duration-500 w-full relative">
+                        {trashAssets.length === 0 ? (
+                            <div className="col-span-full h-64 flex flex-col items-center justify-center border-2 border-dashed border-red-500/20 bg-red-500/5 opacity-50 text-center p-8 rounded-3xl">
+                                <Trash2 size={48} className="text-red-500/40 mb-4" />
+                                <h3 className="text-2xl font-bebas tracking-widest text-red-500 uppercase">Trash Cache Empty</h3>
+                                <p className="font-mono text-[10px] uppercase tracking-widest mt-2 text-red-500/60">No latent assets pending purge.</p>
+                            </div>
+                        ) : isPurgeMode ? (
+                            <div className="flex flex-col items-center justify-center w-full min-h-[600px] border border-red-500/30 bg-black/90 p-8 rounded-3xl shadow-[0_0_100px_rgba(239,68,68,0.15)] relative overflow-hidden">
+                                <div className="absolute top-8 text-center z-50">
+                                    <h2 className="text-3xl font-bebas tracking-widest text-red-500 uppercase flex items-center gap-3">
+                                        <Trash2 className="animate-pulse" /> PURGE PROTOCOL
+                                    </h2>
+                                    <p className="font-mono text-[10px] uppercase tracking-[0.3em] font-bold mt-2 text-white/50">
+                                        Swipe Right to Recover <span className="text-red-500 mx-2">|</span> Swipe Left to Destroy
+                                    </p>
+                                    <div className="mt-4 font-mono text-[12px] text-red-500 font-black tracking-widest bg-red-500/10 px-4 py-1 inline-block border border-red-500/30">
+                                        {trashAssets.length} ASSETS REMAINING
+                                    </div>
+                                </div>
+
+                                <div className="relative w-full max-w-[300px] sm:max-w-[380px] aspect-[4/5] sm:aspect-square flex items-center justify-center mt-12 z-40">
+                                    <AnimatePresence>
+                                        {trashAssets.slice(0, 5).reverse().map((asset, idx, arr) => {
+                                            const isTop = idx === arr.length - 1;
+                                            return (
+                                                <motion.div
+                                                    key={asset.id}
+                                                    drag={isTop ? 'x' : false}
+                                                    dragConstraints={{ left: 0, right: 0 }}
+                                                    onDragEnd={(e, info) => {
+                                                        if (info.offset.x < -100) permanentlyDelete(asset.id);
+                                                        else if (info.offset.x > 100) recoverGeneration(asset.id);
+                                                    }}
+                                                    className={`absolute inset-0 m-auto w-full h-full rounded-[2rem] overflow-hidden border-2 border-red-500/30 shadow-[0_0_80px_rgba(239,68,68,0.1)] bg-[#020202] ${isTop ? 'z-40 cursor-grab active:cursor-grabbing' : 'z-10'}`}
+                                                    initial={{ scale: 0.8, y: -40, opacity: 0 }}
+                                                    animate={{ scale: isTop ? 1 : 1 - ((arr.length - 1 - idx) * 0.05), y: isTop ? 0 : -15 * (arr.length - 1 - idx), opacity: 1 }}
+                                                    exit={{ opacity: 0, scale: 0.8, y: 100, transition: { duration: 0.2 } }}
+                                                >
+                                                    {asset.type === 'deforum' ? (
+                                                        <video src={asset.assetUrl} autoPlay loop muted className="w-full h-full object-cover opacity-80" />
+                                                    ) : (
+                                                        <img src={asset.assetUrl} className="w-full h-full object-cover opacity-80" />
+                                                    )}
+                                                    
+                                                    {isTop && (
+                                                        <div className="absolute inset-x-0 bottom-0 p-6 bg-gradient-to-t from-black via-black/80 to-transparent flex justify-between gap-4 pointer-events-none">
+                                                            <div className="flex-1 text-center py-3 border border-red-500/50 bg-red-500/20 text-red-500 font-mono text-xs uppercase font-black">← DESTROY</div>
+                                                            <div className="flex-1 text-center py-3 border border-green-500/50 bg-green-500/20 text-green-500 font-mono text-xs uppercase font-black">RECOVER →</div>
+                                                        </div>
+                                                    )}
+                                                </motion.div>
+                                            )
+                                        })}
+                                    </AnimatePresence>
+                                </div>
+                                <button onClick={() => setIsPurgeMode(false)} className="absolute top-6 right-6 p-3 bg-red-500/10 text-red-500 rounded-full hover:bg-red-500 hover:text-black transition-colors z-50">
+                                    <X size={20} />
+                                </button>
+                            </div>
+                        ) : (
+                            <>
+                                <div className="flex items-center justify-between mb-8 bg-black/60 p-6 border border-red-500/20 rounded-2xl flex-wrap gap-4">
+                                    <div>
+                                        <h3 className="text-2xl font-bebas tracking-widest text-white uppercase flex items-center gap-2"><Trash2 className="text-red-500" /> Pending Purge Cache</h3>
+                                        <p className="font-mono text-[10px] uppercase tracking-widest text-red-500/60 mt-1">Warning: Assets exceeding quota will be permanently expunged.</p>
+                                    </div>
+                                    <CyberButton text="INITIATE SWIPE PURGE" onClick={() => setIsPurgeMode(true)} className="bg-red-500 text-black border-red-500 hover:bg-white" />
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 md:gap-8 opacity-80 grayscale-[30%]">
+                                    {trashAssets.map((gen, i) => (
+                                        <AssetMatrix key={gen.id}>
+                                            <div className="group relative bg-[#050505] border border-red-500/20 transition-all duration-500 hover:border-red-500/60 shadow-lg h-full w-full aspect-[3/4] overflow-hidden rounded-2xl md:rounded-3xl" style={{ animationDelay: `${i * 50}ms` }}>
+                                                <div className="absolute inset-x-2 top-2 md:inset-x-4 md:top-4 flex justify-between gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300 z-50">
+                                                    <button onClick={(e) => { e.stopPropagation(); recoverGeneration(gen.id); }} className="bg-black/90 text-[8px] font-mono border border-green-500/40 text-green-500 px-3 py-2 rounded uppercase tracking-widest hover:bg-green-500 hover:text-black transition-colors shadow-[0_0_15px_rgba(34,197,94,0.3)] backdrop-blur-md">
+                                                        RECOVER
+                                                    </button>
+                                                    <button onClick={(e) => { e.stopPropagation(); permanentlyDelete(gen.id); }} className="bg-black/90 text-[8px] font-mono border border-red-500/80 text-red-500 px-3 py-2 rounded uppercase tracking-widest hover:bg-red-500 hover:text-black transition-colors shadow-[0_0_15px_rgba(239,68,68,0.5)] backdrop-blur-md">
+                                                        DESTROY
+                                                    </button>
+                                                </div>
+
+                                                {gen.type === 'deforum' ? (
+                                                    <video src={gen.assetUrl} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" muted loop onMouseEnter={(e) => (e.target as HTMLVideoElement).play()} onMouseLeave={(e) => (e.target as HTMLVideoElement).pause()} />
+                                                ) : (gen.type === 'vocal_dna' || gen.type === 'neural_swap') ? (
+                                                    <div className="w-full h-full flex flex-col items-center justify-center p-6 bg-red-900/10">
+                                                        <Trash2 className="text-red-500/50 w-12 h-12 mb-4" />
+                                                        <span className="text-[10px] font-mono text-red-500/80 uppercase tracking-widest font-black text-center mb-1">TRASH PAYLOAD</span>
+                                                    </div>
+                                                ) : (
+                                                    <img src={gen.assetUrl} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-all duration-700 group-hover:scale-105" />
+                                                )}
+                                                
+                                                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent pointer-events-none" />
+                                                <div className="absolute inset-x-0 bottom-0 p-4 pt-12 flex flex-col justify-end pointer-events-none border-t border-red-500/20 bg-black/60 backdrop-blur-sm">
+                                                    <div className="flex justify-between items-center pb-1 mb-1 border-b border-red-500/30">
+                                                        <span className="text-[8px] font-mono text-white tracking-widest uppercase">TRASHED</span>
+                                                        <span className="text-[7.5px] font-mono text-red-500 font-bold">{new Date(gen.expungedAt?.seconds * 1000).toLocaleDateString()}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </AssetMatrix>
+                                    ))}
+                                </div>
+                            </>
+                        )}
                     </div>
                 )}
                 </div>

@@ -77,11 +77,28 @@ export default function IdentityPod() {
 
     // Authenticated State (Full Desktop Width Dashboard)
     return (
-        <div className="w-full bg-black/80 border-y md:border border-primary/30 md:rounded-sm p-4 md:px-8 md:py-4 mb-8 flex flex-col md:flex-row items-center justify-between gap-6 md:gap-12 shadow-[0_0_30px_rgba(var(--color-primary),0.15)] relative overflow-hidden backdrop-blur-md">
+        <div className="w-full bg-black/80 border-y md:border border-primary/30 md:rounded-sm p-4 md:px-8 md:py-4 mb-8 flex flex-col md:flex-row items-center justify-between gap-6 md:gap-12 shadow-[0_0_30px_rgba(var(--color-primary),0.15)] relative overflow-hidden backdrop-blur-md group">
             {/* Background elements */}
-            <div className="absolute inset-0 bg-primary/5 pointer-events-none" />
-            <div className="absolute top-0 left-0 w-1/3 h-[1px] bg-gradient-to-r from-primary to-transparent" />
-            <div className="absolute bottom-0 right-0 w-1/3 h-[1px] bg-gradient-to-l from-primary to-transparent" />
+            <div className="absolute inset-0 z-0 pointer-events-none">
+                {currentUser.customBannerUrl ? (
+                    <div className="w-full h-full relative overflow-hidden">
+                        <img 
+                            src={currentUser.customBannerUrl} 
+                            className="w-full h-full object-cover opacity-30 grayscale-[0.5] group-hover:grayscale-0 transition-all duration-1000"
+                            style={{ 
+                                objectPosition: `50% ${currentUser.bannerPositionY ?? 50}%`,
+                                transform: `scale(${currentUser.bannerZoom ?? 1})`
+                            }}
+                            alt="Pod Background"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/80 to-black/60" />
+                    </div>
+                ) : (
+                    <div className="absolute inset-0 bg-primary/5 pointer-events-none" />
+                )}
+            </div>
+            <div className="absolute z-0 top-0 left-0 w-1/3 h-[1px] bg-gradient-to-r from-primary to-transparent" />
+            <div className="absolute z-0 bottom-0 right-0 w-1/3 h-[1px] bg-gradient-to-l from-primary to-transparent" />
             
             {/* Left Sector: Avatar and Identification (Stretched Left) */}
             <div className="flex flex-1 items-center gap-4 md:gap-6 relative z-10 w-full md:w-auto justify-start">

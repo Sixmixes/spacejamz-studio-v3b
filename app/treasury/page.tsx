@@ -51,6 +51,21 @@ export default function TreasuryPage() {
         return <div className="min-h-screen bg-black flex items-center justify-center"><Loader2 className="animate-spin text-primary w-12 h-12" /></div>;
     }
 
+    const isFounder = currentUser?.role === 'FOUNDER' || isArchitect;
+
+    if (!isFounder) {
+        return (
+            <div className="min-h-[70vh] flex flex-col items-center justify-center p-6 sm:p-12 text-center bg-black/40 backdrop-blur-sm border border-red-500/20 rounded-3xl m-4 lg:m-20 mt-20 z-50 relative">
+                <Lock className="w-16 h-16 text-red-500 mb-6 animate-pulse" />
+                <h1 className="text-4xl sm:text-6xl font-black font-bebas text-white tracking-widest mb-4">TREASURY BLACKOUT</h1>
+                <p className="font-mono text-[10px] sm:text-xs text-red-500/80 uppercase tracking-[0.4em] max-w-xl leading-relaxed">
+                    THIS DOMAIN IS CURRENTLY RESTRICTED TO FOUNDER AUTHORIZATION.
+                </p>
+                <button onClick={() => (window.location.href = '/')} className="mt-12 px-8 py-4 bg-red-500/20 border border-red-500/50 text-red-500 font-bebas text-xl tracking-widest hover:bg-red-500 hover:text-black transition-all rounded-lg shadow-[0_0_20px_rgba(239,68,68,0.3)] uppercase">RETURN TO CORE</button>
+            </div>
+        );
+    }
+
     const currentCoins = currentUser?.coinsBalance || 0;
     const currentXp = currentUser?.xp || 0;
 
@@ -247,7 +262,7 @@ export default function TreasuryPage() {
         const filteredItems = matrixEnhancements.filter(item => item.currency === filterCurrency);
 
         return (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-20 animate-in fade-in duration-500">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pb-20 animate-in fade-in duration-500">
                 {filteredItems.map((item) => {
                     const ItemIcon = item.icon;
                     const isEquipped = (currentUser?.enhancements || []).includes(item.id);
@@ -260,30 +275,30 @@ export default function TreasuryPage() {
                     const missedSeason = item.currency === 'xp_unlock' && item.season !== undefined && userOriginSeason > item.season;
 
                     return (
-                        <div key={item.id} className={`group relative bg-black/80 backdrop-blur-xl border ${item.border} rounded-3xl p-6 transition-all duration-500 overflow-hidden`}>
+                        <div key={item.id} className={`group relative bg-black/80 backdrop-blur-xl border ${item.border} rounded-2xl p-4 transition-all duration-500 overflow-hidden`}>
                             <div className="relative z-10 flex flex-col h-full">
-                                <div className="flex justify-between items-start mb-4">
-                                    <div className={`p-4 rounded-2xl bg-black/50 border ${item.border} backdrop-blur-md shadow-lg`}>
-                                        <ItemIcon size={24} className={`${item.color}`} />
+                                <div className="flex justify-between items-start mb-3">
+                                    <div className={`p-3 rounded-xl bg-black/50 border ${item.border} backdrop-blur-md shadow-lg flex items-center justify-center`}>
+                                        <ItemIcon size={20} className={`${item.color}`} />
                                     </div>
                                     <div className={`bg-black/80 border px-3 py-1.5 rounded-xl flex items-center gap-2 ${item.currency === 'coins' || missedSeason ? 'border-yellow-500/30' : (item.currency === 'xp_unlock' ? 'border-cyan-500/30' : 'border-white/20')}`}>
                                         {item.currency === 'coins' || missedSeason ? (
-                                            <><CircleDollarSign size={14} className="text-yellow-500" /><span className="font-bebas text-xl text-yellow-500 tracking-widest pt-1 leading-none">{(missedSeason ? (item.missedSeasonCost || 0) : (item.cost || 0)).toLocaleString()}</span></>
+                                            <><CircleDollarSign size={12} className="text-yellow-500" /><span className="font-bebas text-lg text-yellow-500 tracking-widest pt-1 leading-none">{(missedSeason ? (item.missedSeasonCost || 0) : (item.cost || 0)).toLocaleString()}</span></>
                                         ) : item.currency === 'xp_unlock' ? (
-                                            <><Fingerprint size={14} className="text-cyan-500" /><span className="font-bebas text-xl text-cyan-500 tracking-widest pt-1 leading-none">{item.requiredPrestige ? `PRESTIGE ${item.requiredPrestige}` : `${(item.requiredXp || 0).toLocaleString()} XP`}</span></>
+                                            <><Fingerprint size={12} className="text-cyan-500" /><span className="font-bebas text-lg text-cyan-500 tracking-widest pt-1 leading-none">{item.requiredPrestige ? `PRESTIGE ${item.requiredPrestige}` : `${(item.requiredXp || 0).toLocaleString()} XP`}</span></>
                                         ) : (
-                                            <span className="font-bebas text-xl text-white tracking-widest pt-1 leading-none px-2">FREE</span>
+                                            <span className="font-bebas text-lg text-white tracking-widest pt-1 leading-none px-2">FREE</span>
                                         )}
                                     </div>
                                 </div>
                                 
-                                <h3 className="font-bebas text-2xl text-white tracking-widest mb-2 uppercase">{item.name}</h3>
-                                <p className="font-mono text-gray-400 text-[10px] leading-relaxed mb-6 uppercase flex-1">{item.description}</p>
+                                <h3 className="font-bebas text-xl text-white tracking-widest mb-1 uppercase leading-tight">{item.name}</h3>
+                                <p className="font-mono text-gray-400 text-[9px] leading-relaxed mb-4 uppercase flex-1">{item.description}</p>
                                 
                                 {isOwned ? (
                                     <button 
                                         onClick={() => handleToggleEnhancement(item, isEquipped)}
-                                        className={`w-full py-3 rounded-xl font-bebas text-lg tracking-widest flex items-center justify-center gap-3 transition-all pt-4 ${isEquipped ? 'bg-green-500/10 text-green-400 border border-green-500/50 hover:bg-green-500 hover:text-black' : 'bg-white/5 text-white border border-white/20 hover:bg-white hover:text-black'}`}
+                                        className={`w-full py-2 rounded-lg font-bebas text-base tracking-widest flex items-center justify-center gap-2 transition-all pt-3 ${isEquipped ? 'bg-green-500/10 text-green-400 border border-green-500/50 hover:bg-green-500 hover:text-black' : 'bg-white/5 text-white border border-white/20 hover:bg-white hover:text-black'}`}
                                     >
                                         {isEquipped && <CheckCircle2 size={18} />} {isEquipped ? 'UNEQUIP LAYER' : 'EQUIP LAYER'}
                                     </button>
@@ -291,7 +306,7 @@ export default function TreasuryPage() {
                                     <button 
                                         disabled={isPrestigeLocked || (!missedSeason && isXpLocked)}
                                         onClick={() => handleInstallEnhancement(item)}
-                                        className={`w-full py-3 rounded-xl font-bebas text-lg tracking-widest transition-all flex items-center justify-center gap-3 pt-4 
+                                        className={`w-full py-2 rounded-lg font-bebas text-base tracking-widest transition-all flex items-center justify-center gap-2 pt-3 
                                             ${(isPrestigeLocked || (!missedSeason && isXpLocked)) ? 'bg-red-500/10 text-red-500 border border-red-500/30 opacity-60 cursor-not-allowed' : 
                                             item.currency === 'free' ? 'bg-white/10 text-white border border-white/30 hover:bg-white hover:text-black' :
                                             item.currency === 'xp_unlock' && !missedSeason ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 hover:bg-cyan-500 hover:text-black' :
@@ -326,7 +341,7 @@ export default function TreasuryPage() {
     };
 
     return (
-        <div className="relative flex flex-1 w-full flex-col justify-start overflow-visible bg-transparent group/main shrink-0 min-h-max pt-12 md:pt-20 pb-0 selection:bg-yellow-500/20">
+        <div className="relative flex w-full flex-col justify-start overflow-visible bg-transparent group/main shrink-0 min-h-max pt-12 md:pt-16 pb-32 selection:bg-yellow-500/20">
             
             {/* CINEMATIC B-ROLL BACKGROUND LAYER */}
             <div className="fixed inset-0 z-[-1] flex items-center justify-center pointer-events-none overflow-hidden">
@@ -392,7 +407,7 @@ export default function TreasuryPage() {
                 </div>
             )}
 
-            <div className="cyber-panel p-8 md:p-14 w-full flex-1 max-w-[1700px] mx-auto relative z-50 overflow-hidden bg-black/80 border-2 border-yellow-500/20 shadow-[0_40px_100px_rgba(0,0,0,1)] rounded-t-[40px] md:rounded-[40px]" style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 50px), calc(100% - 50px) 100%, 0 100%)' }}>
+            <div className="w-full flex-1 relative z-50 px-4 md:px-8 max-w-[1400px] mx-auto">
                 {/* Tactical Ledger Sync Overlay */}
                 <div className="absolute top-6 left-8 flex flex-col gap-1 opacity-20">
                     <span className="font-mono text-[7px] text-yellow-500 tracking-[0.5em] font-black uppercase italic">Ledger_Sync: ACTIVE</span>
@@ -400,93 +415,92 @@ export default function TreasuryPage() {
                 </div>
                 
                 {/* Treasury Header */}
-                <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 pb-4 shrink-0 mt-4 md:mt-8">
+                <div className="flex flex-col md:flex-row md:items-end justify-between mb-6 pb-4 shrink-0 mt-4">
                 <div className="flex flex-col">
-                    <h1 className="font-bebas text-4xl md:text-5xl tracking-widest uppercase text-white leading-none flex items-center gap-3">
-                        <CircleDollarSign className="text-yellow-500" size={36} />
+                    <h1 className="font-bebas text-3xl md:text-4xl tracking-widest uppercase text-white leading-none flex items-center gap-3">
+                        <CircleDollarSign className="text-yellow-500" size={28} />
                         Treasury Node
                     </h1>
-                    <p className="font-mono text-xs text-gray-400 tracking-[0.2em] uppercase mt-2">
+                    <p className="font-mono text-[10px] text-gray-400 tracking-[0.2em] uppercase mt-2">
                         Official V3 Alpha Coin Stripe Exchange & Matrix Customization
                     </p>
                 </div>
                 
                 <div className="mt-4 md:mt-0 flex gap-4">
-                    <div className="bg-black/50 border border-cyan-500/20 rounded-2xl p-4 flex flex-col items-end justify-center min-w-[120px]">
-                        <span className="font-mono text-[8px] text-gray-500 uppercase tracking-widest">Lifetime XP</span>
+                    <div className="bg-black/50 border border-cyan-500/20 rounded-xl p-3 flex flex-col items-end justify-center min-w-[100px]">
+                        <span className="font-mono text-[7px] text-gray-500 uppercase tracking-widest">Lifetime XP</span>
                         <div className="flex items-baseline gap-1">
-                            <span className="font-bebas text-2xl text-white tracking-widest">{currentXp.toLocaleString()}</span>
-                            <span className="font-bebas text-sm text-cyan-500">XP</span>
+                            <span className="font-bebas text-xl text-white tracking-widest">{currentXp.toLocaleString()}</span>
+                            <span className="font-bebas text-xs text-cyan-500">XP</span>
                         </div>
                     </div>
-                    <div className="bg-black/50 border border-yellow-500/20 rounded-2xl p-4 flex flex-col items-end justify-center min-w-[120px]">
-                        <span className="font-mono text-[8px] text-gray-500 uppercase tracking-widest">Coin Balance</span>
+                    <div className="bg-black/50 border border-yellow-500/20 rounded-xl p-3 flex flex-col items-end justify-center min-w-[100px]">
+                        <span className="font-mono text-[7px] text-gray-500 uppercase tracking-widest">Coin Balance</span>
                         <div className="flex items-baseline gap-1">
-                            <span className="font-bebas text-3xl text-white tracking-widest">{currentCoins.toLocaleString()}</span>
-                            <span className="font-bebas text-lg text-yellow-500">C</span>
+                            <span className="font-bebas text-2xl text-white tracking-widest">{currentCoins.toLocaleString()}</span>
+                            <span className="font-bebas text-sm text-yellow-500">C</span>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* NAVIGATION TABS */}
-            <div className="flex w-full gap-2 mb-8 bg-black/40 p-2 rounded-2xl border border-white/10 shrink-0 overflow-x-auto custom-scrollbar">
+            <div className="flex w-full gap-2 mb-6 bg-black/40 p-1.5 rounded-xl border border-white/10 shrink-0 overflow-x-auto custom-scrollbar">
                 <button 
                     onClick={() => setActiveTab('armory')}
-                    className={`flex-1 min-w-[150px] flex items-center justify-center gap-2 py-4 rounded-xl font-bebas text-xl tracking-widest transition-all ${activeTab === 'armory' ? 'bg-yellow-500/20 text-yellow-500 border border-yellow-500/50 shadow-[inset_0_0_20px_rgba(234,179,8,0.2)]' : 'text-gray-500 hover:text-white hover:bg-white/5 border border-transparent'}`}
+                    className={`flex-1 min-w-[120px] flex items-center justify-center gap-2 py-3 rounded-lg font-bebas text-lg tracking-widest transition-all ${activeTab === 'armory' ? 'bg-yellow-500/20 text-yellow-500 border border-yellow-500/50 shadow-[inset_0_0_20px_rgba(234,179,8,0.2)]' : 'text-gray-500 hover:text-white hover:bg-white/5 border border-transparent'}`}
                 >
-                    <ShoppingBag size={20} /> THE ARMORY
+                    <ShoppingBag size={16} /> THE ARMORY
                 </button>
                 <button 
                     onClick={() => setActiveTab('blackmarket')}
-                    className={`flex-1 min-w-[150px] flex items-center justify-center gap-2 py-4 rounded-xl font-bebas text-xl tracking-widest transition-all ${activeTab === 'blackmarket' ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50 shadow-[inset_0_0_20px_rgba(6,182,212,0.2)]' : 'text-gray-500 hover:text-white hover:bg-white/5 border border-transparent'}`}
+                    className={`flex-1 min-w-[120px] flex items-center justify-center gap-2 py-3 rounded-lg font-bebas text-lg tracking-widest transition-all ${activeTab === 'blackmarket' ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50 shadow-[inset_0_0_20px_rgba(6,182,212,0.2)]' : 'text-gray-500 hover:text-white hover:bg-white/5 border border-transparent'}`}
                 >
-                    <Lock size={20} /> BLACK MARKET
+                    <Lock size={16} /> BLACK MARKET
                 </button>
                 <button 
                     onClick={() => setActiveTab('archives')}
-                    className={`flex-1 min-w-[150px] flex items-center justify-center gap-2 py-4 rounded-xl font-bebas text-xl tracking-widest transition-all ${activeTab === 'archives' ? 'bg-white/20 text-white border border-white/50 shadow-[inset_0_0_20px_rgba(255,255,255,0.2)]' : 'text-gray-500 hover:text-white hover:bg-white/5 border border-transparent'}`}
+                    className={`flex-1 min-w-[120px] flex items-center justify-center gap-2 py-3 rounded-lg font-bebas text-lg tracking-widest transition-all ${activeTab === 'archives' ? 'bg-white/20 text-white border border-white/50 shadow-[inset_0_0_20px_rgba(255,255,255,0.2)]' : 'text-gray-500 hover:text-white hover:bg-white/5 border border-transparent'}`}
                 >
-                    <Archive size={20} /> THE ARCHIVES
+                    <Archive size={16} /> THE ARCHIVES
                 </button>
             </div>
 
             {/* ARMORY TAB: Displays Stripe Packages + Coin Items */}
             {activeTab === 'armory' && (
                 <>
-                    <h2 className="font-bebas text-3xl text-white tracking-widest uppercase flex gap-3 items-center mb-6">
-                        <CircleDollarSign className="text-yellow-500" /> ALPHACOIN INJECTION VENDORS
+                    <h2 className="font-bebas text-2xl text-white tracking-widest uppercase flex gap-2 items-center mb-4">
+                        <CircleDollarSign className="text-yellow-500" size={20} /> ALPHACOIN INJECTION VENDORS
                     </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 shrink-0 mb-12">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 shrink-0 mb-10">
                         {coinPackages.map((pkg) => {
                             const Icon = pkg.icon;
                             const isPurchasing = loadingPkg === pkg.id;
                             return (
-                                <div key={pkg.id} className={`group relative flex flex-col h-full bg-black/80 backdrop-blur-xl border ${pkg.border} rounded-[2rem] p-8 transition-all duration-300 ${pkg.bg} ${pkg.glow} overflow-hidden hover:-translate-y-2`}>
-                                    {pkg.popular && <div className="absolute top-0 right-0 bg-primary text-black font-bebas text-sm px-4 py-1 rounded-bl-xl tracking-widest z-10 hidden md:block">MOST POPULAR</div>}
+                                <div key={pkg.id} className={`group relative flex flex-col h-full bg-black/80 backdrop-blur-xl border ${pkg.border} rounded-2xl p-6 transition-all duration-300 ${pkg.bg} ${pkg.glow} overflow-hidden hover:-translate-y-1`}>
+                                    {pkg.popular && <div className="absolute top-0 right-0 bg-primary text-black font-bebas text-[10px] px-3 py-1 rounded-bl-lg tracking-widest z-10 hidden md:block">MOST POPULAR</div>}
                                     <div className="flex-1 flex flex-col z-10">
-                                        <Icon size={32} className={`${pkg.color} mb-6 transition-transform duration-500 group-hover:rotate-12 group-hover:scale-110`} />
-                                        <h3 className="font-bebas text-3xl text-white tracking-widest mb-2 uppercase">{pkg.name}</h3>
-                                        <div className="flex items-baseline gap-2 mb-6 border-b border-white/10 pb-6">
-                                            <span className={`font-bebas text-5xl tracking-widest leading-none ${pkg.color}`}>{pkg.coins.toLocaleString()}</span>
-                                            <span className="font-bebas text-xl text-gray-500">COINS</span>
+                                        <Icon size={24} className={`${pkg.color} mb-4 transition-transform duration-500 group-hover:rotate-12 group-hover:scale-110`} />
+                                        <h3 className="font-bebas text-xl text-white tracking-widest mb-1 uppercase">{pkg.name}</h3>
+                                        <div className="flex items-baseline gap-1 mb-4 border-b border-white/10 pb-4">
+                                            <span className={`font-bebas text-3xl tracking-widest leading-none ${pkg.color}`}>{pkg.coins.toLocaleString()}</span>
+                                            <span className="font-bebas text-sm text-gray-500">COINS</span>
                                         </div>
-                                        <span className="font-mono text-xl text-white mt-auto">{pkg.price} <span className="text-[10px] text-gray-500 align-super">USD</span></span>
+                                        <span className="font-mono text-sm text-white mt-auto">{pkg.price} <span className="text-[9px] text-gray-500 align-super">USD</span></span>
                                     </div>
                                     <button 
                                         disabled={loadingPkg !== null || !isArchitect}
                                         onClick={() => handlePurchase(pkg)}
-                                        className={`w-full mt-6 py-4 rounded-xl font-bebas text-xl tracking-widest transition-all duration-300 flex items-center justify-center gap-3 ${isPurchasing ? 'bg-white text-black shadow-[0_0_20px_rgba(255,255,255,0.8)]' : `bg-white/5 text-white border border-white/20 hover:bg-white pt-5 hover:text-black ${(loadingPkg !== null || !isArchitect) ? 'opacity-50 cursor-not-allowed' : ''}`}`}
+                                        className={`w-full mt-4 py-3 rounded-lg font-bebas text-base tracking-widest transition-all duration-300 flex items-center justify-center gap-2 ${isPurchasing ? 'bg-white text-black shadow-[0_0_20px_rgba(255,255,255,0.8)]' : `bg-white/5 text-white border border-white/20 hover:bg-white pt-4 hover:text-black ${(loadingPkg !== null || !isArchitect) ? 'opacity-50 cursor-not-allowed' : ''}`}`}
                                     >
-                                        {isPurchasing ? <><Loader2 size={24} className="animate-spin" /> GENERATING...</> : <>{isArchitect ? 'SECURE PACKAGE' : 'CHECKOUT SUSPENDED'}</>}
+                                        {isPurchasing ? <><Loader2 size={18} className="animate-spin" /> ...</> : <>{isArchitect ? 'SECURE PACKAGE' : 'CHECKOUT SUSPENDED'}</>}
                                     </button>
                                 </div>
                             );
                         })}
                     </div>
 
-                    <h2 className="font-bebas text-3xl text-white tracking-widest uppercase flex gap-3 items-center mb-6">
-                        <ShoppingBag className="text-yellow-500" /> PREMIUM MATRICES
+                    <h2 className="font-bebas text-2xl text-white tracking-widest uppercase flex gap-2 items-center mb-4">
+                        <ShoppingBag className="text-yellow-500" size={20} /> PREMIUM MATRICES
                     </h2>
                     {renderEnhancementGrid('coins')}
                 </>

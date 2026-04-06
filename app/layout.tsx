@@ -5,8 +5,6 @@ import AudioEngine from "@/components/global/AudioEngine";
 import WarpBackground from "@/components/global/WarpBackground";
 import SpaceWarpNoSSR from "@/components/global/SpaceWarpNoSSR";
 import StickyPlayer from "@/components/ui/StickyPlayer";
-import WrldChangerEnv from "@/components/global/WrldChangerEnv";
-import WrldChanger from "@/components/global/WrldChanger";
 import AgeVerificationModal from "@/components/global/AgeVerificationModal";
 import AuthEngine from "@/components/global/AuthEngine";
 import NavigationHUD from "@/components/global/NavigationHUD";
@@ -53,7 +51,6 @@ export default function RootLayout({
           <AuthEngine />
           <AgeVerificationModal />
           <AirdropModal />
-          <WrldChangerEnv />
           <div className="contents">
             {/* BACKGROUND AUDIO-VISUAL PHYSICS ENGINE */}
             <AudioEngine />
@@ -103,7 +100,7 @@ export default function RootLayout({
             </div>
 
             {/* INNER SCROLLABLE / INTERACTIVE REALM (Native Body Scrolling) */}
-            <div className="audio-filter-target interface-interactive flex-1 flex flex-col z-[50] relative w-full pt-[var(--content-top-offset,0px)]">
+            <div className="audio-filter-target interface-interactive flex-1 flex flex-col z-[50] relative w-full pt-[var(--content-top-offset,0px)] !min-h-0">
               <main className="flex-1 w-full pb-[88px] sm:pb-[80px] pt-0 overflow-x-hidden transition-all duration-700 flex flex-col">
                   {children}
               </main>

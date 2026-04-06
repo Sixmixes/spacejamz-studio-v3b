@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { useUserStore } from '@/store/useUserStore';
 import { Sparkles, Video, UserPlus, Lock, Zap, Coins, Image as ImageIcon, AlertCircle, Loader2, Cpu, Terminal, CheckCircle2, Database, Trash2, Save, X } from 'lucide-react';
 import { CyberButton } from '@/components/ui/CyberButton';
-import { NeuralModal } from '@/components/ui/NeuralModal';
 import { motion, AnimatePresence, PanInfo, useMotionValue, useTransform } from 'framer-motion';
 
 import { db, storage } from '@/lib/firebase/config';
@@ -14,11 +13,12 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import FlixSynthPanel from '@/components/neural/FlixSynthPanel';
 import VocalDnaPanel from '@/components/neural/VocalDnaPanel';
 import NeuralSwapPanel from '@/components/neural/NeuralSwapPanel';
+import RAPGSlotMachine from '@/components/neural/RAPGSlotMachine';
 
 type NeuralState = 'IDLE' | 'PROCESSING' | 'SUCCESS' | 'ERROR';
 
 export default function NeuralStudioApp({ embeddedFlixSynthOnly = false, onEmbeddedClose }: { embeddedFlixSynthOnly?: boolean, onEmbeddedClose?: () => void }) {
-    const { currentUser, isArchitect } = useUserStore();
+    const { currentUser, isArchitect, setUser } = useUserStore();
     const [activeTab, setActiveTab] = useState<'flixsynth' | 'deforum' | 'vocal_dna' | 'neural_swap'>('flixsynth');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [prompt, setPrompt] = useState('');
@@ -47,18 +47,26 @@ export default function NeuralStudioApp({ embeddedFlixSynthOnly = false, onEmbed
         }
     }, [embeddedFlixSynthOnly]);
 
-    const generateRAPG = () => {
-        const subjects = ["A lone cyber-monk", "A shattered porcelain android", "A neon-drenched samurai", "A massive orbital dreadnought", "A bioluminescent deep-sea leviathan", "A rogue AI mainframe", "A phantom data-courier", "A chrome-plated gargoyle", "A squad of tactical hackers"];
-        const actions = ["meditating in the rain", "breaching the atmosphere", "dissolving into data streams", "standing over a defeated mech", "floating in zero gravity", "hacking a neural port", "summoning a digital storm", "awakening from cryosleep"];
-        const environments = ["in a brutalist concrete megacity", "inside a shattered quantum reactor", "on the edge of a black hole accretion disk", "in a forgotten subterranean temple", "atop a floating glass pyramid", "within an infinite server farm", "in a neon-lit cyberpunk alleyway"];
-        const lighting = ["volumetric god rays", "harsh neon underglow", "strobe lighting", "thick radioactive fog", "bioluminescent spores floating in the air", "diffused cinematic lighting", "lens flares"];
-        const styles = ["shot on 35mm film", "8k resolution octane render", "unreal engine 5 cinematic", "macro photography, shallow depth of field", "vintage anime aesthetic, 1990s cel shading", "hyper-realistic matte painting"];
-        const aesthetics = ["style of H.R. Giger", "cyberpunk aesthetic", "synthwave retrowave", "dark fantasy", "directed by Denis Villeneuve", "by Syd Mead", "Yoji Shinkawa line art"];
-
-        const r = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
-        const generated = `${r(subjects)} ${r(actions)} ${r(environments)}, ${r(lighting)}, ${r(styles)}, ${r(aesthetics)}. Masterpiece, highly detailed, trending on ArtStation.`;
+    const generateRAPG = async () => {
+        setPrompt('Pinging Neural Core for stylistic vision...');
+        setStatusMsg('INITIALIZING RAPG LLM SYNTHESIS...');
         
-        setPrompt(generated);
+        try {
+            const res = await fetch('/api/rapg', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ style: "Extremely detailed, distinct from generic sci-fi." })
+            });
+
+            if (!res.ok) throw new Error("API Failure");
+
+            const data = await res.json();
+            setPrompt(data.prompt);
+            setStatusMsg('READY_FOR_COMMAND');
+        } catch (error) {
+            setPrompt('R.A.P.G OFFLINE. Utilizing backup sequence: A lone wanderer traversing a hyper-realistic neon desert at dusk, shot on 35mm film, volumetric lighting, highly detailed masterpiece.');
+            setStatusMsg('READY_FOR_COMMAND');
+        }
     };
 
     const handleFaceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -331,18 +339,6 @@ export default function NeuralStudioApp({ embeddedFlixSynthOnly = false, onEmbed
     const remainingUrls = batchUrls.slice(currentBatchIndex);
     const stackUrls = [...remainingUrls].reverse();
 
-    if (!isFounder) {
-        return (
-            <div className="min-h-[70vh] flex flex-col items-center justify-center p-6 sm:p-12 text-center bg-black/40 backdrop-blur-sm border border-red-500/20 rounded-3xl m-4 lg:m-20">
-                <Lock className="w-16 h-16 text-red-500 mb-6 animate-pulse" />
-                <h1 className="text-4xl sm:text-6xl font-black font-bebas text-white tracking-widest mb-4">PRIORITY CLEARANCE REQUIRED</h1>
-                <p className="font-mono text-[10px] sm:text-xs text-red-500/80 uppercase tracking-[0.4em] max-w-xl leading-relaxed">
-                    ACCESS TO THE NEURAL STUDIO IS RESTRICTED TO CERTIFIED [ FOUNDER ] OPERATIVES. UPGRADE CLEARANCE TO BYPASS SECURITY.
-                </p>
-                <CyberButton text="RETURN TO CORE" onClick={() => (window.location.href = '/')} className="mt-12" />
-            </div>
-        );
-    }
     
     // If embedded, we do not want the black absolute background taking over the whole page behind the modal
     return (
@@ -415,12 +411,21 @@ export default function NeuralStudioApp({ embeddedFlixSynthOnly = false, onEmbed
                                          'Replace Suno voices with your Neural Blueprint'}
                                     </p>
                                 </div>
-                                <button 
-                                    onClick={() => { setActiveTab(tab); setIsModalOpen(true); setNeuralState('IDLE'); setLastOutput(null); setIsBatchMode(false); }}
-                                    className="w-full px-1 py-3 md:px-8 md:py-4 bg-black/40 text-primary border border-primary/30 rounded-lg md:rounded-xl font-mono text-[7px] md:text-[10px] font-black uppercase tracking-widest md:tracking-[0.4em] hover:bg-primary hover:text-black transition-all shadow-xl group-hover:border-primary/80 mt-1 md:mt-4 whitespace-nowrap"
-                                >
-                                    [ BOOT ]
-                                </button>
+                                {(!isFounder && tab !== 'flixsynth') ? (
+                                    <button 
+                                        disabled
+                                        className="w-full px-1 py-3 md:px-8 md:py-4 bg-red-500/10 text-red-500/50 border border-red-500/20 rounded-lg md:rounded-xl font-mono text-[7px] md:text-[10px] font-black uppercase tracking-widest md:tracking-[0.4em] mt-1 md:mt-4 whitespace-nowrap cursor-not-allowed"
+                                    >
+                                        [ COMING SOON ]
+                                    </button>
+                                ) : (
+                                    <button 
+                                        onClick={() => { setActiveTab(tab); setIsModalOpen(true); setNeuralState('IDLE'); setLastOutput(null); setIsBatchMode(false); }}
+                                        className="w-full px-1 py-3 md:px-8 md:py-4 bg-black/40 text-primary border border-primary/30 rounded-lg md:rounded-xl font-mono text-[7px] md:text-[10px] font-black uppercase tracking-widest md:tracking-[0.4em] hover:bg-primary hover:text-black transition-all shadow-xl group-hover:border-primary/80 mt-1 md:mt-4 whitespace-nowrap"
+                                    >
+                                        [ BOOT ]
+                                    </button>
+                                )}
                             </div>
                         </div>
                     ))}
@@ -429,14 +434,49 @@ export default function NeuralStudioApp({ embeddedFlixSynthOnly = false, onEmbed
             </>
             )}
 
-            <NeuralModal 
-                isOpen={isModalOpen} 
-                onClose={() => {
-                    setIsModalOpen(false);
-                    if (onEmbeddedClose) onEmbeddedClose();
-                }} 
-                title={activeTab === 'flixsynth' ? 'FLIXSYNTH ART STUDIO' : activeTab === 'deforum' ? 'VIDEO ENGINE' : activeTab === 'vocal_dna' ? 'NEURAL BLUEPRINT' : 'NEURAL SWAP CONVERSION'}
-            >
+            {isModalOpen && (
+                <div className="w-full max-w-[1700px] mx-auto px-4 md:px-8 animate-in slide-in-from-bottom-8 duration-700 pb-32">
+                    
+                    {/* INLINE TOOL HEADER */}
+                    <div className="flex items-center justify-between p-4 md:p-6 border border-primary/20 bg-black/80 backdrop-blur-md rounded-t-3xl relative overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.8)]">
+                        <div className="absolute top-0 left-0 w-1 h-full bg-primary animate-pulse" />
+                        <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-4">
+                                <Cpu size={24} className="text-primary animate-pulse hidden sm:block" />
+                                <h2 className="text-3xl sm:text-5xl font-black font-bebas text-white tracking-[0.1em] uppercase italic leading-none drop-shadow-[0_2px_15px_rgba(var(--color-primary),0.4)]">
+                                    {activeTab === 'flixsynth' ? 'FLIXSYNTH ART STUDIO' : activeTab === 'deforum' ? 'VIDEO ENGINE' : activeTab === 'vocal_dna' ? 'NEURAL BLUEPRINT' : 'NEURAL SWAP CONVERSION'}
+                                </h2>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <span className="text-[9px] font-mono text-primary/40 uppercase tracking-[0.5em] font-black">Neural_Link_OK</span>
+                                <div className="w-1 h-1 rounded-full bg-green-500 animate-ping" />
+                            </div>
+                        </div>
+
+                        <button 
+                            onClick={() => {
+                                setIsModalOpen(false);
+                                if (onEmbeddedClose) onEmbeddedClose();
+                            }}
+                            className="px-6 py-4 bg-black border-2 border-primary/30 text-primary hover:bg-primary hover:text-black hover:scale-105 transition-all shadow-[0_0_15px_rgba(var(--color-primary),0.2)] font-bebas text-xl tracking-widest hidden sm:block"
+                            style={{ clipPath: 'polygon(0 0, 100% 0, 100% 70%, 70% 100%, 0 100%)' }}
+                        >
+                            <X size={20} className="inline mr-2" /> DISCONNECT
+                        </button>
+                        <button 
+                            onClick={() => {
+                                setIsModalOpen(false);
+                                if (onEmbeddedClose) onEmbeddedClose();
+                            }}
+                            className="p-3 bg-black border-2 border-primary/30 text-primary hover:bg-primary hover:text-black transition-all sm:hidden"
+                        >
+                            <X size={20} />
+                        </button>
+                    </div>
+
+                    {/* TOOL BODY OVERRIDE */}
+                    <div className="bg-black/60 border-x border-b border-primary/20 rounded-b-3xl p-4 sm:p-8 backdrop-blur-3xl shadow-[0_0_100px_rgba(0,0,0,0.9)] relative flex-1">
+                        <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,rgba(var(--color-primary),0.02)_0,transparent_100%)] opacity-30" />
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 lg:gap-16">
                     
                     {/* LEFT CONTROLS PORT - ALWAYS VISIBLE AT OP */}
@@ -451,6 +491,14 @@ export default function NeuralStudioApp({ embeddedFlixSynthOnly = false, onEmbed
                                     [ {activeTab === 'deforum' ? '5' : activeTab === 'vocal_dna' ? '10' : activeTab === 'neural_swap' ? '8' : '2'} COINS ]
                                 </span>
                             </label>
+
+                            {/* RAPG Visual Masterpiece Slot Engine */}
+                            {activeTab === 'flixsynth' && (
+                                <div className="mb-8 mt-2">
+                                    <RAPGSlotMachine prompt={prompt} setPrompt={setPrompt} />
+                                </div>
+                            )}
+
                             <textarea 
                                 value={prompt}
                                 onChange={(e) => setPrompt(e.target.value)}
@@ -469,7 +517,7 @@ export default function NeuralStudioApp({ embeddedFlixSynthOnly = false, onEmbed
                                                     <button
                                                         key={num}
                                                         onClick={() => setBatchSize(num)}
-                                                        className={`px-3 py-1.5 font-mono text-[10px] sm:text-xs font-black transition-all ${batchSize === num ? 'bg-primary text-black' : 'bg-black text-primary/60 hover:text-primary hover:bg-primary/10'}`}
+                                                        className={`px-3 py-1.5 font-mono text-[10px] sm:text-xs font-black transition-all ${batchSize === num ? 'bg-[rgb(var(--color-primary))] text-black' : 'bg-black text-primary/60 hover:text-primary hover:bg-primary/10'}`}
                                                     >
                                                         {num}
                                                     </button>
@@ -477,14 +525,31 @@ export default function NeuralStudioApp({ embeddedFlixSynthOnly = false, onEmbed
                                             </div>
                                         </div>
                                     )}
-                                    <button 
-                                        onClick={generateRAPG}
-                                        className="flex items-center gap-2 sm:gap-3 bg-black/60 hover:bg-primary/10 border border-primary/30 px-3 sm:px-6 py-2 sm:py-4 rounded-xl font-mono text-[9px] sm:text-[10px] font-black text-primary uppercase tracking-[0.2em] sm:tracking-[0.3em] transition-all hover:border-primary/60 shadow-xl ml-auto"
-                                    >
-                                        <Sparkles size={16} className="animate-pulse" /> [ RANDOMIZE ]
-                                    </button>
+                                    {activeTab === 'deforum' && (
+                                        <button 
+                                            onClick={generateRAPG}
+                                            className="flex items-center gap-2 sm:gap-3 bg-black/60 hover:bg-primary/10 border border-primary/30 px-3 sm:px-6 py-2 sm:py-4 rounded-xl font-mono text-[9px] sm:text-[10px] font-black text-primary uppercase tracking-[0.2em] sm:tracking-[0.3em] transition-all hover:border-primary/60 shadow-xl ml-auto"
+                                        >
+                                            <Sparkles size={16} className="animate-pulse" /> [ RANDOMIZE ]
+                                        </button>
+                                    )}
                                 </div>
                             )}
+                        </div>
+
+                        {/* ELEVATED NEURAL SYNTHESIS ACTION (moved from bottom) */}
+                        <div className="relative group/btn my-4 z-20">
+                            <div className="absolute -inset-2 bg-primary/40 blur-2xl opacity-0 group-hover/btn:opacity-100 transition-opacity duration-1000" />
+                            <CyberButton 
+                                text={neuralState === 'PROCESSING' ? 'SYNTHESIZING...' : 
+                                      activeTab === 'vocal_dna' ? 'TRANSMIT DNA PAYLOAD' : 
+                                      activeTab === 'neural_swap' ? 'INITIATE NEURAL SWAP' : 'INITIATE NEURAL SYNTHESIS'}
+                                disabled={neuralState === 'PROCESSING' || 
+                                         (activeTab === 'vocal_dna' ? (!vocalStem || !consentLikeness || !consentResale) : !prompt)} 
+                                onClick={activeTab === 'vocal_dna' ? handleStemUpload : runGeneration}
+                                className="w-full h-20 text-2xl md:text-4xl tracking-[0.2em] font-black relative z-10 drop-shadow-[0_0_20px_rgba(var(--color-primary),0.5)] border-primary/50 bg-black/60 backdrop-blur-md"
+                                style={{ clipPath: 'polygon(0 15px, 15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%)' }}
+                            />
                         </div>
 
                         {activeTab === 'flixsynth' && (
@@ -503,19 +568,7 @@ export default function NeuralStudioApp({ embeddedFlixSynthOnly = false, onEmbed
                             <NeuralSwapPanel />
                         )}
 
-                        <div className="relative group/btn mt-4">
-                            <div className="absolute -inset-2 bg-primary/40 blur-2xl opacity-0 group-hover/btn:opacity-100 transition-opacity duration-1000" />
-                            <CyberButton 
-                                text={neuralState === 'PROCESSING' ? 'SYNTHESIZING...' : 
-                                      activeTab === 'vocal_dna' ? 'TRANSMIT DNA PAYLOAD' : 
-                                      activeTab === 'neural_swap' ? 'INITIATE NEURAL SWAP' : 'INITIATE NEURAL SYNTHESIS'}
-                                disabled={neuralState === 'PROCESSING' || 
-                                         (activeTab === 'vocal_dna' ? (!vocalStem || !consentLikeness || !consentResale) : !prompt)} 
-                                onClick={activeTab === 'vocal_dna' ? handleStemUpload : runGeneration}
-                                className="w-full h-28 text-3xl md:text-5xl tracking-[0.2em] font-black relative z-10 drop-shadow-[0_0_20px_rgba(var(--color-primary),0.5)]"
-                                style={{ clipPath: 'polygon(0 15px, 15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%)' }}
-                            />
-                        </div>
+
                     </div>
 
                     {/* RIGHT PREVIEW PORT - UNDER CONTROLS ON MOBILE NOW */}
@@ -565,7 +618,49 @@ export default function NeuralStudioApp({ embeddedFlixSynthOnly = false, onEmbed
                                     <div className="absolute inset-0 pointer-events-none opacity-20 scanlines opacity-10 z-20" />
                                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--color-primary),0.02)_0,transparent_100%)] opacity-30 z-10" />
 
-                                    {lastOutput ? (
+                                    {isBatchMode && batchUrls.length > 0 ? (
+                                        <div className="w-full h-full flex flex-col items-center justify-between py-8 px-4 bg-black/90 z-40 relative animate-in fade-in duration-500">
+                                            <div className="text-center w-full relative z-50">
+                                                <h2 className="text-xl sm:text-2xl font-bebas tracking-widest text-[#00ffff] mb-1 uppercase">Batch Complete</h2>
+                                                <div className="font-mono text-[9px] text-[#00ffff]/50 tracking-[0.3em] bg-[#00ffff]/10 inline-block px-3 py-1 border border-[#00ffff]/20">
+                                                    [{currentBatchIndex + 1} / {batchUrls.length}]
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="relative w-full aspect-square sm:max-w-[300px] flex items-center justify-center my-4 overflow-visible z-40">
+                                                <AnimatePresence>
+                                                    {stackUrls.map((url, stackIndex) => {
+                                                        const isTop = stackIndex === stackUrls.length - 1;
+                                                        const virtualIndex = stackUrls.length - 1 - stackIndex;
+                                                        return (
+                                                            <BatchCard 
+                                                                key={`${currentBatchIndex + virtualIndex}-${url}`} 
+                                                                url={url} 
+                                                                isTop={isTop} 
+                                                                index={virtualIndex}
+                                                                handleSwipe={handleSwipe}
+                                                            />
+                                                        );
+                                                    })}
+                                                </AnimatePresence>
+                                            </div>
+
+                                            {batchUrls.length > 0 && currentBatchIndex >= batchUrls.length ? (
+                                                <div className="w-full z-50 relative pb-6 px-4">
+                                                    <CyberButton text="VIEW ARCHIVES" onClick={() => window.location.href = '/pod'} className="w-full h-14 text-lg" />
+                                                </div>
+                                            ) : (
+                                                <div className="flex w-full justify-between items-center px-6 gap-4 z-50 relative pb-6">
+                                                    <button onClick={() => handleSwipe(null, { offset: { x: -200 } } as any)} className="w-16 h-16 flex items-center justify-center rounded-full border-2 border-red-500/30 bg-red-500/10 hover:bg-red-500/30 text-red-500 transition-all shadow-[0_0_30px_rgba(239,68,68,0.2)]">
+                                                        <Trash2 size={24} />
+                                                    </button>
+                                                    <button onClick={() => handleSwipe(null, { offset: { x: 200 } } as any)} className="w-16 h-16 flex items-center justify-center rounded-full border-2 border-green-500/30 bg-green-500/10 hover:bg-green-500/30 text-green-500 transition-all shadow-[0_0_30px_rgba(34,197,94,0.2)]">
+                                                        <Save size={24} />
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ) : lastOutput ? (
                                         <div className="w-full h-full animate-in zoom-in-95 duration-1000 relative">
                                             {activeTab === 'deforum' ? (
                                                 <video src={lastOutput} controls autoPlay loop className="w-full h-full object-cover" />
@@ -596,12 +691,8 @@ export default function NeuralStudioApp({ embeddedFlixSynthOnly = false, onEmbed
                                             </div>
                                         </div>
                                     ) : (
-                                        <div className="flex flex-col items-center gap-6 opacity-10 group-hover:opacity-30 transition-all duration-1000">
-                                            <Database size={64} className="text-primary animate-pulse" />
-                                            <div className="flex flex-col items-center gap-1">
-                                                <span className="font-bebas text-3xl text-white tracking-[0.1em] uppercase">No_Asset_Latent</span>
-                                                <span className="font-mono text-[8px] text-primary/60 uppercase tracking-[0.3em]">Neural_Payload_Empty</span>
-                                            </div>
+                                        <div className="flex flex-col items-center justify-center w-full h-full border border-dashed border-[#00ffff]/20 bg-[#00ffff]/5">
+                                            <span className="font-mono text-[10px] uppercase tracking-[0.5em] cyber-flicker-slow text-[#00ffff]/50">Awaiting Subroutine</span>
                                         </div>
                                     )}
 
@@ -634,77 +725,11 @@ export default function NeuralStudioApp({ embeddedFlixSynthOnly = false, onEmbed
                     </div>
                 </div>
             </div>
-            </NeuralModal>
+                    </div>
+                </div>
+            )}
 
-            {/* FULL SCREEN BATCH REVIEW */}
-            <AnimatePresence>
-                {isBatchMode && batchUrls.length > 0 && (
-                    <motion.div 
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        transition={{ duration: 0.5 }}
-                        className="fixed inset-0 z-[300000] bg-black/95 backdrop-blur-xl flex flex-col items-center justify-center p-4 sm:p-8"
-                    >
-                        <button 
-                            onClick={() => {
-                                setIsBatchMode(false);
-                                setBatchUrls([]);
-                                setStatusMsg('BATCH ABORTED.');
-                            }}
-                            className="absolute top-6 right-6 p-4 bg-black border border-primary/40 text-primary hover:bg-primary hover:text-black transition-all z-50 rounded-full"
-                        >
-                            <X size={24} />
-                        </button>
-                        
-                        <div className="absolute top-8 pb-4 text-center z-10">
-                            <h2 className="text-3xl font-bebas tracking-widest text-white mb-2 uppercase">Neural Synthesis Complete</h2>
-                            <p className="font-mono text-[10px] text-primary/60 uppercase tracking-[0.3em] font-bold">
-                                Swipe Right to Archive <span className="text-white mx-2">|</span> Swipe Left to Discard
-                            </p>
-                            <div className="mt-4 font-mono text-[11px] text-primary/80 font-black tracking-widest">
-                                [{currentBatchIndex + 1} / {batchUrls.length}]
-                            </div>
-                        </div>
 
-                        <div className="relative w-full max-w-lg aspect-square flex items-center justify-center mt-12 bg-[#050505] rounded-3xl border border-primary/20 shadow-[0_0_120px_rgba(var(--color-primary),0.15)] overflow-hidden">
-                            <AnimatePresence>
-                                {stackUrls.map((url, stackIndex) => {
-                                    const isTop = stackIndex === stackUrls.length - 1;
-                                    // True index in the remaining active subset
-                                    const virtualIndex = stackUrls.length - 1 - stackIndex;
-                                    return (
-                                        <BatchCard 
-                                            key={`${currentBatchIndex + virtualIndex}-${url}`} 
-                                            url={url} 
-                                            isTop={isTop} 
-                                            index={virtualIndex}
-                                            handleSwipe={handleSwipe}
-                                        />
-                                    );
-                                })}
-                            </AnimatePresence>
-                        </div>
-                        
-                        {batchUrls.length > 0 && currentBatchIndex >= batchUrls.length && (
-                            <div className="mt-8">
-                                <CyberButton text="VIEW MATRIX ARCHIVES" onClick={() => window.location.href = '/pod'} />
-                            </div>
-                        )}
-                        
-                        <div className="mt-8 flex items-center gap-12 sm:gap-24 relative z-10 w-full max-w-lg justify-center">
-                            <button onClick={() => handleSwipe(null, { offset: { x: -200 } } as any)} className="flex flex-col items-center gap-3 text-red-500/60 hover:text-red-500 transition-all hover:scale-110 active:scale-95">
-                                <div className="p-5 rounded-full border border-red-500/30 bg-red-500/10 shadow-[0_0_30px_rgba(239,68,68,0.2)]"><Trash2 size={24} /></div>
-                                <span className="font-mono text-[10px] uppercase font-black tracking-widest drop-shadow-[0_0_10px_rgba(239,68,68,0.5)]">Discard</span>
-                            </button>
-                            <button onClick={() => handleSwipe(null, { offset: { x: 200 } } as any)} className="flex flex-col items-center gap-3 text-green-500/60 hover:text-green-500 transition-all hover:scale-110 active:scale-95">
-                                <div className="p-5 rounded-full border border-green-500/30 bg-green-500/10 shadow-[0_0_30px_rgba(34,197,94,0.2)]"><Save size={24} /></div>
-                                <span className="font-mono text-[10px] uppercase font-black tracking-widest drop-shadow-[0_0_10px_rgba(34,197,94,0.5)]">Archive</span>
-                            </button>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
 
             <div className="fixed inset-0 pointer-events-none z-[100] opacity-10 mix-blend-overlay scanlines" />
         </div>
@@ -735,7 +760,7 @@ function BatchCard({ url, isTop, index, handleSwipe }: { url: string, isTop: boo
 
     return (
         <motion.div
-            className={`absolute inset-0 m-auto w-[82vw] max-w-[380px] aspect-square rounded-3xl overflow-hidden border border-[#00ffff]/30 shadow-[0_20px_50px_rgba(0,0,0,0.8)] bg-black ${isTop ? 'z-40' : 'z-10'}`}
+            className={`absolute inset-0 m-auto w-full max-w-full h-full rounded-[2rem] overflow-hidden border-2 border-[#00ffff]/30 shadow-[0_0_80px_rgba(0,255,255,0.1)] bg-[#020202] ${isTop ? 'z-40' : 'z-10'}`}
             style={{ x, rotate }}
             animate={{ scale, y: yOffset }}
             exit={{ opacity: 0, scale: 0.85, y: yOffset + 100, transition: { duration: 0.5, ease: 'easeOut' } }}

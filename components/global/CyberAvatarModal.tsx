@@ -5,13 +5,13 @@ import { useUserStore } from '@/store/useUserStore';
 import { auth, storage, db } from '@/lib/firebase/config';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { doc, updateDoc } from 'firebase/firestore';
-import { X, UploadCloud, RefreshCw, Image as ImageIcon, Loader2, Sparkles } from 'lucide-react';
+import { X, UploadCloud, RefreshCw, Image as ImageIcon, Loader2, Sparkles, Lock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { CyberButton } from '@/components/ui/CyberButton';
 import CyberGlitchButton  from '@/components/ui/CyberGlitchButton';
 
 export function CyberAvatarModal() {
-    const { currentUser, setUser, setPreviewBanner } = useUserStore();
+    const { currentUser, setUser, setPreviewBanner, isArchitect } = useUserStore();
     const router = useRouter();
     const [uploading, setUploading] = useState(false);
     const [errorMsg, setErrorMsg] = useState("");
@@ -21,6 +21,44 @@ export function CyberAvatarModal() {
     const [bannerPreviewUrl, setBannerPreviewUrl] = useState<string>('');
     const [editBannerY, setEditBannerY] = useState<number>(50);
     const [editBannerZoom, setEditBannerZoom] = useState<number>(1);
+    
+    // Drag State
+    const previewContainerRef = useRef<HTMLDivElement>(null);
+    const [isDragging, setIsDragging] = useState(false);
+    const [dragStartY, setDragStartY] = useState(0);
+    const [dragStartBannerY, setDragStartBannerY] = useState(50);
+
+    const handlePointerDown = (e: React.PointerEvent) => {
+        setIsDragging(true);
+        setDragStartY(e.clientY);
+        setDragStartBannerY(editBannerY);
+        e.currentTarget.setPointerCapture(e.pointerId);
+    };
+
+    const handlePointerMove = (e: React.PointerEvent) => {
+        if (!isDragging) return;
+        
+        // Calculate the physical pixels moved
+        const dy = e.clientY - dragStartY;
+        
+        // Relate the pixel movement to the container's height (which represents 100%)
+        const containerHeight = previewContainerRef.current?.clientHeight || 200;
+        
+        // Since dragging DOWN reveals upper parts of the image, the Y % should go DOWN.
+        // Therefore, if dy is positive (mouse went down), we reduce % .
+        const sensitivity = 100; // How many % of the image matches 100% of the container height drag.
+        const percentageChange = (dy / containerHeight) * sensitivity;
+        
+        // Reversing percentage change because dragging down means image moves down (Y % decreases)
+        const newY = dragStartBannerY - percentageChange;
+        
+        setEditBannerY(Math.max(0, Math.min(100, Math.round(newY))));
+    };
+
+    const handlePointerUp = (e: React.PointerEvent) => {
+        setIsDragging(false);
+        e.currentTarget.releasePointerCapture(e.pointerId);
+    };
     
     // Broadcast live preview to global header
     useEffect(() => {
@@ -230,9 +268,43 @@ export function CyberAvatarModal() {
                             <h3 className="text-[#00ffff] font-bebas text-2xl tracking-widest uppercase shadow-none text-center m-0 leading-none">Live Calibration Active</h3>
                         </div>
                         
-                        <p className="font-mono text-[9px] text-gray-400 uppercase tracking-widest text-center mb-8 px-4 leading-relaxed">
-                            The visual matrix above is currently reflecting your changes in real-time. Adjust the parameters below until the physical header meets your clearance parameters.
+                        <p className="font-mono text-[9px] text-gray-400 uppercase tracking-widest text-center mb-6 px-4 leading-relaxed">
+                            The visual matrix above is currently reflecting your changes in real-time. Sweep the miniature matrix below or adjust the parameters to meet your clearance limits.
                         </p>
+                        
+                        {/* MINIATURE PREVIEW WITH TOUCH / MOUSE DRAG */}
+                        <div 
+                            className="relative w-full md:w-[85%] aspect-[5/1] mb-8 bg-zinc-900 overflow-hidden border border-[#00ffff]/30 shadow-[0_0_20px_rgba(0,255,255,0.1)] touch-none select-none cursor-ns-resize group"
+                            onPointerDown={handlePointerDown}
+                            onPointerMove={handlePointerMove}
+                            onPointerUp={handlePointerUp}
+                            onPointerLeave={handlePointerUp}
+                            onPointerCancel={handlePointerUp}
+                            ref={previewContainerRef}
+                        >
+                            {/* Drag Indicator Overlay */}
+                            <div className={`absolute inset-0 bg-[#00ffff]/5 pointer-events-none transition-opacity duration-300 flex items-center justify-center ${isDragging ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                                <div className="bg-black/60 px-3 py-1 border border-[#00ffff]/30 text-[#00ffff] font-mono text-[8px] uppercase tracking-[0.2em] backdrop-blur-sm pointer-events-none">
+                                    {isDragging ? 'CALIBRATING...' : 'DRAG TO REPOSITION'}
+                                </div>
+                            </div>
+
+                            <img 
+                                src={bannerPreviewUrl}
+                                className="w-full h-full object-cover opacity-60 pointer-events-none"
+                                style={{
+                                    objectPosition: `center ${editBannerY}%`,
+                                    transform: `scale(${editBannerZoom})`
+                                }}
+                            />
+                            
+                            {/* Simulated Avatar Overlay */}
+                            <div className="absolute z-10 left-4 md:left-8 bottom-0 flex items-end pb-0 pointer-events-none">
+                                <div className="w-12 h-12 bg-black border border-primary p-0.5 opacity-80" style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%)' }}>
+                                    <img src={currentUser.photoURL || 'https://api.dicebear.com/7.x/identicon/svg?seed=pilot'} className="w-full h-full object-cover grayscale" />
+                                </div>
+                            </div>
+                        </div>
                         
                         <div className="w-full flex flex-col gap-6 mb-8 px-4 md:px-0">
                             <div className="flex flex-col gap-2">
@@ -343,20 +415,30 @@ export function CyberAvatarModal() {
                             </button>
 
                             {/* BANNER INJECTION MODULE */}
-                            <div className="w-full mt-4 pt-6 border-t border-[#00ffff]/20 flex flex-col gap-3 relative animate-in slide-in-from-top-4">
-                                <span className="absolute -top-3 left-1/2 -translate-x-1/2 font-mono text-[8px] bg-[#050505] px-2 text-[#00ffff]/50 tracking-[0.2em] uppercase">Banner Module</span>
-                                
-                                <button onClick={() => bannerInputRef.current?.click()} className="group relative w-full flex items-center justify-center gap-3 p-3 bg-black/40 border border-dashed border-[#00ffff]/30 hover:bg-[#00ffff]/10 transition-colors uppercase disabled:opacity-50" disabled={uploading}>
-                                    <span className="font-mono text-[10px] md:text-xs text-[#00ffff]/80 tracking-widest font-black group-hover:text-[#00ffff] transition-colors">{currentUser.customBannerUrl ? 'Overwrite Visual Mesh' : 'Upload Banner Mesh'}</span>
-                                </button>
-
-                                {currentUser.customBannerUrl && (
-                                    <button onClick={startEditingExistingBanner} className="group relative w-full flex flex-col items-center justify-center gap-1 p-2 bg-[#00ffff]/5 border border-[#00ffff]/20 hover:bg-[#00ffff]/10 transition-colors uppercase disabled:opacity-50" disabled={uploading}>
-                                        <span className="font-mono text-[9px] text-[#00ffff] tracking-[0.3em] font-black uppercase">Calibrate Trajectory</span>
-                                        <span className="font-mono text-[7px] text-[#00ffff]/60 uppercase tracking-[0.2em]">Y-Axis & Zoom Options</span>
+                            {(isArchitect || currentUser?.role === 'FOUNDER') ? (
+                                <div className="w-full mt-4 pt-6 border-t border-[#00ffff]/20 flex flex-col gap-3 relative animate-in slide-in-from-top-4">
+                                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 font-mono text-[8px] bg-[#050505] px-2 text-[#00ffff]/50 tracking-[0.2em] uppercase">Banner Module</span>
+                                    
+                                    <button onClick={() => bannerInputRef.current?.click()} className="group relative w-full flex items-center justify-center gap-3 p-3 bg-black/40 border border-dashed border-[#00ffff]/30 hover:bg-[#00ffff]/10 transition-colors uppercase disabled:opacity-50" disabled={uploading}>
+                                        <span className="font-mono text-[10px] md:text-xs text-[#00ffff]/80 tracking-widest font-black group-hover:text-[#00ffff] transition-colors">{currentUser.customBannerUrl ? 'Overwrite Visual Mesh' : 'Upload Banner Mesh'}</span>
                                     </button>
-                                )}
-                            </div>
+
+                                    {currentUser.customBannerUrl && (
+                                        <button onClick={startEditingExistingBanner} className="group relative w-full flex flex-col items-center justify-center gap-1 p-2 bg-[#00ffff]/5 border border-[#00ffff]/20 hover:bg-[#00ffff]/10 transition-colors uppercase disabled:opacity-50" disabled={uploading}>
+                                            <span className="font-mono text-[9px] text-[#00ffff] tracking-[0.3em] font-black uppercase">Calibrate Trajectory</span>
+                                            <span className="font-mono text-[7px] text-[#00ffff]/60 uppercase tracking-[0.2em]">Y-Axis & Zoom Options</span>
+                                        </button>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="w-full mt-4 pt-6 border-t border-[#00ffff]/20 flex flex-col gap-3 relative opacity-50 select-none">
+                                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 font-mono text-[8px] bg-[#050505] px-2 text-red-500 tracking-[0.2em] uppercase whitespace-nowrap z-10">Access Denied: Founder/Architect Only</span>
+                                    <button disabled className="relative w-full flex items-center justify-center gap-3 p-3 bg-red-500/5 border border-dashed border-red-500/20 text-red-500/50 uppercase cursor-not-allowed">
+                                        <Lock size={14} className="shrink-0" />
+                                        <span className="font-mono text-[10px] md:text-xs tracking-widest font-black">Banner Injection Locked</span>
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </>
                 )}
