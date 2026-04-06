@@ -72,7 +72,7 @@ export default function MatrixCore() {
             <div className={`relative z-20 w-full h-full flex-1 flex flex-col transition-all duration-1000 ${isBooted ? 'opacity-100' : 'opacity-0'}`}>
                 
                 {/* TOP COMPONENT: TACTICAL DASHBOARD - DOCKS TO PROFILE BANNER */}
-                <div className="w-full shrink-0 flex flex-col md:flex-row items-stretch border-b border-primary/30 bg-black/60 shadow-[0_10px_50px_rgba(var(--color-primary),0.05)] relative overflow-hidden backdrop-blur-3xl min-h-[140px]">
+                <div className="w-full shrink-0 flex flex-col md:flex-row items-stretch border-b border-primary/30 bg-black/40 shadow-[0_10px_50px_rgba(var(--color-primary),0.05)] relative overflow-hidden backdrop-blur-md min-h-[140px]">
                     
                     {/* Background "SPACEJAMZ" text anchored strictly within dashboard to avoid loose layout blocks */}
                     <div className="absolute inset-0 z-0 flex justify-center items-center blur-[3px] opacity-10 pointer-events-none overflow-hidden">
@@ -150,7 +150,7 @@ export default function MatrixCore() {
                 </div>
 
                 {/* BOTTOM COMPONENT: VANGUARD CLUSTER - DYNAMICALLY STRETCHES DOWN */}
-                <div className="w-full flex-1 flex flex-col z-30">
+                <div className="w-full flex-1 flex flex-col z-30 bg-black/30 backdrop-blur-sm">
                     <div className="w-full bg-black/80 shadow-inner py-3 px-6 border-b border-[#00ffff]/20 flex justify-between items-center">
                         <div className="flex items-center gap-4">
                             <div className="w-2 h-2 bg-primary animate-ping" />
@@ -166,12 +166,12 @@ export default function MatrixCore() {
                     </div>
 
                     {/* VANGUARD CARDS GRID - AUTO ROWS FILL REMAINING SPACE */}
-                    <div className="w-full flex-1 grid grid-cols-2 lg:grid-cols-6 auto-rows-fr bg-[#050505]">
+                    <div className="w-full flex-1 grid grid-cols-2 lg:grid-cols-6 auto-rows-fr bg-[#050505]/20">
                         {stargates.map((gate) => (
                             <Link
                                 key={gate.id}
                                 href={gate.href}
-                                className="group relative flex flex-col p-6 pb-[calc(1.5rem+88px)] sm:pb-[calc(1.5rem+80px)] h-full justify-between border-r border-[#1a1a1a] hover:bg-black transition-all duration-500 overflow-hidden"
+                                className="group relative flex flex-col p-6 pb-[calc(1.5rem+88px)] sm:pb-[calc(1.5rem+80px)] h-full justify-between border-r border-[#1a1a1a]/50 hover:bg-black/60 hover:backdrop-blur-xl transition-all duration-500 overflow-hidden"
                             >
                                 {/* Background Video Layer */}
                                 <div className="absolute inset-0 z-0 opacity-10 group-hover:opacity-40 transition-opacity duration-1000">

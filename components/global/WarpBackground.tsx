@@ -144,12 +144,8 @@ const WarpBackground = memo(() => {
 
             // Limit logical pixel scale to 1.0 (or below) to override high DPI Mac/Retina displays from crushing desktop iGPUs
             const dpr = Math.min(window.devicePixelRatio || 1, 1);
-
-            width = viewportWidth * dpr;
-            height = viewportHeight * dpr;
-
-            canvas.style.width = viewportWidth + "px";
-            canvas.style.height = viewportHeight + "px";
+            width = window.innerWidth * dpr;
+            height = window.innerHeight * dpr;
 
             canvas.width = width;
             canvas.height = height;
