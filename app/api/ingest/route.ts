@@ -13,7 +13,7 @@ export async function POST(req: Request) {
         console.log(`[INGESTION_NODE] Extracting: ${url}`);
 
         // --- SPACEJAMZ CUSTOM SUNO ABSTRACTION ---
-        if (url.includes('suno.com') || url.includes('suno.ai')) {
+        if ((url.includes('suno.com') || url.includes('suno.ai')) && !url.includes('/playlist/')) {
             // Natively follow the HTTP 302 Redirect and read HTML to decrypt metadata
             const res = await fetch(url, { 
                 redirect: "follow",
@@ -58,24 +58,41 @@ export async function POST(req: Request) {
             }
         }
 
-        // --- YOUTUBE / SOUNDCLOUD (Using yt-dlp) ---
+        // --- YOUTUBE / SOUNDCLOUD / SUNO PLAYLISTS (Using yt-dlp) ---
         // Scrapes the raw media link bypassing browser blocks
         const ytInfo = await youtubedl(url, {
             dumpSingleJson: true,
             noWarnings: true,
             callHome: false,
             format: 'bestaudio',
+            flatPlaylist: true
         }).catch(err => {
             console.error(err);
-            throw new Error("Unable to pierce YouTube/SC Firewall.");
+            throw new Error("Unable to pierce Extractor Firewall.");
         });
 
         const data = ytInfo as any;
+        
+        // Handle Playlist Arrays natively
+        if (data.entries && Array.isArray(data.entries)) {
+             return NextResponse.json({
+                  success: true,
+                  isPlaylist: true,
+                  playlistTitle: data.title || "Decrypted External Playlist",
+                  tracks: data.entries.map((t: any) => ({
+                       title: t.title || "Unknown Encrypted Track",
+                       streamUrl: t.url,
+                       type: url.includes('suno') ? 'suno' : 'youtube-dl',
+                       thumbnail: t.thumbnail
+                  })).filter((t: any) => t.streamUrl)
+             });
+        }
+
         return NextResponse.json({
             success: true,
             title: data.title || "Unknown Encrypted Track",
             streamUrl: data.url, // Raw Direct CDN Stream
-            type: "youtube-dl",
+            type: url.includes('suno') ? 'suno' : 'youtube-dl',
             thumbnail: data.thumbnail
         });
 

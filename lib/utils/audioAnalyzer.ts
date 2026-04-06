@@ -71,8 +71,18 @@ export const analyzeExternalLink = async (url: string): Promise<any> => {
 
         const data = await response.json();
         
-        if (!data.success || !data.streamUrl) {
+        if (!data.success || (!data.streamUrl && !data.isPlaylist)) {
             throw new Error("Target payload encrypted. Failed to extract secure MP3 CDN stream.");
+        }
+
+        if (data.isPlaylist) {
+             return data.tracks.map((t: any) => ({
+                 id: crypto.randomUUID(),
+                 title: t.title || "PLAYLIST TRACK",
+                 producer: t.type === 'suno' ? 'SUNO.COM [PLAYLIST NODE]' : 'EXTERNAL PLAYLIST NODE',
+                 src: t.streamUrl,
+                 status: 'ingested'
+             }));
         }
 
         return {

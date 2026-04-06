@@ -419,7 +419,9 @@ export default function ArchitectSuite() {
             const { analyzeExternalLink } = await import('@/lib/utils/audioAnalyzer');
             const newTrack = await analyzeExternalLink(linkInput);
             
-            const newPlaylist = [newTrack, ...dynamicTracks];
+            const newTracks = Array.isArray(newTrack) ? newTrack : [newTrack];
+            const newPlaylist = [...newTracks, ...dynamicTracks];
+
             setDynamicTracks(newPlaylist);
             commitToFirebase(newPlaylist);
             setLinkInput('');

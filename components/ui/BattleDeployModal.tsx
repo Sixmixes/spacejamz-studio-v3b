@@ -41,6 +41,22 @@ export default function BattleDeployModal({
           const data = await res.json();
           if (!res.ok) throw new Error(data.error || "Neural interception failed.");
           
+          if (data.isPlaylist) {
+              const newBeats = data.tracks.map((t: any) => ({
+                  id: `link_${crypto.randomUUID()}`,
+                  title: t.title,
+                  bpm: 120, // Playlist assets skip heavy initial DSP decoding
+                  key: "N/A",
+                  producer: t.type === 'suno' ? 'Suno AI Playlist' : 'Playlist Node',
+                  streamUrl: `/api/proxy?url=${encodeURIComponent(t.streamUrl)}`
+              }));
+              
+              setLocalBeats([...newBeats, ...localBeats]);
+              setSelectedBeatId(newBeats[0]?.id);
+              setLinkInput('');
+              return;
+          }
+
           const proxyUrl = `/api/proxy?url=${encodeURIComponent(data.streamUrl)}`;
           const bufferRes = await fetch(proxyUrl);
           if (!bufferRes.ok) throw new Error("Could not pipe proxy stream.");
